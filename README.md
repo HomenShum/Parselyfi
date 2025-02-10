@@ -86,24 +86,34 @@
 4.  **Action Buttons:** Utilize the buttons in the File Manager to create folders, upload files, and delete items.
 5.  **Pagination:** For file lists and data tables, use the pagination controls to navigate through pages of data.
 
-## 🤝 Contributing (Optional)
+## 📜 License 
 
-[If you are open to contributions, add information here about how others can contribute. For example:]
+Homen Shum reserves all rights not expressly granted by the license.
 
-Contributions are welcome! Please fork the repository and submit pull requests with your improvements. For major changes, please open an issue first to discuss what you would like to change.
+## 👨‍💻 About the Creator
 
-## 📜 License (Optional)
+**Homen Shum** is a data-driven professional with expertise in AI/ML, Data Analytics, and Workflow Automation. With a background in startup banking and technical development, he brings a unique perspective to financial technology solutions.
 
-[If you have a license, specify it here. For example:]
+#### Key Skills:
+- 🐍 Python, Streamlit, FastAPI
+- ☁️ Cloud Platforms (Azure, AWS, GCP)
+- 🤖 AI/ML, RAG, Automation
+- 📊 Data Analysis & Visualization
+- 🌐 Web Development
+- 🏦 Financial Markets & Investment Strategies
 
-[MIT License](LICENSE)
+#### Experience Highlights:
+- Technical Co-Founder building innovative AI solutions
+- Startup Banking experience at JPMC
+- AWS DeepRacer Global Finalist
+- Creator of 'Parsely' AI Assistant
 
-## 👤 About the Creator
+## 📫 Contact
 
-**Homen Shum** - Data-Driven Professional | AI/ML, Data Analytics, Workflow Automation
-
-*   [Personal Website](https://homenshum.com/)
-*   [LinkedIn Profile](https://linkedin.com/in/homen-shum)
+- Personal Website: [homenshum.com](https://homenshum.com/)
+- LinkedIn: [linkedin.com/in/homen-shum](https://linkedin.com/in/homen-shum)
+- GitHub: [github.com/HomenShum](https://github.com/HomenShum)
 
 ---
+
 *Last Updated: Feb 2025*
