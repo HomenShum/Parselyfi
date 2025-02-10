@@ -7,6 +7,7 @@ import math # For pagination
 import pandas as pd
 from io import BytesIO
 import base64
+from datetime import datetime
 
 # Initialize Supabase client
 supabase_url = st.secrets['supabase']['SUPABASE_URL']
@@ -583,16 +584,13 @@ def render_items_per_page_selector():
 
 
 def sidebar_content_fragment_st_file_manager_component():
-    st.title("Lite S3 File Manager (Supabase Storage)")
-
+    st.subheader(f"📂 {st.experimental_user.name}'s S3 File Manager")
     # Ensure user is logged in
     if not st.experimental_user.is_logged_in:
         st.button("Log in with Google", on_click=st.login)
         st.stop()
 
     _init_session_state() # Initialize session state
-
-    st.header("Browse & Manage S3 Files") # More specific header
 
     with st.container(border=True): # Container for action buttons and file listing
         col_header, col_pagination_selector = st.columns([5, 2]) # Adjust ratio as needed for header and selector
@@ -897,7 +895,8 @@ def main_content_fragment_st_data_editor_public_dashboard():
         "📊 Company Data",
         "📊 Daily Youtube Transcription Report",
         "📰 News",
-        "🗣️ Public Discussion Forums"
+        "🗣️ Public Discussion Forums",
+        "➕ Add New Data"  # New tab for adding data
     ])
 
     # Outer Tab 1: Company Data
@@ -983,21 +982,103 @@ def main_content_fragment_st_data_editor_public_dashboard():
 
         # --- Editable Filtered Table Section ---
         st.divider()
-        st.subheader("Editable Company Data (with Row Selection) - *Read Only from Supabase*") # Indicate read-only
+        st.subheader("Choose Columns to Display & Apply Filter") 
         if not df_enriched.empty:
             available_columns = df_enriched.columns.tolist()
-            selected_columns = st.multiselect(
-                "Choose columns to display:",
-                options=available_columns,
-                default=available_columns,
-                key="columns_selector"
-            )
-            filtered_df = df_enriched[selected_columns]
-            st.dataframe(filtered_df, use_container_width=True) # Display as dataframe, not editor as it's read-only
+            
+            with st.expander("Choose Columns to Display"):
+                selected_columns = st.multiselect(
+                    "Choose columns to display:",
+                    options=available_columns,
+                    default=available_columns,
+                    key="columns_selector"
+                )
+                
+            with st.expander("Add Filters"):
+                # Initialize session state for filters if not exists
+                if 'filters' not in st.session_state:
+                    st.session_state.filters = []
+                    # Configure new filter and display current filters side by side
+                left_col, right_col = st.columns(2)
+
+                with left_col:
+                    st.subheader("Configure Filter")
+                    new_filter_column = st.selectbox("Select Column", options=available_columns)
+                    new_filter_operator = st.selectbox("Choose Comparison Method", 
+                        options=['Equals', 'Not Equal', 'Greater Than', 'Less Than', 'Greater Than or Equal', 'Less Than or Equal', 'Contains'])
+                    
+                    # Map friendly names to operators
+                    operator_map = {
+                        'Equals': '==',
+                        'Not Equal': '!=',
+                        'Greater Than': '>',
+                        'Less Than': '<',
+                        'Greater Than or Equal': '>=',
+                        'Less Than or Equal': '<=',
+                        'Contains': 'contains'
+                    }
+                    operator_display = {v: k for k, v in operator_map.items()}
+                    
+                    unique_values = df_enriched[new_filter_column].dropna().unique().tolist()
+                    if len(unique_values) <= 10:
+                        new_filter_value = st.selectbox("Select Value", options=unique_values)
+                    else:
+                        new_filter_value = st.text_input("Enter Value")
+                    
+                    if st.button("Add This Filter"):
+                        if new_filter_value:
+                            st.session_state.filters.append({
+                                'column': new_filter_column,
+                                'operator': operator_map[new_filter_operator],
+                                'value': new_filter_value
+                            })
+                            st.success("Filter added!")
+                            st.rerun()
+                        else:
+                            st.warning("Please enter a value for the filter")
+
+                with right_col:
+                    st.subheader("Current Filters")
+                    if st.session_state.filters:
+                        for i, filter in enumerate(st.session_state.filters):
+                            cols = st.columns([5, 1])
+                            cols[0].write(f"{filter['column']} {operator_display[filter['operator']]} {filter['value']}")
+                            if cols[1].button("🗑️", key=f"remove_filter_{i}"):
+                                st.session_state.filters.pop(i)
+                                st.rerun()
+                        
+                        if st.button("Clear All Filters"):
+                            st.session_state.filters = []
+                            st.rerun()
+                    else:
+                        st.info("No filters applied")
+
+                # Apply filters to dataframe
+                filtered_df = df_enriched[selected_columns].copy()
+                for filter in st.session_state.filters:
+                    try:
+                        if filter['operator'] == '==':
+                            filtered_df = filtered_df[filtered_df[filter['column']].astype(str) == str(filter['value'])]
+                        elif filter['operator'] == '!=':
+                            filtered_df = filtered_df[filtered_df[filter['column']].astype(str) != str(filter['value'])]
+                        elif filter['operator'] == '>':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') > float(filter['value'])]
+                        elif filter['operator'] == '<':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') < float(filter['value'])]
+                        elif filter['operator'] == '>=':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') >= float(filter['value'])]
+                        elif filter['operator'] == '<=':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') <= float(filter['value'])]
+                        elif filter['operator'] == 'contains':
+                            filtered_df = filtered_df[filtered_df[filter['column']].astype(str).str.contains(str(filter['value']), case=False, na=False)]
+                    except Exception as e:
+                        st.warning(f"Error applying filter: {e}")
+            
+            # Display filtered dataframe
+            st.subheader(f"Filtered Data ({len(filtered_df)} rows)")
+            st.data_editor(filtered_df, use_container_width=True)
         else:
             st.info("No company data available to filter.")
-
-
     # Outer Tab 2: Daily Youtube Transcription Report
     with outer_tabs[1]:
         st.subheader("Daily Youtube Transcription Report")
@@ -1022,23 +1103,123 @@ def main_content_fragment_st_data_editor_public_dashboard():
         else:
             st.info("No public discussion forum data available.")
 
+    # New Tab: Add Data
+    with outer_tabs[4]:
+        st.subheader("Add New Data")
+        data_type = st.selectbox(
+            "Select Data Type",
+            ["Company Data", "Youtube Report", "News", "Forum Discussion"]
+        )
+
+        if data_type == "Company Data":
+            with st.form("add_company_data"):
+                st.subheader("Add Company Data")
+                company_name = st.text_input("Company Name*")
+                product_name = st.text_input("Product Name")
+                company_url = st.text_input("Company URL")
+                product_type = st.text_input("Product Type")
+                scientific_domain = st.text_input("Scientific Domain")
+                description_abstract = st.text_area("Description/Abstract")
+                
+                submitted = st.form_submit_button("Submit Company Data")
+                if submitted and company_name:  # Ensure company name is provided
+                    try:
+                        data = {
+                            "company_name": company_name,
+                            "product_name": product_name,
+                            "company_url": company_url,
+                            "product_type": product_type,
+                            "scientific_domain": scientific_domain,
+                            "description_abstract": description_abstract
+                        }
+                        response = supabase_client.table("company_data").insert(data).execute()
+                        st.success("Company data added successfully!")
+                        st.cache_data.clear()  # Clear cache to refresh data
+                    except Exception as e:
+                        st.error(f"Error adding company data: {e}")
+
+        elif data_type == "Youtube Report":
+            with st.form("add_youtube_data"):
+                st.subheader("Add Youtube Report")
+                video_title = st.text_input("Video Title*")
+                channel_name = st.text_input("Channel Name*")
+                transcript_text = st.text_area("Transcript Text")
+                video_url = st.text_input("Video URL")
+                
+                submitted = st.form_submit_button("Submit Youtube Report")
+                if submitted and video_title and channel_name:
+                    try:
+                        data = {
+                            "video_title": video_title,
+                            "channel_name": channel_name,
+                            "transcript_text": transcript_text,
+                            "video_url": video_url
+                        }
+                        response = supabase_client.table("youtube_transcription_report").insert(data).execute()
+                        st.success("Youtube report added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error adding Youtube report: {e}")
+
+        elif data_type == "News":
+            with st.form("add_news_data"):
+                st.subheader("Add News")
+                title = st.text_input("News Title*")
+                source = st.text_input("Source*")
+                content = st.text_area("Content")
+                url = st.text_input("URL")
+                
+                submitted = st.form_submit_button("Submit News")
+                if submitted and title and source:
+                    try:
+                        data = {
+                            "title": title,
+                            "source": source,
+                            "content": content,
+                            "url": url
+                        }
+                        response = supabase_client.table("news_data").insert(data).execute()
+                        st.success("News added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error adding news: {e}")
+
+        elif data_type == "Forum Discussion":
+            with st.form("add_forum_data"):
+                st.subheader("Add Forum Discussion")
+                topic = st.text_input("Topic*")
+                forum_name = st.text_input("Forum Name*")
+                discussion_content = st.text_area("Discussion Content")
+                url = st.text_input("URL")
+                
+                submitted = st.form_submit_button("Submit Forum Discussion")
+                if submitted and topic and forum_name:
+                    try:
+                        data = {
+                            "topic": topic,
+                            "forum_name": forum_name,
+                            "discussion_content": discussion_content,
+                            "url": url
+                        }
+                        response = supabase_client.table("public_discussion_forums").insert(data).execute()
+                        st.success("Forum discussion added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error adding forum discussion: {e}")
+
+
 def main():
     st.set_page_config(
         page_title="🌱 ParselyFi by Homen Shum",
         page_icon="📊",
         layout="wide",
         initial_sidebar_state="expanded",
-        menu_items={
-            'Get Help': 'https://www.parselyfi.com/help',
-            'Report a bug': "https://www.parselyfi.com/bug",
-            'About': "# ParselyFi: Revolutionizing Financial Workflows with AI"
-        }
     )
 
     with st.sidebar:
         st.title("🌱 ParselyFi")
-        st.markdown("**Info on Venture Capital, Middle Market, and Public Company** \n\n- Search Financial Data, Crunchbase, Pitchbook, LinkedIn, News, YouTube, and more - all in one place.")
-        with st.expander("About the Creator"):
+        st.markdown("💡 **Info on Venture Capital, Middle Market, and Public Company** 📊\n\n- Search Financial Data, Crunchbase, Pitchbook, LinkedIn, News, YouTube, and more - all in one place.")
+        with st.expander("📃 About the Creator"):
             st.markdown("**Homen Shum** is a data-driven professional with expertise in **AI/ML, Data Analytics, and Workflow Automation.**")
             st.markdown("Driven to optimize processes and drive strategic innovation using cutting-edge technologies.")
 
@@ -1092,7 +1273,7 @@ def main():
 
         st.divider()
         
-        st.sidebar.header("📁 File Manager")
+        st.sidebar.header("🧍 User Profile")
         sidebar_content_fragment_st_file_manager_component()
         
         st.divider()

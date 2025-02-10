@@ -7,3 +7,4 @@ openpyxl
 xlrd
 python-pptx
 st-supabase-connection
+cleanco
