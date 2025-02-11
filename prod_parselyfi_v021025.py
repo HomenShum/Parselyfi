@@ -584,12 +584,12 @@ def render_items_per_page_selector():
 
 
 def sidebar_content_fragment_st_file_manager_component():
-    st.subheader(f"📂 {st.experimental_user.name}'s S3 File Manager")
     # Ensure user is logged in
     if not st.experimental_user.is_logged_in:
         st.button("Log in with Google", on_click=st.login)
         st.stop()
 
+    st.subheader(f"📂 {st.experimental_user.name}'s S3 File Manager")
     _init_session_state() # Initialize session state
 
     with st.container(border=True): # Container for action buttons and file listing
