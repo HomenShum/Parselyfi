@@ -8,3 +8,5 @@ xlrd
 python-pptx
 st-supabase-connection
 cleanco
+pydantic-ai
+tavily-python
