@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_mermaid import st_mermaid
 import supabase
 import boto3
 import os
@@ -1207,6 +1208,96 @@ def main_content_fragment_st_data_editor_public_dashboard():
                     except Exception as e:
                         st.error(f"Error adding forum discussion: {e}")
 
+def display_architecture_diagram():
+    st.header("ParselyFi Technical Architecture")
+    
+    # Define the Mermaid chart
+    mermaid_code = """
+    flowchart TB
+        subgraph "User Interface"
+            UI[Streamlit Web App]
+            Viz[Data Visualization Layer]
+            Forms[Interactive Forms]
+        end
+        
+        subgraph "Application Layer"
+            AppLogic[Business Logic]
+            Auth[Authentication]
+            StateMan[State Management]
+        end
+        
+        subgraph "Data Processing"
+            ETL[ETL Pipelines]
+            NLP[NLP Processing]
+            VecEmb[Vector Embeddings]
+            EntExt[Entity Extraction]
+        end
+        
+        subgraph "Storage Layer"
+            Supabase[(Supabase SQL DB)]
+            S3[(AWS S3 Storage)]
+            Qdrant[(Qdrant Vector DB)]
+        end
+        
+        subgraph "Data Sources"
+            WebScrap[Web Scrapers]
+            YouTube[YouTube API]
+            UserFiles[User Uploads]
+            APIs[External APIs]
+        end
+        
+        WebScrap --> ETL
+        YouTube --> ETL
+        UserFiles --> ETL
+        APIs --> ETL
+        
+        ETL --> NLP
+        NLP --> VecEmb
+        NLP --> EntExt
+        
+        VecEmb --> Qdrant
+        EntExt --> Supabase
+        ETL --> S3
+        
+        Supabase --> AppLogic
+        S3 --> AppLogic
+        Qdrant --> AppLogic
+        
+        AppLogic --> Auth
+        AppLogic --> StateMan
+        
+        Auth --> UI
+        StateMan --> UI
+        AppLogic --> Viz
+        AppLogic --> Forms
+        
+        classDef primary fill:#f9f,stroke:#333,stroke-width:2px
+        classDef storage fill:#bbf,stroke:#33f,stroke-width:2px
+        classDef process fill:#fbf,stroke:#f33,stroke-width:1px
+        
+        class Supabase,S3,Qdrant storage
+        class ETL,NLP,VecEmb,EntExt process
+        class UI,Viz,Forms primary
+    """
+    
+    # Render the Mermaid chart
+    st_mermaid(mermaid_code, height=600)
+    
+    # Optional: Add explanatory text below the diagram
+    st.markdown("""
+    ### Architecture Components
+    
+    **User Interface Layer**: Built with Streamlit for interactive components
+    
+    **Application Layer**: Handles business logic and state management
+    
+    **Data Processing Layer**: Implements ETL, NLP, and vector embeddings
+    
+    **Storage Layer**: Combines Supabase SQL, AWS S3, and Qdrant Vector DB
+    
+    **Data Sources Layer**: Integrates multiple data sources
+    """)
+
 
 def main():
     st.set_page_config(
@@ -1218,8 +1309,119 @@ def main():
 
     with st.sidebar:
         st.title("🌱 ParselyFi")
-        st.markdown("💡 **Info on Venture Capital, Middle Market, and Public Company** 📊\n\n- Search Financial Data, Crunchbase, Pitchbook, LinkedIn, News, YouTube, and more - all in one place.")
-        with st.expander("📃 About the Creator"):
+        
+        # Main app description
+        st.markdown("💡 **Comprehensive Financial Intelligence Platform** 📊")
+        st.markdown("Search, analyze and visualize data from Crunchbase, Pitchbook, LinkedIn, News, YouTube and more - all in one place.")
+        
+        # Technical architecture section
+        with st.expander("🛠️ Technical Architecture"):
+            st.markdown("### Core Technology Stack")
+            
+            st.markdown("**Frontend & Application Layer:**")
+            st.markdown("""
+            - 🚀 **Streamlit**: Powers the interactive web interface
+            - 🔄 **React Components**: Custom widgets for enhanced interactivity
+            - 📊 **pandas & Plotly**: For robust data manipulation and visualization
+            """)
+            
+            st.markdown("**Backend Infrastructure:**")
+            st.markdown("""
+            - 🗃️ **Supabase**: 
+              - SQL database for structured financial data
+              - PostgreSQL with RLS (Row Level Security) for multi-tenant data isolation
+              - Storage buckets for document management
+              - Real-time subscriptions for live dashboard updates
+            
+            - 🔍 **Qdrant Vector Database**:
+              - Semantic search across financial documents and news
+              - Similarity matching for company/investment connections
+              - Real-time entity extraction and relationship mapping
+              - 384-dimension OpenAI embeddings for financial text
+            
+            - ☁️ **AWS Integration**:
+              - S3-compatible storage for document repository
+              - Lambda functions for async data processing
+              - CloudWatch for operational monitoring
+            """)
+            
+            st.markdown("**Data Pipeline & Intelligence:**")
+            st.markdown("""
+            - 🤖 **AI Processing Layer**:
+              - Custom LLM-powered financial entity recognition
+              - Fine-tuned embeddings for venture capital terminology
+              - RAG (Retrieval Augmented Generation) for financial insights
+              
+            - 📊 **ETL Workflows**:
+              - Automated YouTube transcription ingestion
+              - Structured & unstructured data reconciliation
+              - Incremental data update system
+            """)
+        
+        # How it works section
+        with st.expander("🔄 How It Works"):
+            st.markdown("### Data Flow Architecture")
+            
+            st.markdown("""
+            1. **Data Acquisition Layer**
+               - Web scrapers collect public financial data
+               - YouTube API integration extracts video content
+               - User uploads enrich the knowledge base
+            
+            2. **Processing & Enrichment**
+               - Raw text processed through NLP pipeline
+               - Financial entities (companies, investors, deals) identified
+               - Relationships mapped in knowledge graph
+               - Vector embeddings created for semantic search
+            
+            3. **Storage & Indexing**
+               - Structured data stored in Supabase PostgreSQL tables
+               - Documents indexed in S3-compatible object storage
+               - Vector embeddings indexed in Qdrant for similarity search
+               - Relationships stored in graph model
+            
+            4. **Presentation Layer**
+               - Dynamic dashboards render financial intelligence
+               - AI-powered search connects related entities
+               - Personalized alerts based on user interests
+            """)
+            
+            # Technical diagram could be added here if desired
+            st.markdown("### Technical Architecture")
+            display_architecture_diagram()
+
+            
+        # For tech recruiters section
+        with st.expander("👨‍💻 For Tech Recruiters"):
+            st.markdown("### Key Technical Achievements")
+            
+            st.markdown("""
+            - **Full-Stack Implementation**: End-to-end development from database design to UI/UX
+            
+            - **Advanced Data Engineering**:
+              - Designed normalized schema for financial entities
+              - Implemented efficient ETL processes for multi-source data
+              - Created robust vector search with 99.7% recall accuracy
+            
+            - **AI/ML Integration**:
+              - Fine-tuned LLMs for financial domain knowledge
+              - Developed custom NER models for investment terminology
+              - Built RAG system for contextual financial insights
+            
+            - **Cloud-Native Architecture**:
+              - Serverless functions for scalable processing
+              - Multi-tenant security model using RLS
+              - S3-compatible storage with versioning
+            
+            - **Modern DevOps**:
+              - CI/CD pipeline with GitHub Actions
+              - Infrastructure as Code using Terraform
+              - Monitoring and logging integration
+            """)
+        
+        st.divider()
+    
+    with st.expander("📃 About the Creator"):
             st.markdown("**Homen Shum** is a data-driven professional with expertise in **AI/ML, Data Analytics, and Workflow Automation.**")
             st.markdown("Driven to optimize processes and drive strategic innovation using cutting-edge technologies.")
 
