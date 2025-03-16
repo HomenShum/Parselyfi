@@ -1387,7 +1387,7 @@ def main():
             
             # Resume preview - keep if important, but could be removed for space
             st.markdown("---")
-            image_path = r"images\Homen Shum - Resume.png"
+            image_path = "images/Homen Shum - Resume.png"
 
             if os.path.exists(image_path):
                 st.image(image_path, caption="Resume Preview", width=300)
