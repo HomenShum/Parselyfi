@@ -1390,7 +1390,7 @@ def main():
             image_path = "images/Homen Shum - Resume.png"
 
             if os.path.exists(image_path):
-                st.image(image_path, caption="Resume Preview", width=300)
+                st.image(image_path, caption="Resume Preview", use_container_width=True)
             else:
                 st.info("Resume preview not available")
         
