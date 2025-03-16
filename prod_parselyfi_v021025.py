@@ -1421,7 +1421,7 @@ def main():
         
         st.divider()
     
-    with st.expander("📃 About the Creator"):
+        with st.expander("📃 About the Creator"):
             st.markdown("**Homen Shum** is a data-driven professional with expertise in **AI/ML, Data Analytics, and Workflow Automation.**")
             st.markdown("Driven to optimize processes and drive strategic innovation using cutting-edge technologies.")
 
