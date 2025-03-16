@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_mermaid import st_mermaid
+import streamlit_mermaid as stmd
 import supabase
 import boto3
 import os
@@ -1281,7 +1281,7 @@ def display_architecture_diagram():
     """
     
     # Render the Mermaid chart
-    st_mermaid(mermaid_code, height=600)
+    stmd.st_mermaid(mermaid_code)
     
     # Optional: Add explanatory text below the diagram
     st.markdown("""
