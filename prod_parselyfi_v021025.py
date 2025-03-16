@@ -1273,17 +1273,14 @@ def main():
 
         st.divider()
         
-        st.sidebar.header("🧍 User Profile")
         sidebar_content_fragment_st_file_manager_component()
         
         st.divider()
         
-        st.sidebar.header("🤖 AI Assistant")
         sidebar_content_fragment_PydanticAIAgentChat_component()
         
         st.divider()
         
-        st.sidebar.header("🔔 System Messages")
         sidebar_content_fragment_SystemDialog_component()
         
     st.header("Feature Selection")
