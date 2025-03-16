@@ -1209,8 +1209,6 @@ def main_content_fragment_st_data_editor_public_dashboard():
                         st.error(f"Error adding forum discussion: {e}")
 
 def display_architecture_diagram():
-    st.header("ParselyFi Technical Architecture")
-    
     # Define the Mermaid chart
     mermaid_code = """
     flowchart TB
@@ -1310,169 +1308,91 @@ def main():
     with st.sidebar:
         st.title("🌱 ParselyFi")
         
-        # Main app description
-        st.markdown("💡 **Comprehensive Financial Intelligence Platform** 📊")
-        st.markdown("Search, analyze and visualize data from Crunchbase, Pitchbook, LinkedIn, News, YouTube and more - all in one place.")
+        # Main app description - keep this brief
+        st.markdown("💡 **Financial Intelligence Platform** 📊")
+        st.markdown("Search & analyze data from Crunchbase, Pitchbook, LinkedIn, News, YouTube and more - all in one place.")
         
-        # Technical architecture section
-        with st.expander("🛠️ Technical Architecture"):
-            st.markdown("### Core Technology Stack")
+        # First combined expander: About the App (Technical + How it Works)
+        with st.expander("ℹ️ About the App"):
+            st.markdown("### ParselyFi Technical Architecture")
             
-            st.markdown("**Frontend & Application Layer:**")
-            st.markdown("""
-            - 🚀 **Streamlit**: Powers the interactive web interface
-            - 🔄 **React Components**: Custom widgets for enhanced interactivity
-            - 📊 **pandas & Plotly**: For robust data manipulation and visualization
-            """)
-            
-            st.markdown("**Backend Infrastructure:**")
-            st.markdown("""
-            - 🗃️ **Supabase**: 
-              - SQL database for structured financial data
-              - PostgreSQL with RLS (Row Level Security) for multi-tenant data isolation
-              - Storage buckets for document management
-              - Real-time subscriptions for live dashboard updates
-            
-            - 🔍 **Qdrant Vector Database**:
-              - Semantic search across financial documents and news
-              - Similarity matching for company/investment connections
-              - Real-time entity extraction and relationship mapping
-              - 384-dimension OpenAI embeddings for financial text
-            
-            - ☁️ **AWS Integration**:
-              - S3-compatible storage for document repository
-              - Lambda functions for async data processing
-              - CloudWatch for operational monitoring
-            """)
-            
-            st.markdown("**Data Pipeline & Intelligence:**")
-            st.markdown("""
-            - 🤖 **AI Processing Layer**:
-              - Custom LLM-powered financial entity recognition
-              - Fine-tuned embeddings for venture capital terminology
-              - RAG (Retrieval Augmented Generation) for financial insights
-              
-            - 📊 **ETL Workflows**:
-              - Automated YouTube transcription ingestion
-              - Structured & unstructured data reconciliation
-              - Incremental data update system
-            """)
-        
-        # How it works section
-        with st.expander("🔄 How It Works"):
-            st.markdown("### Data Flow Architecture")
-            
-            st.markdown("""
-            1. **Data Acquisition Layer**
-               - Web scrapers collect public financial data
-               - YouTube API integration extracts video content
-               - User uploads enrich the knowledge base
-            
-            2. **Processing & Enrichment**
-               - Raw text processed through NLP pipeline
-               - Financial entities (companies, investors, deals) identified
-               - Relationships mapped in knowledge graph
-               - Vector embeddings created for semantic search
-            
-            3. **Storage & Indexing**
-               - Structured data stored in Supabase PostgreSQL tables
-               - Documents indexed in S3-compatible object storage
-               - Vector embeddings indexed in Qdrant for similarity search
-               - Relationships stored in graph model
-            
-            4. **Presentation Layer**
-               - Dynamic dashboards render financial intelligence
-               - AI-powered search connects related entities
-               - Personalized alerts based on user interests
-            """)
-            
-            # Technical diagram could be added here if desired
-            st.markdown("### Technical Architecture")
+            # Display the architecture diagram at the top
             display_architecture_diagram()
-
             
-        # For tech recruiters section
-        with st.expander("👨‍💻 For Tech Recruiters"):
-            st.markdown("### Key Technical Achievements")
+            # Core tech stack overview - more condensed
+            st.markdown("#### Core Technology Stack")
             
-            st.markdown("""
-            - **Full-Stack Implementation**: End-to-end development from database design to UI/UX
+            col1, col2 = st.columns(2)
             
-            - **Advanced Data Engineering**:
-              - Designed normalized schema for financial entities
-              - Implemented efficient ETL processes for multi-source data
-              - Created robust vector search with 99.7% recall accuracy
+            with col1:
+                st.markdown("**Frontend:**")
+                st.markdown("""
+                - Streamlit web interface
+                - React components
+                - pandas & Plotly
+                """)
+                
+                st.markdown("**Data Processing:**")
+                st.markdown("""
+                - ETL pipelines
+                - NLP processing
+                - Vector embeddings
+                - Entity extraction
+                """)
             
-            - **AI/ML Integration**:
-              - Fine-tuned LLMs for financial domain knowledge
-              - Developed custom NER models for investment terminology
-              - Built RAG system for contextual financial insights
+            with col2:
+                st.markdown("**Backend:**")
+                st.markdown("""
+                - Supabase SQL DB
+                - Qdrant Vector DB
+                - AWS S3 Storage
+                - Lambda functions
+                """)
             
-            - **Cloud-Native Architecture**:
-              - Serverless functions for scalable processing
-              - Multi-tenant security model using RLS
-              - S3-compatible storage with versioning
-            
-            - **Modern DevOps**:
-              - CI/CD pipeline with GitHub Actions
-              - Infrastructure as Code using Terraform
-              - Monitoring and logging integration
-            """)
+                st.markdown("**Data Flow:**")
+                st.markdown("""
+                1. Acquisition
+                2. Processing
+                3. Storage
+                4. Presentation
+                """)
         
-        st.divider()
-    
-        with st.expander("📃 About the Creator"):
+        # Second combined expander: About the Creator (Tech Recruiters + About Creator)
+        with st.expander("👨‍💻 About the Creator"):
             st.markdown("**Homen Shum** is a data-driven professional with expertise in **AI/ML, Data Analytics, and Workflow Automation.**")
-            st.markdown("Driven to optimize processes and drive strategic innovation using cutting-edge technologies.")
-
-            st.markdown("\n**Key Skills:**")
-            st.markdown(
-                """
-                - 🐍 Python, Streamlit, FastAPI
-                - ☁️ Cloud Platforms (Azure, AWS, GCP)
-                - 🤖 AI/ML, RAG, Automation
-                - 📊 Data Analysis & Visualization
-                - 🌐 Web Development (Frontend & Backend)
-                - 🏦 Financial Markets & Investment Strategies
-                """
-            )
-
-            st.markdown("\n**Experience Highlights:**")
-            st.markdown(
-                """
-                - **Technical Co-Founder:** Building innovative solutions using AI and automation.
-                - **Startup Banking at JPMC:** Piloted GenAI applications and automated key banking workflows.
-                - **AWS DeepRacer Global Finalist:** Demonstrated expertise in AI/ML strategy and optimization.
-                - **Developed 'Parsely' AI Assistant:** Focused on workflow automation and enhancing daily tasks.
-                """
-            )
-
-            st.markdown("\n**Education & Certifications:**")
-            st.markdown(
-                """
-                - **UC Santa Barbara Graduate:** B.A. Global Studies, Strategic Investment & Technology Management Certificates
-                - **Data Engineering Professional Certificate (In Progress)**
-                - **Web Design and Development Certificate**
-                """
-            )
-
-            st.markdown("[Personal Website](https://homenshum.com/)")
-            st.markdown("[LinkedIn Profile](https://linkedin.com/in/homen-shum)")
-
-            st.markdown("---")  # Separator line
-            st.markdown("📄 **View Full Resume:**")
-
-            # Paths for resume PDF and image
+            
+            # Key technical achievements - highlight for recruiters
+            st.markdown("#### Key Technical Achievements")
+            st.markdown("""
+            - **Full-Stack Development**: End-to-end from database design to UI/UX
+            - **Data Engineering**: Normalized schemas, ETL processes, vector search
+            - **AI/ML Integration**: Fine-tuned LLMs, NER models, RAG systems
+            - **Cloud Architecture**: Serverless functions, multi-tenant security
+            - **Modern DevOps**: CI/CD pipeline, IaC, monitoring
+            """)
+            
+            # Personal info
+            st.markdown("#### Experience & Education")
+            st.markdown("""
+            - **Technical Co-Founder**: AI-powered solutions
+            - **JPMC Startup Banking**: GenAI applications & automation
+            - **AWS DeepRacer Global Finalist**: AI/ML expertise
+            - **UC Santa Barbara Graduate**: B.A. Global Studies
+            - **Certifications**: Data Engineering (In Progress), Web Development
+            """)
+            
+            # Links and contact
+            st.markdown("#### Connect")
+            st.markdown("[Personal Website](https://homenshum.com/) | [LinkedIn](https://linkedin.com/in/homen-shum)")
+            
+            # Resume preview - keep if important, but could be removed for space
+            st.markdown("---")
             image_path = "images\Homen Shum - Resume.png"
-
-            # Check if the image exists, if not, inform the user
             if os.path.exists(image_path):
-                # Display the image
-                st.image(image_path, caption="Resume Preview")
+                st.image(image_path, caption="Resume Preview", width=300)
             else:
-                st.warning("Resume preview image not available. Please check the file path.")
-
-
+                st.info("Resume preview not available")
+        
         st.divider()
         
         sidebar_content_fragment_st_file_manager_component()
