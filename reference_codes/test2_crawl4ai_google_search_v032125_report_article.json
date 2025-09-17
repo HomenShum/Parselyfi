@@ -1,0 +1,91 @@
+{
+  "title": "Fed Signals Potential Rate Cuts Later This Year as Inflation Cools",
+  "source": "Financial Times",
+  "author": "Colby Smith",
+  "date": "June 12, 2024",
+  "readingTime": "4 min read",
+  "url": "https://www.ft.com/content/example123",
+  "thumbnail": "https://www.ft.com/__origami/service/image/v2/images/raw/ftheader.jpg",
+  "summary": "Federal Reserve officials indicated they expect to cut interest rates once or twice this year, as new projections showed policymakers growing more confident that inflation is returning to their 2% target. The central bank held rates steady at 5.25-5.5% but the 'dot plot' revealed most officials anticipate at least one quarter-point reduction in 2024.",
+  "keyPoints": [
+      "Fed holds rates steady at 5.25-5.5% range",
+      "Median projection shows one 25-basis-point cut in 2024",
+      "Core PCE inflation forecast lowered to 2.8% for end of 2024",
+      "S&P 500 rose 0.4% following the announcement",
+      "10-year Treasury yield fell to 4.25%",
+      "Officials emphasize decisions remain data-dependent"
+  ],
+  "expertOpinions": [
+      {
+          "name": "Jan Hatzius",
+          "title": "Chief Economist",
+          "organization": "Goldman Sachs",
+          "quote": "We continue to expect the first cut in September, assuming inflation continues to moderate gradually.",
+          "sentiment": "neutral"
+      },
+      {
+          "name": "Diane Swonk",
+          "title": "Chief Economist",
+          "organization": "KPMG",
+          "quote": "The Fed is trying to thread the needle - they don't want to declare victory too soon but also don't want to keep policy too tight for too long.",
+          "sentiment": "cautious"
+      }
+  ],
+  "marketImpact": {
+      "equities": {
+          "sp500": "+0.4%",
+          "nasdaq": "+0.6%",
+          "dow": "+0.3%"
+      },
+      "bonds": {
+          "10yrYield": "4.25% (-0.08%)",
+          "2yrYield": "4.70% (-0.12%)"
+      },
+      "sectorPerformance": [
+          {
+              "name": "Technology",
+              "change": "+0.8%"
+          },
+          {
+              "name": "Banks",
+              "change": "-0.4%"
+          },
+          {
+              "name": "Real Estate",
+              "change": "+1.2%"
+          }
+      ]
+  },
+  "economicContext": {
+      "inflation": {
+          "currentCPI": "3.3%",
+          "corePCE": "2.8%",
+          "trend": "Moderating"
+      },
+      "employment": {
+          "unemployment": "4.0%",
+          "jobGrowth": "150K (last month)"
+      }
+  },
+  "fedProjections": {
+      "2024": {
+          "medianRate": "5.1%",
+          "inflation": "2.8%",
+          "unemployment": "4.0%"
+      },
+      "2025": {
+          "medianRate": "4.1%",
+          "inflation": "2.4%"
+      }
+  },
+  "analysis": {
+      "keyTakeaways": [
+          "Fed remains cautious but has opened door to rate cuts",
+          "Markets slightly disappointed by conservative dot plot",
+          "Future decisions will depend heavily on inflation trajectory"
+      ]
+  },
+  "confidenceScore": 0.92,
+  "tags": ["Federal Reserve", "Interest Rates", "Monetary Policy", "Inflation"],
+  "significance": "This marks a potential turning point in Fed policy after the most aggressive tightening cycle in decades. The guidance suggests policymakers are becoming more confident about inflation control while remaining attentive to economic risks."
+}

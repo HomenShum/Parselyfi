@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Report UI Prototype</title>
+    <style>
+        /* Basic Reset & Global Styles */
+        :root {
+            --primary-color: #376f4e; /* Plant Green */
+            --secondary-color: #69380a; /* Coffee Brown */
+            --background-color: #fcf9f8;
+            --sidebar-bg: #f1e9dd;
+            --text-color: #4d2907;
+            --border-color: rgba(105, 56, 10, 0.15);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --border-radius: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 260px 1fr 240px;
+            min-height: 100vh;
+            gap: 1px; /* Thin visual separation */
+            background-color: var(--border-color); /* Background acts as grid lines */
+        }
+
+        .left-sidebar, .main-content, .right-sidebar {
+            padding: 1.5rem;
+            overflow-y: auto;
+            background-color: var(--background-color); /* Default background */
+        }
+
+        .left-sidebar {
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .right-sidebar {
+            background-color: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+        }
+
+        /* Sidebar Sections */
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-section h4 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+/* Projects Panel */
+        .projects-list {
+            font-size: 0.9rem;
+        }
+        
+        .project-item {
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .project-item.active {
+            border-color: var(--primary-color);
+        }
+        
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+        }
+        
+        .project-item.active .project-header {
+            background-color: rgba(55, 111, 78, 0.1);
+        }
+        
+        .project-toggle {
+            color: var(--secondary-color);
+            font-size: 0.7rem;
+        }
+        
+        .project-files {
+            padding: 0 0 5px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .project-item:not(.active) .project-files {
+            display: none;
+        }
+        
+        .file-group {
+            margin-bottom: 5px;
+        }
+        
+        .file-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            background-color: rgba(105, 56, 10, 0.05);
+        }
+        
+        .file-count {
+            background-color: rgba(105, 56, 10, 0.2);
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 0.75rem;
+        }
+        
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px 5px 15px;
+            font-size: 0.85rem;
+            position: relative;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        
+        .file-item:hover {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .file-item.processed {
+            border-left-color: #4caf50;
+        }
+        
+        .file-item.processing {
+            border-left-color: #ff9800;
+        }
+        
+        .file-item.queued {
+            border-left-color: #9e9e9e;
+        }
+        
+        .file-icon {
+            margin-right: 5px;
+            font-size: 1rem;
+        }
+        
+        .status-badge {
+            font-size: 0.7rem;
+            background-color: #ffe0b2;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-left: 5px;
+            color: #e65100;
+        }
+        
+        .file-item.queued .status-badge {
+            background-color: #e0e0e0;
+            color: #616161;
+        }
+        
+        .add-project {
+            text-align: center;
+            padding: 8px;
+            background-color: rgba(55, 111, 78, 0.1);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .add-project:hover {
+            background-color: rgba(55, 111, 78, 0.2);
+        }
+        
+        /* Pipelines View */
+        .pipeline-container {
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 10px;
+            background-color: #fff;
+        }
+        
+        .pipeline-header {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+        
+        .pipeline-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 5px;
+        }
+        
+        .pipeline-step {
+            text-align: center;
+            flex: 1;
+            font-size: 0.75rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 5px;
+        }
+        
+        .pipeline-step.completed .step-icon {
+            background-color: rgba(55, 111, 78, 0.2);
+            border-color: var(--primary-color);
+        }
+        
+        .pipeline-step.active .step-icon {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .pipeline-connector {
+            position: absolute;
+            height: 2px;
+            background-color: #ddd;
+            top: 15px;
+            left: 45px;
+            right: 45px;
+            z-index: 1;
+        }
+        
+        .pipeline-progress {
+            position: absolute;
+            height: 2px;
+            background-color: var(--primary-color);
+            top: 15px;
+            left: 45px;
+            width: 60%;
+            z-index: 1;
+        }
+        
+        /* Left Sidebar Specifics */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .user-details {
+            font-size: 0.9rem;
+        }
+        .user-name {
+            font-weight: 600;
+        }
+
+        .chapter-nav ul {
+            list-style: none;
+            padding-left: 10px;
+        }
+        .chapter-nav li { margin-bottom: 0.3rem; }
+        .chapter-nav a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            font-size: 0.95rem;
+        }
+        .chapter-nav a:hover { color: var(--primary-color); }
+        .chapter-nav .active { font-weight: 600; color: var(--primary-color); }
+        .chapter-nav ul ul { padding-left: 15px; font-size: 0.9em; margin-top: 5px; }
+
+        .agent-chat {
+            position: relative;
+        }
+        
+        .agent-chat-messages {
+            height: 100px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 8px;
+            margin-bottom: 8px;
+            background-color: #fff;
+            font-size: 0.9rem;
+        }
+        
+        .agent-message {
+            margin-bottom: 6px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            max-width: 90%;
+            display: inline-block;
+            clear: both;
+        }
+        
+        .user-message {
+            background-color: #e1f5fe;
+            float: right;
+            border-bottom-right-radius: 0;
+            text-align: right;
+        }
+        
+        .bot-message {
+            background-color: #f0f0f0;
+            float: left;
+            border-bottom-left-radius: 0;
+        }
+
+        .agent-chat textarea {
+            width: 100%;
+            height: 60px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        .agent-chat button {
+            padding: 5px 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .agent-chat button:hover { background-color: #2a5a3d; }
+
+        /* Main Content Specifics */
+        .main-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .main-header h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        .chapter {
+            background-color: #fff;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+        .chapter h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        .source-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .summary p { margin-bottom: 0.8rem; }
+
+        /* Interactive Elements */
+        .keyword-expandable {
+            color: var(--primary-color);
+            text-decoration: underline dotted;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .keyword-expandable:hover {
+            background-color: rgba(55, 111, 78, 0.1);
+        }
+
+        #keyword-popup {
+            position: absolute;
+            display: none; /* Hidden by default */
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 12px;
+            width: 300px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            color: var(--text-color);
+        }
+        #keyword-popup h5 { margin: 0 0 8px 0; font-size: 1rem; color: var(--primary-color); }
+        #keyword-popup p { margin: 0 0 5px 0; }
+        #keyword-popup strong { color: var(--secondary-color); }
+        #keyword-popup .context-snippet {
+            font-style: italic;
+            color: #555;
+            border-left: 2px solid var(--primary-color);
+            padding-left: 8px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        
+        #keyword-popup .related-terms {
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+        
+        #keyword-popup .related-terms span {
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            padding: 2px 6px;
+            background-color: rgba(55, 111, 78, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        #keyword-popup .related-terms span:hover {
+            background-color: rgba(55, 111, 78, 0.2);
+        }
+
+        /* ANS Diagram */
+        .ans-diagram {
+            margin-top: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            background-color: white;
+        }
+        
+        .ans-diagram h4 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        /* Styling for details/summary elements */
+        details { 
+            margin-top: 1rem; 
+            cursor: pointer;
+        }
+        summary {
+            font-weight: 600;
+            color: var(--secondary-color);
+            padding: 5px 0;
+            list-style: none; /* Hide default marker */
+            position: relative;
+            padding-left: 1.5em;
+        }
+        summary::before {
+           content: '▶';
+           position: absolute;
+           left: 0;
+           top: 5px;
+           font-size: 0.8em;
+        }
+        details[open] summary::before {
+           content: '▼';
+        }
+        .details-content {
+            padding: 10px;
+            border-left: 2px solid var(--sidebar-bg);
+            margin-left: 5px;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        .details-content ul { padding-left: 20px; }
+        .details-content li { margin-bottom: 8px; }
+        .qna-item strong { color: var(--primary-color); }
+        .keyword-item strong { color: var(--primary-color); }
+
+        .visuals-placeholder {
+            border: 1px dashed var(--border-color);
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            background-color: #fafafa;
+            border-radius: var(--border-radius);
+        }
+        
+        /* Knowledge Graph */
+        #knowledge-graph {
+            height: 400px;
+            margin-top: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: #fafafa;
+            overflow: hidden;
+        }
+        
+        /* Code Display */
+        .code-block {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .code-block .comment { color: #5c6370; }
+        .code-block .keyword { color: #c678dd; }
+        .code-block .string { color: #98c379; }
+        .code-block .function { color: #61afef; }
+        .code-block .number { color: #d19a66; }
+        
+        /* Media Clips */
+        .media-clips {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 10px 0;
+        }
+        
+        .media-clip {
+            flex: 0 0 auto;
+            width: 160px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .media-clip img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+        
+        .media-clip .clip-info {
+            padding: 8px;
+            font-size: 0.8rem;
+            background-color: #fff;
+        }
+        
+        .media-clip .clip-time {
+            color: #666;
+            font-size: 0.75rem;
+        }
+        
+        /* Timeline */
+        .timeline {
+            height: 30px;
+            background-color: #eee;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background-color: var(--primary-color);
+            opacity: 0.7;
+        }
+        
+        .timeline-current {
+            position: absolute;
+            width: 2px;
+            height: 30px;
+            background-color: red;
+            left: 20%;
+        }
+        
+        /* Search Results */
+        .search-results {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 250px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            z-index: 100;
+        }
+        
+        .search-result-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+        
+        .search-result-item:hover {
+            background-color: rgba(55, 111, 78, 0.1);
+        }
+        
+        .search-result-item .result-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+        
+        .search-result-item .result-context {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .callout-block {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            border-left: 4px solid;
+        }
+        
+        .callout-info {
+            background-color: rgba(33, 150, 243, 0.1);
+            border-left-color: #2196f3;
+        }
+        
+        .callout-warning {
+            background-color: rgba(255, 152, 0, 0.1);
+            border-left-color: #ff9800;
+        }
+        
+        /* Mindmap */
+        .mindmap-container {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background-color: #fcfcfc;
+            height: 180px;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        
+        .mindmap-container svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .mindmap-node text {
+            font-size: 8px;
+            fill: var(--text-color);
+        }
+        
+        .mindmap-node circle {
+            fill: white;
+            stroke: var(--primary-color);
+            stroke-width: 1.5;
+        }
+        
+        .mindmap-node.active circle {
+            fill: var(--primary-color);
+        }
+        
+        .mindmap-node.active text {
+            fill: white;
+            font-weight: bold;
+        }
+        
+        .mindmap-link {
+            fill: none;
+            stroke: var(--border-color);
+            stroke-width: 1;
+        }
+        
+        /* Right Sidebar Specifics */
+        .source-filters button {
+            background: none;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 4px 8px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .source-filters button:hover, .source-filters button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .glossary-list ul {
+            list-style: none;
+            font-size: 0.9rem;
+        }
+        .glossary-list li { margin-bottom: 5px; }
+        .glossary-list a { color: var(--secondary-color); text-decoration: none; }
+        .glossary-list a:hover { color: var(--primary-color); text-decoration: underline;}
+
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .container {
+                grid-template-columns: 220px 1fr 200px;
+            }
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .left-sidebar, .right-sidebar {
+                display: none; /* Hide sidebars on small screens for simplicity */
+                 /* In a real app, you'd add a toggle button */
+            }
+            .main-content {
+                padding: 1rem;
+            }
+            #keyword-popup {
+                width: 90%;
+                max-width: 300px;
+                left: 5% !important; /* Adjust positioning */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <aside class="left-sidebar">
+            <div class="sidebar-section">
+                <div class="user-info">
+                    <div class="user-avatar">DU</div>
+                    <div class="user-details">
+                        <div class="user-name">Demo User</div>
+                        <div>demo@example.com</div>
+                    </div>
+                </div>
+                <button style="width: 100%; padding: 8px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Settings</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Projects</h4>
+                <div class="projects-list">
+                    <div class="project-item active">
+                        <div class="project-header">
+                            <span class="project-name">Trauma & Neurodiversity</span>
+                            <span class="project-toggle">▼</span>
+                        </div>
+                        <div class="project-files">
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">PDF Documents</span>
+                                    <span class="file-count">3</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📄</span>
+                                        <span class="file-name">Polyvagal_Theory_Overview.pdf</span>
+                                    </li>
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📄</span>
+                                        <span class="file-name">Trauma_Informed_Care.pdf</span>
+                                    </li>
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📄</span>
+                                        <span class="file-name">System_Design_Doc.pdf</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">Audio/Video</span>
+                                    <span class="file-count">2</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item processed">
+                                        <span class="file-icon">🎧</span>
+                                        <span class="file-name">Lecture_Neuroception.mp3</span>
+                                    </li>
+                                    <li class="file-item processing">
+                                        <span class="file-icon">🎬</span>
+                                        <span class="file-name">Interview_Porges.mp4</span>
+                                        <span class="status-badge">Transcribing...</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">Code Files</span>
+                                    <span class="file-count">2</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📝</span>
+                                        <span class="file-name">file_ingestor.py</span>
+                                    </li>
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📝</span>
+                                        <span class="file-name">report_assembler.py</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">Web Sources</span>
+                                    <span class="file-count">1</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item queued">
+                                        <span class="file-icon">🌐</span>
+                                        <span class="file-name">stephenporges.com/research</span>
+                                        <span class="status-badge">Queued</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-header">
+                            <span class="project-name">Cognitive Development</span>
+                            <span class="project-toggle">▶</span>
+                        </div>
+                    </div>
+                    <div class="add-project">+ New Project</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Chapters</h4>
+                <nav class="chapter-nav">
+                    <ul>
+                        <li><a href="#chapter1" class="active">1. Introduction & Setup</a></li>
+                        <li><a href="#chapter2">2. Core Concepts</a>
+                            <ul>
+                                <li><a href="#topic2.1">2.1 Polyvagal Theory</a></li>
+                                <li><a href="#topic2.2">2.2 Neuroception</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#chapter3">3. Processing Modalities</a>
+                            <ul>
+                                <li><a href="#topic3.1">3.1 File Processing</a></li>
+                                <li><a href="#topic3.2">3.2 Audio/Video Analysis</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#chapter4">4. Code Implementation</a></li>
+                        <li><a href="#chapter5">5. Report Assembly</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Agent Chat</h4>
+                <div class="agent-chat">
+                    <div class="agent-chat-messages" id="chat-messages">
+                        <div class="agent-message bot-message">Hello! I'm your report assistant. How can I help you understand this information?</div>
+                    </div>
+                    <textarea id="chat-input" placeholder="Ask about the report... (e.g., 'Summarize chapter 2')"></textarea>
+                    <button id="chat-send">Send</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Project Report: Trauma & Neurodiversity Synthesis</h1>
+            </header>
+
+            <div class="chapters-container">
+                <article class="chapter" id="chapter1">
+                    <h3>1. Introduction & System Setup</h3>
+                    <p class="source-info">Source: Design Documentation | Type: PDF</p>
+                    <div class="summary">
+                        <p>This report synthesizes information from various sources on the intersection of trauma care and neurodiversity. The system utilizes <span class="keyword-expandable" data-keyword="PocketFlow">PocketFlow</span> principles for modular processing. Key inputs include research papers (PDFs), lecture transcripts (Audio), and code summaries related to <span class="keyword-expandable" data-keyword="Neurofeedback">Neurofeedback</span> tools.</p>
+                        <p>The initial setup involves file ingestion and classification, followed by modality-specific extraction like transcription and text parsing.</p>
+                    </div>
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="qna-item"><strong>Q:</strong> What is the primary goal of this report generator? <br><strong>A:</strong> To create structured, chapter-based reports from diverse multimodal sources using PocketFlow's modular architecture.</li>
+                                <li class="qna-item"><strong>Q:</strong> Which file type requires transcription? <br><strong>A:</strong> Audio and Video files are processed by the `BatchTranscriber` node.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                         <div class="details-content">
+                             <ul>
+                                 <li class="keyword-item"><strong>PocketFlow:</strong> Minimalist LLM framework for modular agent workflows.</li>
+                                 <li class="keyword-item"><strong>Neurofeedback:</strong> Brain training technique using real-time EEG display.</li>
+                                 <li class="keyword-item"><strong>File Ingestion:</strong> Initial step of scanning and classifying input files.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <div id="knowledge-graph">
+                        <!-- D3.js graph will be rendered here -->
+                    </div>
+                </article>
+
+                <article class="chapter" id="chapter2">
+                    <h3>2. Core Concepts: Polyvagal Theory & Neuroception</h3>
+                    <p class="source-info">Source: Research Paper Summary | Type: DOCX | Page: 3-5</p>
+                    <div class="summary">
+                        <p>Central to understanding trauma responses is the <span class="keyword-expandable" data-keyword="Polyvagal Theory">Polyvagal Theory</span>, developed by Stephen Porges. It explains how the <span class="keyword-expandable" data-keyword="Autonomic Nervous System">Autonomic Nervous System</span> (ANS), particularly the vagus nerve, mediates responses to safety and threat.</p>
+                        <p><span class="keyword-expandable" data-keyword="Neuroception">Neuroception</span> describes the subconscious neural process of evaluating risk. In individuals with trauma or certain neurodevelopmental profiles like <span class="keyword-expandable" data-keyword="ASD">ASD</span>, neuroceptive processes might be altered, leading to states of <span class="keyword-expandable" data-keyword="Hyperarousal">Hyperarousal</span> or <span class="keyword-expandable" data-keyword="Hypoarousal">Hypoarousal</span>.</p>
+                    </div>
+                     <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> What are the three main states described by Polyvagal Theory? <br><strong>A:</strong> Social Engagement (Ventral Vagal), Fight/Flight (Sympathetic), and Freeze/Shutdown (Dorsal Vagal).</li>
+                                <li class="qna-item"><strong>Q:</strong> How does Neuroception relate to PTSD? <br><strong>A:</strong> Faulty neuroception can lead individuals with PTSD to perceive threat in safe environments, triggering maladaptive ANS responses.</li>
+                            </ul>
+                        </div>
+                    </details>
+                     <details class="keywords-section">
+                        <summary>Keywords</summary>
+                         <div class="details-content">
+                             <ul>
+                                 <li class="keyword-item"><strong>Polyvagal Theory:</strong> Explains ANS hierarchy in response to safety/threat.</li>
+                                 <li class="keyword-item"><strong>Autonomic Nervous System:</strong> Regulates involuntary functions (heart rate, digestion). Includes Sympathetic and Parasympathetic branches.</li>
+                                 <li class="keyword-item"><strong>Neuroception:</strong> Subconscious detection of safety vs. danger cues.</li>
+                                 <li class="keyword-item"><strong>ASD:</strong> Autism Spectrum Disorder, neurodevelopmental condition impacting social communication and behavior.</li>
+                                 <li class="keyword-item"><strong>Hyperarousal:</strong> State of high alert, anxiety (fight/flight).</li>
+                                 <li class="keyword-item"><strong>Hypoarousal:</strong> State of shutdown, disconnection (freeze).</li>
+                                 <li class="keyword-item"><strong>Ventral Vagal Complex:</strong> Part of the vagus nerve that supports social engagement and self-regulation.</li>
+                                 <li class="keyword-item"><strong>Dorsal Vagal Complex:</strong> Part of the vagus nerve associated with immobilization and shutdown responses.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    <div class="visuals-placeholder">ANS Diagram showing connections between Nervous System states</div>
+                </article>
+                
+                <article class="chapter" id="chapter3">
+                    <h3>3. Processing Modalities</h3>
+                    <p class="source-info">Source: System Documentation, Audio Lecture | Type: PDF, MP3 | Page: 8-12, Timestamp: 00:15:30-00:28:45</p>
+                    <div class="summary">
+                        <p>This chapter explores the different processing modalities used in our multimodal system. Each file type requires specific handling through dedicated <span class="keyword-expandable" data-keyword="PocketFlow Nodes">PocketFlow Nodes</span> to extract content effectively.</p>
+                        
+                        <div class="callout-block callout-info">
+                            <strong>Information:</strong> Processing times vary significantly by modality. Audio/video transcription is the most resource-intensive process in the pipeline.
+                        </div>
+                        
+                        <p>For audio and video content, the <span class="keyword-expandable" data-keyword="BatchTranscriber">BatchTranscriber</span> node handles conversion to text, while maintaining timestamps for synchronization with the original media. PDF and document processing use the <span class="keyword-expandable" data-keyword="TextExtractor">TextExtractor</span> to parse content while preserving structural elements.</p>
+                    </div>
+                    
+                    <div class="timeline">
+                        <div class="timeline-marker" style="left: 10%; width: 5%;" title="Introduction"></div>
+                        <div class="timeline-marker" style="left: 25%; width: 15%;" title="File Processing"></div>
+                        <div class="timeline-marker" style="left: 50%; width: 20%;" title="Audio Extraction"></div>
+                        <div class="timeline-marker" style="left: 75%; width: 15%;" title="System Integration"></div>
+                        <div class="timeline-current"></div>
+                    </div>
+                    
+                    <div class="media-clips">
+                        <div class="media-clip">
+                            <img src="/api/placeholder/160/100" alt="Audio waveform visualization">
+                            <div class="clip-info">
+                                <div>Audio Processing</div>
+                                <div class="clip-time">00:15:30</div>
+                            </div>
+                        </div>
+                        <div class="media-clip">
+                            <img src="/api/placeholder/160/100" alt="PDF extraction diagram">
+                            <div class="clip-info">
+                                <div>PDF Structure</div>
+                                <div class="clip-time">00:19:45</div>
+                            </div>
+                        </div>
+                        <div class="media-clip">
+                            <img src="/api/placeholder/160/100" alt="Code analysis">
+                            <div class="clip-info">
+                                <div>Code Analysis</div>
+                                <div class="clip-time">00:24:10</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> Which processing modality requires the most computational resources? <br><strong>A:</strong> Audio/video transcription, especially for longer files with background noise.</li>
+                                <li class="qna-item"><strong>Q:</strong> How are timestamps preserved in the final report? <br><strong>A:</strong> Through the media_map in the final_index, which links media sources to chapter sections.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="keyword-item"><strong>PocketFlow Nodes:</strong> Individual processing components in the PocketFlow framework.</li>
+                                <li class="keyword-item"><strong>BatchTranscriber:</strong> Node responsible for converting audio/video to text with timestamps.</li>
+                                <li class="keyword-item"><strong>TextExtractor:</strong> Node that processes textual documents (PDF, DOCX, etc.).</li>
+                            </ul>
+                        </div>
+                    </details>
+                </article>
+                
+                <article class="chapter" id="chapter4">
+                    <h3>4. Code Implementation</h3>
+                    <p class="source-info">Source: GitHub Repository | Type: Python Code</p>
+                    <div class="summary">
+                        <p>This chapter focuses on the implementation details of the key <span class="keyword-expandable" data-keyword="PocketFlow">PocketFlow</span> nodes. Below is a simplified version of the <span class="keyword-expandable" data-keyword="FileIngestor">FileIngestor</span> node that handles the initial classification of files by type.</p>
+                    </div>
+                    
+                    <div class="code-block">
+<span class="keyword">class</span> <span class="function">FileIngestor</span>(Node):
+    <span class="comment"># Node responsible for scanning project folder and classifying files</span>
+    
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, config=None):
+        <span class="keyword">super</span>().<span class="function">__init__</span>(config)
+        self.supported_types = {
+            <span class="string">"pdf"</span>: [<span class="string">".pdf"</span>],
+            <span class="string">"docx"</span>: [<span class="string">".docx"</span>, <span class="string">".doc"</span>],
+            <span class="string">"text"</span>: [<span class="string">".txt"</span>, <span class="string">".md"</span>],
+            <span class="string">"audio_video"</span>: [<span class="string">".mp3"</span>, <span class="string">".mp4"</span>, <span class="string">".wav"</span>, <span class="string">".avi"</span>],
+            <span class="string">"code"</span>: [<span class="string">".py"</span>, <span class="string">".js"</span>, <span class="string">".html"</span>, <span class="string">".css"</span>, <span class="string">".java"</span>]
+        }
+    
+    <span class="keyword">def</span> <span class="function">process</span>(self, context):
+        <span class="comment"># Get input from context</span>
+        project_folder = context.get(<span class="string">"project_folder"</span>)
+        
+        <span class="keyword">if not</span> os.path.exists(project_folder):
+            <span class="keyword">raise</span> <span class="function">ValueError</span>(<span class="string">f"Project folder {project_folder} does not exist"</span>)
+            
+        <span class="comment"># Initialize result structure</span>
+        files_by_type = {k: [] <span class="keyword">for</span> k <span class="keyword">in</span> self.supported_types.keys()}
+        
+        <span class="comment"># Scan files recursively</span>
+        <span class="keyword">for</span> root, dirs, files <span class="keyword">in</span> os.<span class="function">walk</span>(project_folder):
+            <span class="keyword">for</span> file <span class="keyword">in</span> files:
+                file_path = os.<span class="function">path.join</span>(root, file)
+                file_ext = os.<span class="function">path.splitext</span>(file)[<span class="number">1</span>].lower()
+                
+                <span class="comment"># Classify file by extension</span>
+                <span class="keyword">for</span> file_type, extensions <span class="keyword">in</span> self.supported_types.items():
+                    <span class="keyword">if</span> file_ext <span class="keyword">in</span> extensions:
+                        files_by_type[file_type].<span class="function">append</span>(file_path)
+                        <span class="keyword">break</span>
+        
+        <span class="comment"># Store result in context</span>
+        context[<span class="string">"files_by_type"</span>] = files_by_type
+        <span class="keyword">return</span> context
+                    </div>
+                    
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> What is the purpose of the FileIngestor class? <br><strong>A:</strong> It scans a project folder, identifies file types by extension, and categorizes them for subsequent processing by specialized nodes.</li>
+                                <li class="qna-item"><strong>Q:</strong> How does PocketFlow handle state between nodes? <br><strong>A:</strong> Through a shared context dictionary that each node can read from and write to.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="keyword-item"><strong>FileIngestor:</strong> PocketFlow node that classifies files by type for processing.</li>
+                                <li class="keyword-item"><strong>Node:</strong> Base class for all processing components in PocketFlow.</li>
+                                <li class="keyword-item"><strong>context:</strong> Shared dictionary used to pass data between nodes.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </article>
+                
+                <article class="chapter" id="chapter5">
+                    <h3>5. Report Assembly</h3>
+                    <p class="source-info">Source: System Documentation | Type: PDF | Page: 25-30</p>
+                    <div class="summary">
+                        <p>The final step in the processing pipeline is performed by the <span class="keyword-expandable" data-keyword="ReportAssembler">ReportAssembler</span> node. This node aggregates all the processed components into a structured JSON format suitable for rendering in the UI.</p>
+                        
+                        <div class="callout-block callout-warning">
+                            <strong>Note:</strong> The final JSON structure must follow the schema exactly for the UI to properly render all components.
+                        </div>
+                        
+                        <p>The <span class="keyword-expandable" data-keyword="Output Schema">Output Schema</span> includes sections for chapters, Q&A pairs, keywords with context, visual elements, and a cross-reference index. Additional <span class="keyword-expandable" data-keyword="Notion-style blocks">Notion-style blocks</span> can be included for enhanced formatting.</p>
+                    </div>
+                    
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> What is the primary function of the ReportAssembler? <br><strong>A:</strong> To combine all generated insights and components into a unified JSON structure that follows the output schema.</li>
+                                <li class="qna-item"><strong>Q:</strong> How are cross-references between chapters handled? <br><strong>A:</strong> Through the cross_chapter_links array in the final_index section of the output.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="keyword-item"><strong>ReportAssembler:</strong> Final node in the pipeline that creates the structured report output.</li>
+                                <li class="keyword-item"><strong>Output Schema:</strong> The JSON structure specification for the final report.</li>
+                                <li class="keyword-item"><strong>Notion-style blocks:</strong> Content formatting options like callouts, toggles, and lists.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </article>
+            </div>
+
+            <!-- Keyword Popup Structure (Hidden) -->
+            <div id="keyword-popup">
+                <h5 id="popup-title">Keyword</h5>
+                <p><strong>Definition:</strong> <span id="popup-definition">Definition loading...</span></p>
+                <p><strong>Source:</strong> <span id="popup-source">Source loading...</span></p>
+                <div class="context-snippet">
+                    <strong>Context:</strong> <span id="popup-context">Context loading...</span>
+                </div>
+                <div class="related-terms">
+                    <strong>Related Terms:</strong> <span id="popup-related"></span>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <div class="sidebar-section">
+                <h4>Concept Map</h4>
+                <div class="mindmap-container" id="mindmap-container">
+                    <!-- Mindmap will be rendered here -->
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h4>Search Report</h4>
+                 <div class="search-box">
+                    <input type="search" id="search-input" placeholder="Search keywords or text...">
+                    <div class="search-results" id="search-results">
+                        <!-- Search results will appear here -->
+                    </div>
+                 </div>
+            </div>
+            <div class="sidebar-section">
+                <h4>Filter by Source</h4>
+                <div class="source-filters">
+                    <button class="active">All</button>
+                    <button>PDF</button>
+                    <button>DOCX</button>
+                    <button>Audio</button>
+                    <button>Code</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Glossary / Index</h4>
+                 <div class="glossary-list">
+                    <ul>
+                        <li><a href="#" data-keyword="PocketFlow">PocketFlow</a></li>
+                        <li><a href="#" data-keyword="Neurofeedback">Neurofeedback</a></li>
+                        <li><a href="#" data-keyword="Polyvagal Theory">Polyvagal Theory</a></li>
+                        <li><a href="#" data-keyword="Autonomic Nervous System">Autonomic Nervous System</a></li>
+                        <li><a href="#" data-keyword="Neuroception">Neuroception</a></li>
+                        <li><a href="#" data-keyword="ASD">ASD</a></li>
+                        <li><a href="#" data-keyword="Hyperarousal">Hyperarousal</a></li>
+                        <li><a href="#" data-keyword="Hypoarousal">Hypoarousal</a></li>
+                        <li><a href="#" data-keyword="BatchTranscriber">BatchTranscriber</a></li>
+                        <li><a href="#" data-keyword="TextExtractor">TextExtractor</a></li>
+                        <li><a href="#" data-keyword="FileIngestor">FileIngestor</a></li>
+                        <li><a href="#" data-keyword="ReportAssembler">ReportAssembler</a></li>
+                        <li><a href="#" data-keyword="Output Schema">Output Schema</a></li>
+                        <li><a href="#" data-keyword="Notion-style blocks">Notion-style blocks</a></li>
+                        <li><a href="#" data-keyword="Ventral Vagal Complex">Ventral Vagal Complex</a></li>
+                        <li><a href="#" data-keyword="Dorsal Vagal Complex">Dorsal Vagal Complex</a></li>
+                    </ul>
+                </div>
+            </div>
+             <div class="sidebar-section">
+                <h4>Export Options</h4>
+                <button style="width: 100%; padding: 8px; margin-bottom: 5px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Export as PDF</button>
+                <button style="width: 100%; padding: 8px; margin-bottom: 5px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Download JSON</button>
+                <button style="width: 100%; padding: 8px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Generate Audio Summary</button>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.0.0/d3.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // MINDMAP IN RIGHT SIDEBAR
+            function renderMindmap() {
+                try {
+                    const container = document.getElementById('mindmap-container');
+                    if (!container) {
+                        console.error('Mindmap container not found');
+                        return false;
+                    }
+                    
+                    // Clear any existing content
+                    container.innerHTML = '';
+                    
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    
+                    // Create SVG container
+                    const svg = d3.select('#mindmap-container')
+                        .append('svg')
+                        .attr('width', width)
+                        .attr('height', height)
+                        .attr('viewBox', `0 0 ${width} ${height}`);
+                    
+                    // Define data structure for the mindmap
+                    const data = {
+                        name: "Report",
+                        children: [
+                            { 
+                                name: "Chapter 1", 
+                                children: [
+                                    { name: "PocketFlow" },
+                                    { name: "Setup" },
+                                    { name: "File Ingestion" }
+                                ]
+                            },
+                            { 
+                                name: "Chapter 2", 
+                                children: [
+                                    { name: "Polyvagal Theory" },
+                                    { name: "Neuroception" },
+                                    { name: "ANS" }
+                                ]
+                            },
+                            { 
+                                name: "Chapter 3", 
+                                children: [
+                                    { name: "Processing" },
+                                    { name: "Modalities" }
+                                ]
+                            },
+                            { 
+                                name: "Output", 
+                                children: [
+                                    { name: "JSON" },
+                                    { name: "UI" }
+                                ]
+                            }
+                        ]
+                    };
+                    
+                    // Create hierarchical data structure
+                    const root = d3.hierarchy(data);
+                    
+                    // Use a cluster layout instead of tree for better radial arrangement
+                    const cluster = d3.cluster()
+                        .size([360, Math.min(width, height) / 2 - 60]);
+                    
+                    cluster(root);
+                    
+                    // Convert to radial coordinates
+                    const linkRadius = d => Math.min(width, height) / 2 - 60;
+                    
+                    // Create a group for the mindmap centered in the container
+                    const g = svg.append("g")
+                        .attr("transform", `translate(${width / 2},${height / 2})`);
+                    
+                    // Add links between nodes
+                    g.selectAll(".mindmap-link")
+                        .data(root.links())
+                        .enter()
+                        .append("path")
+                        .attr("class", "mindmap-link")
+                        .attr("d", d => {
+                            const startAngle = d.source.x * Math.PI / 180;
+                            const startRadius = d.source.y;
+                            const endAngle = d.target.x * Math.PI / 180;
+                            const endRadius = d.target.y;
+                            
+                            const x1 = Math.sin(startAngle) * startRadius;
+                            const y1 = -Math.cos(startAngle) * startRadius;
+                            const x2 = Math.sin(endAngle) * endRadius;
+                            const y2 = -Math.cos(endAngle) * endRadius;
+                            
+                            return `M${x1},${y1}L${x2},${y2}`;
+                        });
+                    
+                    // Add nodes
+                    const nodes = g.selectAll(".mindmap-node")
+                        .data(root.descendants())
+                        .enter()
+                        .append("g")
+                        .attr("class", d => "mindmap-node" + (d.data.name === "Report" ? " active" : ""))
+                        .attr("transform", d => {
+                            const angle = d.x * Math.PI / 180;
+                            const radius = d.y;
+                            return `translate(${Math.sin(angle) * radius},${-Math.cos(angle) * radius})`;
+                        })
+                        .on("click", function(event, d) {
+                            // Toggle active class
+                            const wasActive = d3.select(this).classed("active");
+                            g.selectAll(".mindmap-node").classed("active", false);
+                            if (!wasActive) d3.select(this).classed("active", true);
+                        });
+                    
+                    // Add circles to nodes
+                    nodes.append("circle")
+                        .attr("r", d => d.data.name === "Report" ? 10 : 6);
+                    
+                    // Add text labels
+                    nodes.append("text")
+                        .attr("dy", ".31em")
+                        .attr("x", d => {
+                            const angle = d.x * Math.PI / 180;
+                            return Math.sin(angle) >= 0 ? 8 : -8;
+                        })
+                        .style("text-anchor", d => {
+                            const angle = d.x * Math.PI / 180;
+                            return Math.sin(angle) >= 0 ? "start" : "end";
+                        })
+                        .text(d => d.data.name)
+                        .style("fill", d => d.data.name === "Report" ? "white" : null);
+                        
+                    return true;
+                } catch (error) {
+                    console.error("Error rendering mindmap:", error);
+                    document.getElementById('mindmap-container').innerHTML = 
+                        '<div style="padding: 20px; text-align: center; color: #666;">'+
+                        '<p>Error rendering concept map.</p>'+
+                        '<p style="font-size: 0.8rem; color: #999;">Error: ' + error.message + '</p></div>';
+                    return false;
+                }
+            }
+            
+            // PROJECT INTERACTION FUNCTIONALITY
+            const projectHeaders = document.querySelectorAll('.project-header');
+            const fileItems = document.querySelectorAll('.file-item');
+            
+            projectHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const projectItem = header.closest('.project-item');
+                    const isActive = projectItem.classList.contains('active');
+                    const toggleIcon = header.querySelector('.project-toggle');
+                    
+                    if (isActive) {
+                        // Just toggle visibility
+                        const projectFiles = projectItem.querySelector('.project-files');
+                        if (projectFiles.style.display === 'none') {
+                            projectFiles.style.display = 'block';
+                            toggleIcon.textContent = '▼';
+                        } else {
+                            projectFiles.style.display = 'none';
+                            toggleIcon.textContent = '▶';
+                        }
+                    } else {
+                        // Make this project active
+                        document.querySelectorAll('.project-item').forEach(item => {
+                            item.classList.remove('active');
+                            const toggle = item.querySelector('.project-toggle');
+                            if (toggle) toggle.textContent = '▶';
+                        });
+                        
+                        projectItem.classList.add('active');
+                        toggleIcon.textContent = '▼';
+                    }
+                });
+            });
+            
+            fileItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Simulate file selection
+                    fileItems.forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    
+                    const fileName = item.querySelector('.file-name').textContent;
+                    const isProcessed = item.classList.contains('processed');
+                    
+                    if (isProcessed) {
+                        // Simulate showing processed file content
+                        alert(`Viewing processed file: ${fileName}`);
+                    } else {
+                        // Simulate showing file status
+                        const status = item.classList.contains('processing') ? 'processing' : 'queued';
+                        alert(`File ${fileName} is currently ${status}. It will be available once processing completes.`);
+                    }
+                });
+            });
+            
+            document.querySelector('.add-project').addEventListener('click', () => {
+                alert('This would open a dialog to create a new project in a real implementation.');
+            });
+            
+            // KEYWORD POPUP FUNCTIONALITY
+            const keywordSpans = document.querySelectorAll('.keyword-expandable');
+            const glossaryLinks = document.querySelectorAll('.glossary-list a');
+            const popup = document.getElementById('keyword-popup');
+            const popupTitle = document.getElementById('popup-title');
+            const popupDefinition = document.getElementById('popup-definition');
+            const popupSource = document.getElementById('popup-source');
+            const popupContext = document.getElementById('popup-context');
+            const popupRelated = document.getElementById('popup-related');
+
+            // Mock data for keywords (replace with actual data fetching)
+            const keywordData = {
+                "PocketFlow": {
+                    definition: "A minimalist, modular LLM framework for building agentic workflows using a graph of nodes and a shared memory store.",
+                    source: "Design Documentation (PDF)",
+                    context: "The system utilizes PocketFlow principles for modular processing.",
+                    related: ["Node", "FileIngestor", "BatchTranscriber", "TextExtractor", "ReportAssembler"]
+                },
+                "Neurofeedback": {
+                    definition: "A type of biofeedback that uses real-time displays of brain activity (EEG) to teach self-regulation of brain function.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "...code summaries related to Neurofeedback tools.",
+                    related: ["ASD", "Hyperarousal", "Hypoarousal"]
+                },
+                "Polyvagal Theory": {
+                    definition: "Developed by Stephen Porges, it explains the role of the autonomic nervous system, especially the vagus nerve, in mediating social behavior and responses to stress and trauma.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "Central to understanding trauma responses is the Polyvagal Theory...",
+                    related: ["Autonomic Nervous System", "Neuroception", "Ventral Vagal Complex", "Dorsal Vagal Complex"]
+                },
+                "Autonomic Nervous System": {
+                    definition: "The part of the peripheral nervous system that controls involuntary bodily functions like heart rate, digestion, respiratory rate, and pupillary response. Comprises the Sympathetic and Parasympathetic systems.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "...explains how the Autonomic Nervous System (ANS), particularly the vagus nerve, mediates responses...",
+                    related: ["Polyvagal Theory", "Hyperarousal", "Hypoarousal"]
+                },
+                "Neuroception": {
+                    definition: "A term coined by Porges describing the nervous system's ability to distinguish whether situations or people are safe, dangerous, or life-threatening without conscious awareness.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "Neuroception describes the subconscious neural process of evaluating risk.",
+                    related: ["Polyvagal Theory", "ASD", "Hyperarousal", "Hypoarousal"]
+                },
+                "ASD": {
+                    definition: "Autism Spectrum Disorder, a neurodevelopmental condition characterized by differences in social communication, interaction, and restricted or repetitive behaviors/interests.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "...neurodevelopmental profiles like ASD, neuroceptive processes might be altered...",
+                    related: ["Neuroception", "Neurofeedback"]
+                },
+                "Hyperarousal": {
+                    definition: "An abnormal state of increased responsiveness to stimuli; marked by anxiety, exaggerated startle response, insomnia, and irritability. Associated with the sympathetic 'fight-or-flight' response.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "...leading to states of Hyperarousal or Hypoarousal.",
+                    related: ["Hypoarousal", "Autonomic Nervous System", "Neuroception"]
+                },
+                "Hypoarousal": {
+                    definition: "An abnormal state of decreased responsiveness; can manifest as dissociation, numbness, disconnection, or collapse. Associated with the dorsal vagal 'freeze' response.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "...leading to states of Hyperarousal or Hypoarousal.",
+                    related: ["Hyperarousal", "Autonomic Nervous System", "Dorsal Vagal Complex"]
+                },
+                "PocketFlow Nodes": {
+                    definition: "Individual processing components in the PocketFlow framework that perform specific tasks in the data processing pipeline.",
+                    source: "System Documentation (PDF)",
+                    context: "Each file type requires specific handling through dedicated PocketFlow Nodes to extract content effectively.",
+                    related: ["PocketFlow", "FileIngestor", "BatchTranscriber", "TextExtractor", "ReportAssembler"]
+                },
+                "BatchTranscriber": {
+                    definition: "A PocketFlow node responsible for converting audio and video files into text transcripts with timestamp information.",
+                    source: "System Documentation (PDF)",
+                    context: "For audio and video content, the BatchTranscriber node handles conversion to text, while maintaining timestamps.",
+                    related: ["PocketFlow", "TextExtractor"]
+                },
+                "TextExtractor": {
+                    definition: "A PocketFlow node that processes textual documents (PDF, DOCX, etc.) to extract content while preserving structure.",
+                    source: "System Documentation (PDF)",
+                    context: "PDF and document processing use the TextExtractor to parse content while preserving structural elements.",
+                    related: ["PocketFlow", "BatchTranscriber"]
+                },
+                "FileIngestor": {
+                    definition: "The initial PocketFlow node responsible for scanning a project folder and classifying files by type.",
+                    source: "GitHub Repository (Code)",
+                    context: "Below is a simplified version of the FileIngestor node that handles the initial classification of files by type.",
+                    related: ["PocketFlow", "Node"]
+                },
+                "Node": {
+                    definition: "The base class for all processing components in the PocketFlow framework.",
+                    source: "GitHub Repository (Code)",
+                    context: "class FileIngestor(Node):",
+                    related: ["PocketFlow", "FileIngestor", "BatchTranscriber", "TextExtractor", "ReportAssembler"]
+                },
+                "ReportAssembler": {
+                    definition: "The final node in the processing pipeline that combines all generated insights into a structured report output.",
+                    source: "System Documentation (PDF)",
+                    context: "The final step in the processing pipeline is performed by the ReportAssembler node.",
+                    related: ["PocketFlow", "Output Schema"]
+                },
+                "Output Schema": {
+                    definition: "The JSON structure specification that defines the format of the final report output.",
+                    source: "System Documentation (PDF)",
+                    context: "The Output Schema includes sections for chapters, Q&A pairs, keywords with context, visual elements, and a cross-reference index.",
+                    related: ["ReportAssembler", "Notion-style blocks"]
+                },
+                "Notion-style blocks": {
+                    definition: "Content formatting options like callouts, toggles, and lists that enhance the visual presentation of report information.",
+                    source: "System Documentation (PDF)",
+                    context: "Additional Notion-style blocks can be included for enhanced formatting.",
+                    related: ["Output Schema"]
+                },
+                "Ventral Vagal Complex": {
+                    definition: "Part of the vagus nerve that supports social engagement, connection, and self-regulation when activated.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "Social Engagement (Ventral Vagal), Fight/Flight (Sympathetic), and Freeze/Shutdown (Dorsal Vagal).",
+                    related: ["Polyvagal Theory", "Dorsal Vagal Complex", "Autonomic Nervous System"]
+                },
+                "Dorsal Vagal Complex": {
+                    definition: "Part of the vagus nerve associated with immobilization, shutdown, and dissociative responses to perceived threats.",
+                    source: "Research Paper Summary (DOCX)",
+                    context: "Social Engagement (Ventral Vagal), Fight/Flight (Sympathetic), and Freeze/Shutdown (Dorsal Vagal).",
+                    related: ["Polyvagal Theory", "Ventral Vagal Complex", "Hypoarousal"]
+                }
+            };
+
+            function showKeywordPopup(keyword, event) {
+                const data = keywordData[keyword];
+
+                if (data && popup) {
+                    popupTitle.textContent = keyword;
+                    popupDefinition.textContent = data.definition || 'No definition available.';
+                    popupSource.textContent = data.source || 'Source unknown.';
+                    popupContext.textContent = data.context || 'No context available.';
+                    
+                    // Add related terms
+                    popupRelated.innerHTML = '';
+                    if (data.related && data.related.length > 0) {
+                        data.related.forEach(term => {
+                            const span = document.createElement('span');
+                            span.textContent = term;
+                            span.setAttribute('data-keyword', term);
+                            span.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                showKeywordPopup(term, e);
+                            });
+                            popupRelated.appendChild(span);
+                        });
+                    } else {
+                        popupRelated.textContent = 'None';
+                    }
+
+                    // Position popup near the trigger
+                    const rect = event.target.getBoundingClientRect();
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    const scrollY = window.scrollY || window.pageYOffset;
+
+                    popup.style.top = `${rect.bottom + scrollY + 5}px`;
+                    popup.style.left = `${rect.left + scrollX}px`;
+                    
+                    // Ensure it doesn't go off-screen right
+                    if ((rect.left + scrollX + popup.offsetWidth) > window.innerWidth) {
+                        popup.style.left = `${window.innerWidth - popup.offsetWidth - 10}px`;
+                    }
+                    // Ensure it doesn't go off-screen left
+                    if ((rect.left + scrollX) < 10) {
+                        popup.style.left = '10px';
+                    }
+
+                    popup.style.display = 'block';
+                }
+            }
+
+            keywordSpans.forEach(span => {
+                span.addEventListener('mouseenter', (event) => {
+                    const keyword = span.getAttribute('data-keyword') || span.textContent;
+                    showKeywordPopup(keyword, event);
+                });
+
+                span.addEventListener('mouseleave', () => {
+                    if (popup) {
+                        setTimeout(() => {
+                            if (!popup.matches(':hover')) {
+                                popup.style.display = 'none';
+                            }
+                        }, 100);
+                    }
+                });
+            });
+
+            glossaryLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const keyword = link.getAttribute('data-keyword') || link.textContent;
+                    showKeywordPopup(keyword, event);
+                });
+            });
+
+            // Hide popup if clicked outside
+            document.addEventListener('click', function(event) {
+                if (popup && popup.style.display === 'block' && 
+                    !popup.contains(event.target) && 
+                    !event.target.classList.contains('keyword-expandable') &&
+                    !event.target.closest('.glossary-list')) {
+                    popup.style.display = 'none';
+                }
+            });
+            
+            // Add event for popup itself
+            popup.addEventListener('mouseleave', () => {
+                popup.style.display = 'none';
+            });
+            
+            // CHAT FUNCTIONALITY
+            const chatInput = document.getElementById('chat-input');
+            const chatSend = document.getElementById('chat-send');
+            const chatMessages = document.getElementById('chat-messages');
+            
+            chatSend.addEventListener('click', () => {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Add user message
+                    const userMsgDiv = document.createElement('div');
+                    userMsgDiv.className = 'agent-message user-message';
+                    userMsgDiv.textContent = message;
+                    chatMessages.appendChild(userMsgDiv);
+                    
+                    // Clear input
+                    chatInput.value = '';
+                    
+                    // Simulate bot response
+                    setTimeout(() => {
+                        const botMsgDiv = document.createElement('div');
+                        botMsgDiv.className = 'agent-message bot-message';
+                        
+                        // Simple response logic
+                        if (message.toLowerCase().includes('chapter 2')) {
+                            botMsgDiv.textContent = "Chapter 2 focuses on Polyvagal Theory and Neuroception, explaining how the autonomic nervous system responds to safety and threat. It describes three main states: Social Engagement, Fight/Flight, and Freeze/Shutdown.";
+                        } else if (message.toLowerCase().includes('polyvagal')) {
+                            botMsgDiv.textContent = "Polyvagal Theory explains how the autonomic nervous system, particularly the vagus nerve, mediates responses to safety and threat through three primary circuits: ventral vagal (social engagement), sympathetic (fight/flight), and dorsal vagal (freeze).";
+                        } else {
+                            botMsgDiv.textContent = "I'm sorry, I'm not sure how to answer that. Could you ask about a specific chapter or topic in the report?";
+                        }
+                        
+                        chatMessages.appendChild(botMsgDiv);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 800);
+                }
+            });
+            
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatSend.click();
+                }
+            });
+            
+            // SEARCH FUNCTIONALITY
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                
+                if (query.length < 2) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                // Clear previous results
+                searchResults.innerHTML = '';
+                
+                // Create mock search results
+                let hasResults = false;
+                
+                // Search in keywords
+                for (const [keyword, data] of Object.entries(keywordData)) {
+                    if (keyword.toLowerCase().includes(query) || 
+                        data.definition.toLowerCase().includes(query)) {
+                        
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'search-result-item';
+                        resultItem.innerHTML = `
+                            <div class="result-title">${keyword}</div>
+                            <div class="result-context">${data.definition.substring(0, 80)}...</div>
+                        `;
+                        
+                        resultItem.addEventListener('click', () => {
+                            searchResults.style.display = 'none';
+                            // Find a keyword span with this term
+                            const keywordSpan = document.querySelector(`.keyword-expandable[data-keyword="${keyword}"]`);
+                            if (keywordSpan) {
+                                keywordSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Highlight briefly
+                                keywordSpan.style.backgroundColor = 'rgba(55, 111, 78, 0.3)';
+                                setTimeout(() => {
+                                    keywordSpan.style.backgroundColor = '';
+                                }, 2000);
+                            }
+                        });
+                        
+                        searchResults.appendChild(resultItem);
+                        hasResults = true;
+                    }
+                }
+                
+                if (hasResults) {
+                    searchResults.style.display = 'block';
+                } else {
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            // Hide search results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            // KNOWLEDGE GRAPH
+            function renderKnowledgeGraph() {
+                try {
+                    const graphContainer = document.getElementById('knowledge-graph');
+                    if (!graphContainer) {
+                        console.error('Graph container not found');
+                        return;
+                    }
+                    
+                    // Set dimensions
+                    const width = graphContainer.clientWidth;
+                    const height = graphContainer.clientHeight;
+                    
+                    // Create SVG container
+                    const svg = d3.select('#knowledge-graph')
+                        .append('svg')
+                        .attr('width', width)
+                        .attr('height', height);
+                    
+                    // Create graph data from keywords
+                    const nodes = [];
+                    const links = [];
+                    
+                    // Create nodes first
+                    for (const keyword in keywordData) {
+                        nodes.push({
+                            id: keyword,
+                            group: getGroup(keyword)
+                        });
+                    }
+                    
+                    // Then create links using node objects, not indices
+                    for (const keyword in keywordData) {
+                        const data = keywordData[keyword];
+                        if (data.related) {
+                            data.related.forEach(related => {
+                                // Make sure the related keyword exists
+                                if (keywordData[related]) {
+                                    links.push({
+                                        source: keyword,
+                                        target: related,
+                                        value: 1
+                                    });
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Create a force simulation - using ID accessor function to reference nodes by ID
+                    const simulation = d3.forceSimulation(nodes)
+                        .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+                        .force('charge', d3.forceManyBody().strength(-100))
+                        .force('center', d3.forceCenter(width / 2, height / 2));
+                    
+                    // Add links
+                    const link = svg.append('g')
+                        .selectAll('line')
+                        .data(links)
+                        .enter().append('line')
+                        .attr('stroke', '#999')
+                        .attr('stroke-opacity', 0.6)
+                        .attr('stroke-width', d => Math.sqrt(d.value));
+                    
+                    // Add nodes
+                    const node = svg.append('g')
+                        .selectAll('circle')
+                        .data(nodes)
+                        .enter().append('circle')
+                        .attr('r', 5)
+                        .attr('fill', d => getColor(d.group))
+                        .call(d3.drag()
+                            .on('start', dragstarted)
+                            .on('drag', dragged)
+                            .on('end', dragended));
+                    
+                    // Add node labels
+                    const text = svg.append('g')
+                        .selectAll('text')
+                        .data(nodes)
+                        .enter().append('text')
+                        .text(d => d.id)
+                        .attr('font-size', 10)
+                        .attr('dx', 8)
+                        .attr('dy', 3);
+                    
+                    // Update positions on tick
+                    simulation.on('tick', () => {
+                        link
+                            .attr('x1', d => d.source.x)
+                            .attr('y1', d => d.source.y)
+                            .attr('x2', d => d.target.x)
+                            .attr('y2', d => d.target.y);
+                        
+                        node
+                            .attr('cx', d => d.x)
+                            .attr('cy', d => d.y);
+                        
+                        text
+                            .attr('x', d => d.x)
+                            .attr('y', d => d.y);
+                    });
+                    
+                    // Add interactivity
+                    node.on('mouseover', function(event, d) {
+                        // Highlight connected links and nodes
+                        const connectedNodeIds = new Set();
+                        links.forEach(link => {
+                            if (link.source.id === d.id) {
+                                connectedNodeIds.add(link.target.id);
+                            } else if (link.target.id === d.id) {
+                                connectedNodeIds.add(link.source.id);
+                            }
+                        });
+                        
+                        node.attr('opacity', n => n.id === d.id || connectedNodeIds.has(n.id) ? 1 : 0.2);
+                        link.attr('stroke-opacity', l => l.source.id === d.id || l.target.id === d.id ? 1 : 0.1);
+                        text.attr('opacity', n => n.id === d.id || connectedNodeIds.has(n.id) ? 1 : 0.2);
+                        
+                        // Create tooltip
+                        d3.select(this).attr('r', 8);
+                    })
+                    .on('mouseout', function() {
+                        node.attr('opacity', 1);
+                        link.attr('stroke-opacity', 0.6);
+                        text.attr('opacity', 1);
+                        d3.select(this).attr('r', 5);
+                    })
+                    .on('click', (event, d) => {
+                        // Show keyword popup
+                        showKeywordPopup(d.id, event);
+                    });
+                    
+                    // Drag functions
+                    function dragstarted(event, d) {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    }
+                    
+                    function dragged(event, d) {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    }
+                    
+                    function dragended(event, d) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null;
+                        d.fy = null;
+                    }
+                    
+                    // Helper functions
+                    function getGroup(keyword) {
+                        if (keyword.includes('Polyvagal') || keyword.includes('Vagal') || 
+                            keyword.includes('Neuroception') || keyword.includes('Arousal') || 
+                            keyword.includes('ASD') || keyword.includes('Nervous')) {
+                            return 1; // Theory/concepts
+                        } else if (keyword.includes('PocketFlow') || keyword.includes('Node') || 
+                                  keyword.includes('Ingestor') || keyword.includes('Extractor') ||
+                                  keyword.includes('Assembler') || keyword.includes('Transcriber')) {
+                            return 2; // Technical/code
+                        } else {
+                            return 3; // Other
+                        }
+                    }
+                    
+                    function getColor(group) {
+                        const colors = {
+                            1: '#e41a1c', // Theory/concepts (red)
+                            2: '#377eb8', // Technical (blue)
+                            3: '#4daf4a'  // Other (green)
+                        };
+                        return colors[group] || '#999';
+                    }
+                } catch (error) {
+                    console.error('Error in renderKnowledgeGraph:', error);
+                    // Add fallback content
+                    document.getElementById('knowledge-graph').innerHTML = 
+                        '<div style="padding: 20px; text-align: center;">'+
+                        '<p>Unable to render knowledge graph visualization.</p>'+
+                        '<p style="font-size: 0.8rem; color: #666;">Error: ' + error.message + '</p></div>';
+                }
+            }
+            
+            // Initialize graphs
+            try {
+                renderKnowledgeGraph();
+            } catch (error) {
+                console.error("Error rendering knowledge graph:", error);
+                document.getElementById('knowledge-graph').innerHTML = 
+                    '<div style="padding: 20px; color: #666;">Error rendering knowledge graph. Please check console for details.</div>';
+            }
+            
+            try {
+                renderMindmap();
+            } catch (error) {
+                console.error("Error rendering mindmap:", error);
+                document.getElementById('mindmap-container').innerHTML = 
+                    '<div style="padding: 20px; color: #666;">Error rendering mindmap. Please check console for details.</div>';
+            }
+            
+            // SOURCE FILTER FUNCTIONALITY
+            const sourceFilterButtons = document.querySelectorAll('.source-filters button');
+            
+            sourceFilterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    sourceFilterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // In a real implementation, this would filter content
+                    // For this prototype, we'll just log
+                    console.log(`Filtering by: ${button.textContent}`);
+                });
+            });
+            
+            // EXPORT FUNCTIONALITY (Mock)
+            document.querySelectorAll('.sidebar-section button').forEach(button => {
+                button.addEventListener('click', () => {
+                    alert(`This would ${button.textContent} in a real implementation.`);
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

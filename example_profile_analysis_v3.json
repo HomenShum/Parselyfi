@@ -1,0 +1,658 @@
+{
+  "targetIndividual": "Jane Doe (Example V3)",
+  "analyzedPlatforms": [
+    "LinkedIn",
+    "Instagram",
+    "Twitter/X",
+    "Reddit"
+  ],
+  "platformSpecificAnalysis": [
+    {
+      "platformName": "LinkedIn",
+      "profileFundamentals": {
+        "username": "jane-doe-123",
+        "fullName": "Jane Doe",
+        "pronouns": "She/Her",
+        "location": "San Francisco Bay Area",
+        "profileURL": "https://linkedin.com/in/jane-doe-123",
+        "profileLanguage": "English",
+        "verificationStatus": null,
+        "contactInfoVisible": true,
+        "profilePictureDescription": "Professional headshot.",
+        "bannerImageDescription": "Abstract blue.",
+        "linkedWebsites": [
+          "https://janedoeportfolio.com",
+          "https://github.com/janedoe"
+        ]
+      },
+      "bioAnalysis": {
+        "fullText": "Software Engineer passionate about building scalable web applications...",
+        "identifiedKeywords": [
+          "Software Engineer",
+          "Python",
+          "React",
+          "AWS"
+        ],
+        "hashtagsInBio": [],
+        "mentionedUsersInBio": [],
+        "statedPurposeFocus": "Professional profile highlighting SE skills.",
+        "tone": "Professional",
+        "callToAction": null
+      },
+      "skillsInterestsExpertise": {
+        "skillsList": [
+          {
+            "skillName": "Python",
+            "endorsementCount": 50
+          },
+          {
+            "skillName": "React",
+            "endorsementCount": 35
+          },
+          {
+            "skillName": "AWS",
+            "endorsementCount": 20
+          }
+        ],
+        "licensesCertifications": [
+          {
+            "name": "AWS Certified Developer - Associate",
+            "issuer": "Amazon Web Services",
+            "date": "2023"
+          }
+        ],
+        "courses": [
+          "Advanced React Patterns - Coursera"
+        ],
+        "followedInfluencers": [
+          "Satya Nadella",
+          "Andrew Ng"
+        ],
+        "followedCompanies": [
+          "TechCorp",
+          "Google",
+          "Microsoft"
+        ],
+        "followedGroups": [
+          "Python Developers Community"
+        ],
+        "followedSchools": [
+          "State University"
+        ]
+      },
+      "featuredPinnedContent": [
+        {
+          "contentType": "Link",
+          "title": "My Portfolio",
+          "link": "https://janedoeportfolio.com"
+        },
+        {
+          "contentType": "Article",
+          "title": "Building Resilient Systems",
+          "link": "..."
+        }
+      ],
+      "professionalHistory": {
+        "experience": [
+          {
+            "title": "Software Engineer",
+            "organization": "TechCorp",
+            "dates": "Jan 2022 - Present",
+            "description": "Built stuff."
+          }
+        ],
+        "education": [
+          {
+            "institution": "State University",
+            "degreeField": "B.S. Computer Science",
+            "activities": "Coding Club President"
+          }
+        ],
+        "projects": [
+          {
+            "name": "Open Source Contributor",
+            "link": "...",
+            "contributors": [
+              "Jane Doe",
+              "Bob White"
+            ]
+          }
+        ]
+      },
+      "contentGenerationActivity": {
+        "postingFrequency": "Monthly",
+        "dominantContentTypes": [
+          "Article",
+          "Link Share"
+        ]
+      },
+      "engagementPatterns": {
+        "outgoingInteractionStyle": "Likes posts, occasionally comments.",
+        "incomingEngagementHighlights": "Articles receive most engagement."
+      },
+      "platformFeatureUsage": [
+        {
+          "featureName": "Articles",
+          "usageDescription": "Published 2 articles."
+        }
+      ],
+      "networkCommunityRecommendations": {
+        "followerCount": "500+",
+        "followingCount": 350,
+        "audienceDescription": "Tech professionals.",
+        "groupCommunityMemberships": [
+          {
+            "groupName": "Python Developers",
+            "membershipStatus": "Member"
+          }
+        ],
+        "inboxSidebarPreview": [
+          {
+            "name": "John Smith",
+            "detailSnippet": "Thanks!"
+          },
+          {
+            "name": "Recruiter",
+            "otherDetails": "Sponsored"
+          }
+        ],
+        "inboxSidebarAnalysis": "Active networking.",
+        "myNetworkTabVisibility": [
+          {
+            "entityName": "Alice Brown",
+            "entityType": "person"
+          },
+          {
+            "entityName": "TechCorp",
+            "entityType": "company"
+          }
+        ],
+        "myNetworkTabAnalysis": "Reflects current employment.",
+        "platformSuggestions": {
+          "suggestedPeople": [
+            {
+              "name": "Bob White"
+            }
+          ],
+          "suggestedCompaniesOrPages": [
+            {
+              "name": "InnovateInc",
+              "followerCount": "10k"
+            }
+          ],
+          "suggestedGroups": [
+            {
+              "name": "React Developers"
+            }
+          ],
+          "peopleAlsoViewed": [
+            {
+              "name": "David Black"
+            }
+          ],
+          "otherSuggestions": []
+        },
+        "platformRecommendationsAnalysis": "Suggestions reinforce SE focus.",
+        "detailedConnectionsList": null,
+        "detailedConnectionsAnalysis": null
+      },
+      "privacyPresentation": "Public profile.",
+      "observedConsumption": {
+        "mainFeed": {
+          "observedTopics": [
+            "Software Engineering",
+            "Cloud Computing",
+            "AI Ethics"
+          ],
+          "observedPosters": [
+            {
+              "posterName": "TechCorp",
+              "exampleContentSummary": "Company news and product updates."
+            },
+            {
+              "posterName": "Industry Leader X",
+              "exampleContentSummary": "Thought leadership piece on AI."
+            }
+          ],
+          "otherFeedObservations": "Mix of connection updates and followed company posts."
+        },
+        "discoveryFeed": null,
+        "consumptionAnalysisNotes": "Feed primarily reflects professional network and industry."
+      },
+      "platformSpecificConclusions": "Strong professional presence aligned with stated skills."
+    },
+    {
+      "platformName": "Instagram",
+      "profileFundamentals": {
+        "username": "jane.codes.pics",
+        "fullName": "Jane D.",
+        "pronouns": null,
+        "location": null,
+        "profileURL": "https://instagram.com/jane.codes.pics",
+        "profileLanguage": "English",
+        "verificationStatus": false,
+        "contactInfoVisible": false,
+        "profilePictureDescription": "Casual photo.",
+        "bannerImageDescription": null,
+        "linkedWebsites": []
+      },
+      "bioAnalysis": {
+        "fullText": "Coder | Hiker | Coffee Lover \u2615\ufe0f @some_coffee_shop #sf",
+        "identifiedKeywords": [
+          "Coder",
+          "Hiker",
+          "Coffee"
+        ],
+        "hashtagsInBio": [
+          "#sf"
+        ],
+        "mentionedUsersInBio": [
+          "@some_coffee_shop"
+        ],
+        "statedPurposeFocus": "Personal interests.",
+        "tone": "Casual",
+        "callToAction": null
+      },
+      "skillsInterestsExpertise": [
+        "Hiking",
+        "Photography",
+        "Coffee"
+      ],
+      "storyHighlights": [
+        {
+          "highlightName": "Travels",
+          "contentDescription": "Photos from recent trips."
+        }
+      ],
+      "contentGenerationActivity": {
+        "postingFrequency": "Weekly",
+        "dominantContentTypes": [
+          "Image",
+          "Reel"
+        ]
+      },
+      "engagementPatterns": {
+        "outgoingInteractionStyle": "Likes friends' posts."
+      },
+      "platformFeatureUsage": [
+        {
+          "featureName": "Reels",
+          "usageDescription": "Posted 3 reels."
+        }
+      ],
+      "networkCommunityRecommendations": {
+        "followerCount": 150,
+        "followingCount": 180,
+        "audienceDescription": "Friends.",
+        "groupCommunityMemberships": [],
+        "inboxSidebarPreview": [],
+        "inboxSidebarAnalysis": null,
+        "myNetworkTabVisibility": [],
+        "myNetworkTabAnalysis": null,
+        "platformSuggestions": {
+          "suggestedPeople": [
+            {
+              "name": "friend_of_friend"
+            }
+          ]
+        },
+        "platformRecommendationsAnalysis": "Minimal recommendations.",
+        "detailedConnectionsList": null,
+        "detailedConnectionsAnalysis": null
+      },
+      "privacyPresentation": "Private account.",
+      "observedConsumption": {
+        "mainFeed": {
+          "observedTopics": [
+            "Friends' updates",
+            "Travel Photos"
+          ],
+          "observedPosters": [
+            {
+              "posterName": "Close Friend",
+              "exampleContentSummary": "Holiday pictures."
+            }
+          ],
+          "otherFeedObservations": "Primarily posts from followed accounts."
+        },
+        "discoveryFeed": {
+          "observedThemes": [
+            "Hiking Trails",
+            "Coffee Art",
+            "Photography Tips",
+            "Viral Challenges"
+          ],
+          "contentTypes": [
+            "Short Video",
+            "Carousel Post",
+            "Meme"
+          ],
+          "specificExamples": [
+            "Reel showing sunrise hike timelapse",
+            "Tutorial on photo editing app",
+            "Someone trying a TikTok dance"
+          ],
+          "otherDiscoveryObservations": "High frequency of nature and aesthetic content."
+        },
+        "consumptionAnalysisNotes": "Clear distinction between personal feed (friends) and discovery feed (interests)."
+      },
+      "platformSpecificConclusions": "Personal account focused on hobbies."
+    },
+    {
+      "platformName": "Twitter/X",
+      "profileFundamentals": {
+        "username": "JaneDoeDev",
+        "fullName": "Jane Doe",
+        "pronouns": "She/Her",
+        "location": "SF",
+        "profileURL": "https://x.com/JaneDoeDev",
+        "profileLanguage": "English",
+        "verificationStatus": true,
+        "contactInfoVisible": false,
+        "profilePictureDescription": "Similar to LinkedIn.",
+        "bannerImageDescription": "Tech conference photo.",
+        "linkedWebsites": [
+          "https://janedoeportfolio.com"
+        ]
+      },
+      "bioAnalysis": {
+        "fullText": "SWE @TechCorp | Building things with #react & #python | Always learning | Opinions my own",
+        "identifiedKeywords": [
+          "SWE",
+          "TechCorp"
+        ],
+        "hashtagsInBio": [
+          "#react",
+          "#python"
+        ],
+        "mentionedUsersInBio": [],
+        "statedPurposeFocus": "Mix of professional identity and personal tech interests.",
+        "tone": "Informal Professional",
+        "callToAction": null
+      },
+      "skillsInterestsExpertise": [
+        "Software Engineering",
+        "React",
+        "Python",
+        "Tech News"
+      ],
+      "pinnedTweet": {
+        "tweetText": "Excited to share my latest article on microservices! Link...",
+        "mediaType": "Link"
+      },
+      "contentGenerationActivity": {
+        "postingFrequency": "Daily",
+        "dominantContentTypes": [
+          "Text",
+          "Link Share",
+          "Reply"
+        ],
+        "hashtagUsage": [
+          "#dev",
+          "#ai"
+        ]
+      },
+      "engagementPatterns": {
+        "outgoingInteractionStyle": "Likes tech posts, replies to discussions.",
+        "typesOfContentEngagedWith": [
+          "Tech news",
+          "Developer tools"
+        ]
+      },
+      "platformFeatureUsage": [
+        {
+          "featureName": "Lists",
+          "usageDescription": "Member of 'Tech Leaders' list."
+        }
+      ],
+      "networkCommunityRecommendations": {
+        "followerCount": 1200,
+        "followingCount": 400,
+        "audienceDescription": "Developers, tech community.",
+        "groupCommunityMemberships": [],
+        "inboxSidebarPreview": [
+          {
+            "name": "DevCommunity Bot",
+            "detailSnippet": "New mention in..."
+          }
+        ],
+        "inboxSidebarAnalysis": "Receiving community notifications.",
+        "myNetworkTabVisibility": [],
+        "myNetworkTabAnalysis": null,
+        "platformSuggestions": {
+          "suggestedPeople": [
+            {
+              "name": "TechInfluencer"
+            }
+          ],
+          "otherSuggestions": [
+            {
+              "suggestionType": "topic",
+              "nameOrTitle": "Artificial Intelligence"
+            }
+          ]
+        },
+        "platformRecommendationsAnalysis": "Suggestions align with tech interests.",
+        "detailedConnectionsList": null,
+        "detailedConnectionsAnalysis": null
+      },
+      "privacyPresentation": "Public profile.",
+      "observedConsumption": {
+        "mainFeed": {
+          "observedTopics": [
+            "JavaScript Frameworks",
+            "AI Startups",
+            "Open Source News"
+          ],
+          "observedPosters": [
+            {
+              "posterName": "React Core Team Member",
+              "exampleContentSummary": "Update on new feature."
+            }
+          ],
+          "otherFeedObservations": "Chronological feed of followed accounts."
+        },
+        "discoveryFeed": {
+          "observedThemes": [
+            "Tech Layoffs Discussion",
+            "Viral Coding Meme",
+            "AI Tool Demos",
+            "Political Commentary"
+          ],
+          "contentTypes": [
+            "Text Post",
+            "Meme Image",
+            "Screen Recording Video",
+            "News Link"
+          ],
+          "specificExamples": [
+            "Thread debating new JS runtime",
+            "Funny GIF about debugging",
+            "Video showcasing a new AI image generator"
+          ],
+          "otherDiscoveryObservations": "Algorithmically curated, broader topics than 'Following'."
+        },
+        "consumptionAnalysisNotes": "'Following' feed is focused tech, 'For You' feed brings in wider (sometimes unrelated) viral content and news."
+      },
+      "platformSpecificConclusions": "Active in tech discussions, uses platform for news and community."
+    },
+    {
+      "platformName": "Reddit",
+      "profileFundamentals": {
+        "username": "jane_dev_alt",
+        "fullName": null,
+        "pronouns": null,
+        "location": null,
+        "profileURL": "https://reddit.com/u/jane_dev_alt",
+        "profileLanguage": null,
+        "verificationStatus": false,
+        "contactInfoVisible": false,
+        "profilePictureDescription": "Default Snoo avatar.",
+        "bannerImageDescription": null,
+        "linkedWebsites": []
+      },
+      "bioAnalysis": {
+        "fullText": "Just lurking and occasionally commenting on tech stuff.",
+        "identifiedKeywords": [
+          "Tech"
+        ],
+        "hashtagsInBio": [],
+        "mentionedUsersInBio": [],
+        "statedPurposeFocus": "Casual participation in tech subreddits.",
+        "tone": "Casual, Anonymous",
+        "callToAction": null
+      },
+      "skillsInterestsExpertise": [
+        "Programming",
+        "React",
+        "AWS"
+      ],
+      "karmaScores": {
+        "postKarma": 150,
+        "commentKarma": 850
+      },
+      "contentGenerationActivity": {
+        "postingFrequency": "Infrequent",
+        "dominantContentTypes": [
+          "Comment"
+        ],
+        "activeSubreddits": [
+          "r/programming",
+          "r/reactjs"
+        ]
+      },
+      "engagementPatterns": {
+        "typicalIncomingCommentTypes": [
+          "Agreement",
+          "Debate"
+        ]
+      },
+      "platformFeatureUsage": [],
+      "networkCommunityRecommendations": {
+        "followerCount": 5,
+        "followingCount": 0,
+        "groupCommunityMemberships": [
+          {
+            "groupName": "r/programming"
+          },
+          {
+            "groupName": "r/reactjs"
+          },
+          {
+            "groupName": "r/aws"
+          }
+        ],
+        "inboxSidebarPreview": [
+          {
+            "name": "Reddit",
+            "detailSnippet": "Welcome message..."
+          }
+        ],
+        "inboxSidebarAnalysis": "Standard system messages.",
+        "myNetworkTabVisibility": [],
+        "myNetworkTabAnalysis": null,
+        "platformSuggestions": {
+          "suggestedGroups": [
+            {
+              "name": "r/learnpython"
+            }
+          ]
+        },
+        "platformRecommendationsAnalysis": "Suggestions based on subscribed subreddits.",
+        "detailedConnectionsList": null,
+        "detailedConnectionsAnalysis": null
+      },
+      "privacyPresentation": "Public, but content is pseudonymous.",
+      "observedConsumption": {
+        "mainFeed": {
+          "observedTopics": [
+            "Python Code Examples",
+            "React State Management Questions",
+            "AWS Service Updates"
+          ],
+          "observedPosters": [],
+          "otherFeedObservations": "Content strictly from subscribed technical subreddits."
+        },
+        "discoveryFeed": {
+          "observedThemes": [
+            "World News",
+            "Funny Videos",
+            "Gaming Highlights",
+            "Relationship Advice",
+            "Tech News"
+          ],
+          "contentTypes": [
+            "News Article Link",
+            "Short Video Clip",
+            "Meme Image",
+            "Text Post (AITA, etc.)"
+          ],
+          "specificExamples": [
+            "Headline about global event",
+            "Cat video",
+            "Screenshot of game achievement",
+            "Long text post asking for advice"
+          ],
+          "otherDiscoveryObservations": "Very diverse, reflects general internet trends."
+        },
+        "consumptionAnalysisNotes": "Home feed is highly technical and curated, discovery feed is broad and general interest."
+      },
+      "platformSpecificConclusions": "Uses Reddit for technical discussions and broad news/entertainment."
+    }
+  ],
+  "crossPlatformSynthesis": {
+    "consistencyVsVariation": {
+      "profileElementConsistency": "Multiple usernames, varying info. Consistent professional theme on LinkedIn/Twitter.",
+      "contentTonePersonaConsistency": "Professional/Tech on LI/Tw/Re, Personal on IG.",
+      "notableDifferences": "Clear separation of spheres. Reddit adds anonymity."
+    },
+    "contentOverlapStrategy": "Minimal overlap.",
+    "synthesizedExpertiseInterests": {
+      "coreProfessionalSkills": [
+        "Software Engineering",
+        "Python",
+        "React",
+        "AWS",
+        "Web Dev"
+      ],
+      "corePersonalInterests": [
+        "Hiking",
+        "Photography",
+        "Coffee",
+        "Tech (general)"
+      ]
+    },
+    "overallOnlinePersonaNarrative": "Multi-faceted: engineer (LI), tech community member (Tw), hobbyist (IG), anonymous commenter (Re).",
+    "professionalEvaluation": {
+      "strengthsSkillsMatch": "Strong SE profile via LI/Tw.",
+      "impactAchievements": "Articles/Pinned Tweet show engagement.",
+      "industryEngagement": "Active across prof/tech platforms.",
+      "potentialRedFlagsClarifications": "None.",
+      "overallCandidateSummary": "Well-rounded engineer active in professional circles."
+    },
+    "marketTrendInsights": null,
+    "inferredAlgorithmicPerception": [
+      {
+        "platformName": "LinkedIn",
+        "categorizationHypothesis": "SE interested in Python, React, AWS, jobs. Consumption matches."
+      },
+      {
+        "platformName": "Instagram",
+        "categorizationHypothesis": "Personal interests: hiking, coffee, travel. Consumption matches."
+      },
+      {
+        "platformName": "Twitter/X",
+        "categorizationHypothesis": "Tech pro interested in SWE, React, news. Consumption broader via 'For You'."
+      },
+      {
+        "platformName": "Reddit",
+        "categorizationHypothesis": "Interest in programming, React, AWS based on subs. Broad consumption via r/all."
+      }
+    ],
+    "crossPlatformNetworkAnalysis": {
+      "networkComparisonNotes": "Professional network on LI/Tw, personal on IG, pseudo-anonymous on Reddit.",
+      "consumptionComparisonNotes": "LI/Reddit (Home) feeds highly curated to professional interests. Tw/IG/Reddit (Discovery) show broader consumption patterns."
+    }
+  },
+  "finalComprehensiveSummary": "Jane Doe effectively manages distinct online personas. Professional profiles (LinkedIn/Twitter) are consistent and showcase relevant skills, supported by UI elements and professional consumption patterns. Personal/anonymous profiles (Instagram/Reddit) are separate and reflect different interests/consumption habits. Overall presentation is coherent and context-appropriate."
+}

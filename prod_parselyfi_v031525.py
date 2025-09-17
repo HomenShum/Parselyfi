@@ -1,0 +1,1465 @@
+import streamlit as st
+import streamlit_mermaid as stmd
+import supabase
+import boto3
+import os
+from botocore.exceptions import NoCredentialsError, ClientError
+import math # For pagination
+import pandas as pd
+from io import BytesIO
+import base64
+from datetime import datetime
+
+# Initialize Supabase client
+supabase_url = st.secrets['supabase']['SUPABASE_URL']
+supabase_key = st.secrets['supabase']['SUPABASE_KEY']
+supabase_client = supabase.create_client(supabase_url, supabase_key)
+
+# Supabase Storage details (from secrets or config)
+SUPABASE_S3_BUCKET_NAME = st.secrets['supabase']['SUPABASE_S3_BUCKET_NAME']
+
+# Initialize boto3 client for S3 (Supabase Storage)
+s3_client = boto3.client(
+    's3',
+    endpoint_url=st.secrets['supabase']['SUPABASE_S3_ENDPOINT_URL'],
+    region_name=st.secrets['supabase']['SUPABASE_S3_BUCKET_REGION'],
+    aws_access_key_id=st.secrets['supabase']['SUPABASE_S3_BUCKET_ACCESS_KEY'],
+    aws_secret_access_key=st.secrets['supabase']['SUPABASE_S3_BUCKET_SECRET_KEY']
+)
+
+KEY_PREFIX = "s3_file_manager" # To avoid session state conflicts
+ITEMS_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100] # Pagination options
+
+# --- Session State Initialization ---
+def _init_session_state():
+    user_root_path = f"{st.experimental_user.name}" if st.experimental_user.is_logged_in else "" # No trailing slash here
+    user_root_path = user_root_path + "/" if user_root_path else "" # Add it back if not empty
+    if KEY_PREFIX + '_current_path' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_current_path'] = user_root_path
+
+    if KEY_PREFIX + '_previous_path' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_previous_path'] = "" # Or None initially
+    if KEY_PREFIX + '_show_new_folder_input' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_show_new_folder_input'] = False
+    if KEY_PREFIX + '_show_rename_folder_input' not in st.session_state: # Not implementing rename in this version for simplicity
+        st.session_state[KEY_PREFIX + '_show_rename_folder_input'] = False
+    if KEY_PREFIX + '_show_upload' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_show_upload'] = False # Initially hide upload, show on button click
+    if KEY_PREFIX + '_selected_folders' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_selected_folders'] = []
+    if KEY_PREFIX + '_selected_files' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_selected_files'] = []
+    if KEY_PREFIX + '_selected_files_in_folders' not in st.session_state: # NEW: For files in selected folders
+        st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = []
+    if KEY_PREFIX + '_new_folder_name' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_new_folder_name'] = ""
+    if KEY_PREFIX + '_rename_folder_name' not in st.session_state: # Not implementing rename in this version for simplicity
+        st.session_state[KEY_PREFIX + '_rename_folder_name'] = ""
+    if KEY_PREFIX + '_upload_success' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_upload_success'] = []
+    if KEY_PREFIX + '_upload_progress' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_upload_progress'] = 0
+    if KEY_PREFIX + '_current_page' not in st.session_state: # For pagination
+        st.session_state[KEY_PREFIX + '_current_page'] = 1
+    if KEY_PREFIX + '_items_per_page' not in st.session_state: # For pagination
+        st.session_state[KEY_PREFIX + '_items_per_page'] = ITEMS_PER_PAGE_OPTIONS[1] # Default to 10 items per page
+    if KEY_PREFIX + '_delete_confirmation' not in st.session_state:
+        st.session_state[KEY_PREFIX + '_delete_confirmation'] = {} # Dict to hold confirmation state for each item
+
+# @st.cache_data(show_spinner=False, ttl=10)
+def list_files_in_folder(folder_path):
+    """Lists files within a given S3 folder path."""
+    folders, files = list_s3_files(prefix=folder_path) # Use existing list_s3_files
+    full_file_paths = files  # Files from list_s3_files already have the correct path
+    return full_file_paths
+
+# @st.cache_data(show_spinner=False, ttl=10) # Caching for performance - adjust ttl as needed
+def list_s3_files(prefix=""):
+    """Lists files and folders in an S3 bucket under a given prefix."""
+    try:
+        response = s3_client.list_objects_v2(Bucket=SUPABASE_S3_BUCKET_NAME, Prefix=prefix, Delimiter='/') # Delimiter for folders
+        files = []
+        folders = []
+        if 'CommonPrefixes' in response: # Folders are returned in CommonPrefixes
+            for prefix_info in response['CommonPrefixes']:
+                folders.append(prefix_info['Prefix'])
+        if 'Contents' in response: # Files are in Contents
+            for obj in response['Contents']:
+                if not obj['Key'].endswith('/'): # Exclude folder "placeholders"
+                    files.append(obj['Key'])
+        return folders, files
+
+    except NoCredentialsError:
+        st.error("AWS credentials not available.")
+        return [], []
+    except ClientError as e:
+        st.error(f"Error accessing S3: {e}")
+        return [], []
+
+def upload_file_to_s3(file, s3_key):
+    """Uploads a file-like object to S3."""
+    try:
+        s3_client.upload_fileobj(file, SUPABASE_S3_BUCKET_NAME, s3_key)
+        return True
+    except NoCredentialsError:
+        st.error("AWS credentials not available.")
+        return False
+    except ClientError as e:
+        st.error(f"Error uploading to S3: {e}")
+        return False
+
+def download_file_from_s3(s3_key):
+    """Downloads a file from S3 and returns its content as bytes."""
+    try:
+        file_obj = s3_client.get_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=s3_key)
+        file_content = file_obj['Body'].read()
+        # st.success(f"File content retrieved from S3 for: {s3_key}") # No need for success here, handled in UI
+        return file_content
+    except NoCredentialsError:
+        st.error("AWS credentials not available.")
+        return None
+    except ClientError as e:
+        st.error(f"Error downloading file from S3: {e}")
+        return None
+
+def delete_file_from_s3(s3_key):
+    """Deletes a file from S3 after checking if it exists."""
+    sanitized_key = sanitize_path(s3_key)  # Sanitize the S3 key
+    try:
+        # Check if the object exists
+        head_response = s3_client.head_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=sanitized_key)
+        print(f"Head response: {head_response}")
+        # Proceed to delete
+        delete_response = s3_client.delete_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=sanitized_key)
+        print(f"Delete response: {delete_response}")
+        return True, s3_key # Return True and the s3_key of the deleted file
+    except ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            st.error(f"File not found: {sanitized_key}")
+        else:
+            st.error(f"Error deleting from S3: {e}")
+        return False, None # Return False and None if deletion fails
+
+def create_s3_folder(s3_folder_key):
+    """Creates an empty folder (object with '/' suffix) in S3."""
+    sanitized_folder_key = sanitize_path(s3_folder_key)  # Sanitize the folder key
+    try:
+        s3_client.put_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=f"{sanitized_folder_key}/") # Keys for folders must end with '/'
+        return True
+    except NoCredentialsError:
+        st.error("AWS credentials not available.")
+        return False
+    except ClientError as e:
+        st.error(f"Error creating S3 folder: {e}")
+        print(f"Error details: {e}") # Print error details for debugging
+        return False
+
+def sanitize_path(path):
+    return path.strip('/').replace('//', '/')
+
+def delete_s3_folder(s3_folder_prefix):
+    """Recursively deletes a folder and all its contents from S3."""
+    sanitized_prefix = sanitize_path(s3_folder_prefix)
+    print(f"Sanitized prefix for deletion: {sanitized_prefix}")
+
+    paginator = s3_client.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=SUPABASE_S3_BUCKET_NAME, Prefix=sanitized_prefix)
+
+    for page in pages:
+        if 'Contents' in page:
+            for obj in page['Contents']:
+                try:
+                    s3_client.delete_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=obj['Key'])
+                    print(f"Deleted object: {obj['Key']}")
+                except ClientError as e:
+                    print(f"Error deleting object {obj['Key']}: {e}")
+
+    # Attempt to delete the folder "placeholder" object
+    placeholder_key = sanitized_prefix + '/'
+    try:
+        s3_client.delete_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=placeholder_key)
+        print(f"Deleted placeholder object: {placeholder_key}")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchKey':
+            print(f"Placeholder object '{placeholder_key}' not found (which is okay).")
+        else:
+            print(f"Error deleting placeholder object '{placeholder_key}': {e}")
+
+    return True
+
+
+
+def _format_size(size: int) -> str:
+    """Format file size in human-readable format."""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size < 1024:
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
+
+def _render_pagination(total_items: int):
+    """Render pagination controls."""
+    total_pages = math.ceil(total_items / st.session_state[KEY_PREFIX + '_items_per_page'])
+
+    if total_pages > 1:
+        col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
+        current_page = st.session_state[KEY_PREFIX + '_current_page']
+
+        with col1:
+            if st.button("⏮️", disabled=current_page == 1, key=f"{KEY_PREFIX}first"):
+                st.session_state[KEY_PREFIX + '_current_page'] = 1
+                st.rerun()
+
+        with col2:
+            if st.button("◀️", disabled=current_page == 1, key=f"{KEY_PREFIX}prev"):
+                st.session_state[KEY_PREFIX + '_current_page'] -= 1
+                st.rerun()
+        with col3:
+            page_options = list(range(1, total_pages + 1))
+            selected_page = st.selectbox(
+                "Go to page",
+                options=page_options,
+                index=current_page - 1,
+                key=f"{KEY_PREFIX}page_select",
+                label_visibility="collapsed"
+            )
+            if selected_page != current_page:
+                st.session_state[KEY_PREFIX + '_current_page'] = selected_page
+                st.rerun()
+
+        with col4:
+            if st.button("▶️", disabled=current_page == total_pages, key=f"{KEY_PREFIX}next"):
+                st.session_state[KEY_PREFIX + '_current_page'] += 1
+                st.rerun()
+
+        with col5:
+            if st.button("⏭️", disabled=current_page == total_pages, key=f"{KEY_PREFIX}last"):
+                st.session_state[KEY_PREFIX + '_current_page'] = total_pages
+                st.rerun()
+
+def get_file_type_from_extension(filename: str) -> str:
+    """Extracts file type from filename extension."""
+    _, ext = os.path.splitext(filename)
+    if ext:
+        return ext[1:].upper()  # Remove the dot and uppercase
+    return "Unknown"
+
+
+def render_folder_management_ui():
+    current_path = st.session_state[KEY_PREFIX + '_current_path']
+    previous_path = st.session_state[KEY_PREFIX + '_previous_path']
+    root_path = f"{st.experimental_user.name}/" if st.experimental_user.is_logged_in else ""
+
+    print(f"Current Path in render_folder_management_ui: {current_path}") # Debug print
+
+    st.markdown(f"**S3 Bucket:** `{SUPABASE_S3_BUCKET_NAME}`")
+    st.markdown(f"**Root Folder (Your Files):** `{root_path if root_path else 'root of bucket'}`") # Clarify root
+
+    path_components = [comp for comp in current_path.split('/') if comp] # Split and remove empty strings
+    full_path = root_path if root_path else "" # Start building path from root
+
+    path_display_cols_count = len(path_components) + (1 if current_path != root_path and current_path != "" else 0)
+    path_display_cols = st.columns(max(1, path_display_cols_count))  # Ensure at least 1 column
+
+    # "Back" button if not at root
+    if current_path != root_path and current_path != "":
+        if st.button("🔙 Back to Previous Folder", key="back_button"):
+            st.session_state[KEY_PREFIX + '_current_path'] = st.session_state[KEY_PREFIX + '_previous_path'] # Go back to previous path
+
+            # Simplify previous path update: Get parent directory of the *current* previous_path
+            current_prev_path = st.session_state[KEY_PREFIX + '_previous_path']
+            if current_prev_path: # Only update if there's a previous path
+                st.session_state[KEY_PREFIX + '_previous_path'] = os.path.dirname(current_prev_path.rstrip('/')) + "/" # Get parent and ensure trailing slash
+            else:
+                st.session_state[KEY_PREFIX + '_previous_path'] = "" # If no previous path, set to root
+
+            st.rerun()
+
+    # Ensure we do not exceed the number of columns
+    for i, component in enumerate(path_components):
+        full_path = os.path.join(full_path, component)  # Reconstruct path
+        if i < len(path_display_cols):  # Check if index is within range
+            with path_display_cols[i]:  # Use i directly for the current column
+                if i < len(path_components) - 1:  # Make path components clickable except the last one
+                    if st.button(component, key=f"path_comp_btn_{i}", help=f"Go to '{full_path}'"):
+                        st.session_state[KEY_PREFIX + '_previous_path'] = st.session_state[KEY_PREFIX + '_current_path']  # Update previous path
+                        st.session_state[KEY_PREFIX + '_current_path'] = full_path + "/"  # Ensure trailing slash for folder prefix
+                        st.session_state[KEY_PREFIX + '_current_page'] = 1
+                        st.rerun()
+                else:
+                    st.markdown(f"**{component}**")  # Current folder as bold text
+        else:
+            st.warning(f"Path display column index out of range for component: {component}. This should not happen, please report.")  # Debugging warning
+
+    folders_in_folder, files_in_folder = list_s3_files(prefix=current_path)
+    items = sorted([{'name': os.path.basename(f_name), 'path': f_name, 'is_directory': False, 'size': None} for f_name in files_in_folder] + # USE f_name directly for file path
+                   [{'name': os.path.basename(f_prefix.rstrip('/')), 'path': f_prefix, 'is_directory': True, 'size': None} for f_prefix in folders_in_folder],
+                   key=lambda x: (not x['is_directory'], x['name'].lower()))
+
+    start_idx = (st.session_state[KEY_PREFIX + '_current_page'] - 1) * st.session_state[KEY_PREFIX + '_items_per_page']
+    end_idx = start_idx + st.session_state[KEY_PREFIX + '_items_per_page']
+    paginated_items = items[start_idx:end_idx]
+
+    if paginated_items:
+        for item in paginated_items:
+            col_sel, col_name, col_size, col_actions = st.columns([0.5, 4, 2, 3])
+            with col_sel:
+                if item['is_directory']:
+                    folder_selected = item['path'] in st.session_state[KEY_PREFIX + '_selected_folders']
+                    checkbox_selected = st.checkbox("Select Folder", key=f"folder_checkbox_{item['path']}", value=folder_selected, label_visibility="collapsed")
+                    if checkbox_selected:
+                        if item['path'] not in st.session_state[KEY_PREFIX + '_selected_folders']:
+                            st.session_state[KEY_PREFIX + '_selected_folders'].append(item['path'])
+                            # NEW: Add files in selected folder to selected_files_in_folders and deselect from _selected_files
+                            files_in_sel_folder = list_files_in_folder(item['path'])
+                            st.session_state[KEY_PREFIX + '_selected_files_in_folders'].extend(files_in_sel_folder)
+                            st.session_state[KEY_PREFIX + '_selected_files'] = [
+                                f for f in st.session_state[KEY_PREFIX + '_selected_files']
+                                if not f.startswith(item['path']) # Remove files in selected folder from _selected_files
+                            ]
+                    else:
+                        if item['path'] in st.session_state[KEY_PREFIX + '_selected_folders']:
+                            st.session_state[KEY_PREFIX + '_selected_folders'].remove(item['path'])
+                            # NEW: Remove files of deselected folder from selected_files_in_folders and _selected_files
+                            files_in_sel_folder = list_files_in_folder(item['path'])
+                            st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = [f for f in st.session_state[KEY_PREFIX + '_selected_files_in_folders'] if f not in files_in_sel_folder]
+                            st.session_state[KEY_PREFIX + '_selected_files'] = [
+                                f for f in st.session_state[KEY_PREFIX + '_selected_files']
+                                if not f.startswith(item['path']) # Remove files in deselected folder from _selected_files
+                            ]
+
+
+                else:
+                    # --- Modified file_selected condition ---
+                    file_selected = (item['path'] in st.session_state[KEY_PREFIX + '_selected_files'] or item['path'] in st.session_state[KEY_PREFIX + '_selected_files_in_folders'])
+                    if st.checkbox("Select File", key=f"file_checkbox_{item['path']}", value=file_selected, label_visibility="collapsed"):
+                        if item['path'] not in st.session_state[KEY_PREFIX + '_selected_files']:
+                            st.session_state[KEY_PREFIX + '_selected_files'].append(item['path'])
+                            # --- Auto-select folder on file select logic ---
+                            current_folder_path = os.path.dirname(item['path']) + "/" # Normalize folder path with trailing slash
+                            files_in_current_folder_view_all = [i for i in paginated_items if not i['is_directory'] and i['path'].startswith(current_folder_path)]
+                            total_files_in_view_in_current_folder = len(files_in_current_folder_view_all)
+                            selected_files_in_view_in_current_folder_check = 0
+                            for file_item_check in files_in_current_folder_view_all:
+                                if file_item_check['path'] in st.session_state[KEY_PREFIX + '_selected_files']:
+                                    selected_files_in_view_in_current_folder_check += 1
+                            if total_files_in_view_in_current_folder > 0 and total_files_in_view_in_current_folder == selected_files_in_view_in_current_folder_check:
+                                folder_item_to_auto_select = next((fd for fd in paginated_items if fd['is_directory'] and fd['path'] == current_folder_path), None)
+                                if folder_item_to_auto_select and folder_item_to_auto_select['path'] not in st.session_state[KEY_PREFIX + '_selected_folders']:
+                                    st.session_state[KEY_PREFIX + '_selected_folders'].append(folder_item_to_auto_select['path'])
+
+                    else:
+                        if item['path'] in st.session_state[KEY_PREFIX + '_selected_files']:
+                            st.session_state[KEY_PREFIX + '_selected_files'].remove(item['path'])
+                            # --- Auto-deselect folder on file deselect logic ---
+                            current_folder_path = os.path.dirname(item['path']) + "/" # Normalize folder path with trailing slash
+                            if current_folder_path in st.session_state[KEY_PREFIX + '_selected_folders']:
+                                st.session_state[KEY_PREFIX + '_selected_folders'].remove(current_folder_path) # Deselect folder if a file is deselected
+                            # --- End auto-deselect folder on file deselect logic ---
+
+
+            with col_name:
+                if item['is_directory']:
+                    if st.button(f"📁 {item['name']}", key=f"open_folder_btn_{item['path']}", use_container_width=True, help=f"Open Folder: {item['name']}"):
+                        st.session_state[KEY_PREFIX + '_previous_path'] = current_path
+                        st.session_state[KEY_PREFIX + '_current_path'] = os.path.join(current_path, item['name']) + "/" # Just join and *then* add trailing slash
+                        st.session_state[KEY_PREFIX + '_current_page'] = 1
+                        st.rerun()
+                else:
+                    st.markdown(f"📄 {item['name']}")
+
+            with col_size:
+                if not item['is_directory']:
+                    # Get file size (inefficient to get size for each file in list, consider optimizing if needed)
+                    try:
+                        response = s3_client.head_object(Bucket=SUPABASE_S3_BUCKET_NAME, Key=item['path'])
+                        file_size = response['ContentLength']
+                        st.text(_format_size(file_size))
+                    except ClientError as e:
+                        st.text("Size N/A") # Handle errors getting file size
+                else:
+                    st.empty() # No size for folders
+            with col_actions:
+                if not item['is_directory']:
+                    if st.button("Download ⬇️", key=f"download_file_btn_{item['path']}", use_container_width=True, help=f"Download File: {item['name']}"):
+                        file_content = download_file_from_s3(item['path'])
+                        if file_content:
+                            st.download_button(
+                                label="Click to Download",
+                                data=file_content,
+                                file_name=item['name'],
+                                mime="application/octet-stream",
+                                key=f"download_button_{item['path']}"
+                            )
+                            st.success(f"File download ready: {item['name']}", icon="⬇️")
+                        else:
+                            st.error("Failed to download file content.")
+                    if st.button("Delete 🗑️", key=f"delete_btn_{item['path']}", use_container_width=True, help=f"Delete {'Folder' if item['is_directory'] else 'File'}: {item['name']}"):
+                        if item['is_directory']:
+                            if delete_s3_folder(item['path']):
+                                st.success(f"Folder '{item['name']}' deleted.")
+                                # --- Folder Delete Update ---
+                                folder_prefix_to_delete = item['path']
+                                # Remove deleted folder from selected folders
+                                if folder_prefix_to_delete in st.session_state[KEY_PREFIX + '_selected_folders']:
+                                    st.session_state[KEY_PREFIX + '_selected_folders'].remove(folder_prefix_to_delete)
+                                # Filter out files that were in the deleted folder from selected_files_in_folders
+                                st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = [
+                                    f for f in st.session_state[KEY_PREFIX + '_selected_files_in_folders']
+                                    if not f.startswith(folder_prefix_to_delete)
+                                ]
+                                # Filter out files that were in the deleted folder from selected_files (standalone selected files)
+                                st.session_state[KEY_PREFIX + '_selected_files'] = [
+                                    f for f in st.session_state[KEY_PREFIX + '_selected_files']
+                                    if not f.startswith(folder_prefix_to_delete)
+                                ]
+                                # --- End Folder Delete Update ---
+                                st.rerun()
+                            else:
+                                st.error(f"Failed to delete folder '{item['name']}'.")
+                        else:
+                            deleted_successfully, deleted_key = delete_file_from_s3(item['path']) # Capture deleted_key
+                            if deleted_successfully:
+                                st.success(f"File '{item['name']}' deleted.")
+                                # --- START OF FILE DELETE UPDATE ---
+                                if deleted_key in st.session_state[KEY_PREFIX + '_selected_files']:
+                                    st.session_state[KEY_PREFIX + '_selected_files'].remove(deleted_key)
+
+                                # Refresh selected_files_in_folders if the deleted file was in a selected folder
+                                selected_folder_containing_deleted_file = next((folder for folder in st.session_state[KEY_PREFIX + '_selected_folders'] if deleted_key.startswith(folder)), None)
+                                if selected_folder_containing_deleted_file:
+                                    files_in_sel_folder = list_files_in_folder(selected_folder_containing_deleted_file)
+                                    st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = files_in_sel_folder # Directly replace to refresh list
+                                # --- END OF FILE DELETE UPDATE ---
+                                st.rerun()
+                            else:
+                                st.error(f"Failed to delete file '{item['name']}'.")
+
+    elif folders_in_folder or files_in_folder: # If folder is not empty but no items to display on current page
+        st.info(f"No items to display on page {st.session_state[KEY_PREFIX + '_current_page']}. Please use pagination controls to navigate.")
+    else:
+        st.info("This folder is empty.")
+    _render_pagination(len(items))  # Pagination below the list
+
+    # Display Selected Paths Section in DataFrame
+    st.subheader("Selected Items:")
+    if st.session_state[KEY_PREFIX + '_selected_folders'] or st.session_state[KEY_PREFIX + '_selected_files'] or st.session_state[KEY_PREFIX + '_selected_files_in_folders']:
+        selected_folders = st.session_state[KEY_PREFIX + '_selected_folders']
+        selected_files = st.session_state[KEY_PREFIX + '_selected_files']
+        selected_files_in_folders = st.session_state[KEY_PREFIX + '_selected_files_in_folders']
+
+        data = []
+        for folder in selected_folders:
+            folder_name = os.path.basename(folder.rstrip('/')) # Get folder name without trailing slash
+            data.append({"Folder": folder_name, "Type": "Folder", "File Name": folder_name, "Path": folder})
+            files_in_folder = [f for f in selected_files_in_folders if f.startswith(folder)]
+            for file in files_in_folder:
+                file_name = os.path.basename(file)
+                file_type = get_file_type_from_extension(file_name)
+                data.append({"Folder": folder_name, "Type": file_type, "File Name": file_name, "Path": file})
+
+        # Handle standalone selected files (not in selected folders)
+        standalone_selected_files = [
+            f for f in selected_files
+            if not any(f.startswith(folder) for folder in selected_folders)
+        ]
+        for file in standalone_selected_files:
+            file_folder_path = os.path.dirname(file) # Get the folder path
+            file_folder_name = os.path.basename(file_folder_path) if file_folder_path else "N/A" # Extract folder name or N/A if root
+            if file_folder_path == "" or file_folder_name == st.experimental_user.name or file_folder_name == "": # Handle root or user root edge cases
+                file_folder_name = "N/A"
+
+            file_name = os.path.basename(file)
+            file_type = get_file_type_from_extension(file_name)
+            data.append({"Folder": file_folder_name, "Type": file_type, "File Name": file_name, "Path": file}) # Use correct file_folder_name
+
+        df = pd.DataFrame(data)
+        if not df.empty: # Check if DataFrame is not empty before displaying
+            st.dataframe(df[["Folder", "Type", "File Name", "Path"]], use_container_width=True, hide_index=True) # Order columns and hide index
+        else:
+            st.info("No items to display in DataFrame (this should not happen if selected items exist).") # Debugging info
+    else:
+        st.info("No folders or files selected.")
+
+
+def render_action_buttons():
+    col1, col2, col3 = st.columns([2, 2, 3]) # Adjust column widths as needed
+
+    with col1:
+        if st.button("➕ New Folder"):
+            st.session_state[KEY_PREFIX + '_show_new_folder_input'] = True
+
+        if st.session_state[KEY_PREFIX + '_show_new_folder_input']:
+            new_folder_name = st.text_input("Folder name:", key=KEY_PREFIX + '_new_folder_name_input')
+            create_button = st.button("✅ Create", key="create_folder_btn")
+            cancel_new_folder_button = st.button("❌ Cancel", key="cancel_new_folder_btn")
+
+            if create_button:
+                if new_folder_name:
+                    new_s3_folder_key = os.path.join(st.session_state[KEY_PREFIX + '_current_path'], new_folder_name)
+                    new_s3_folder_key = new_s3_folder_key + "/" # Ensure trailing slash for folder key
+                    if create_s3_folder(new_s3_folder_key):
+                        st.success(f"Folder '{new_folder_name}' created in '{st.session_state[KEY_PREFIX + '_current_path']}'!")
+                        st.session_state[KEY_PREFIX + '_show_new_folder_input'] = False # Hide input after creation
+                        st.session_state[KEY_PREFIX + '_new_folder_name'] = "" # Clear input
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to create folder '{new_folder_name}'. Check logs.")
+                else:
+                    st.warning("Please enter a folder name.")
+            if cancel_new_folder_button:
+                st.session_state[KEY_PREFIX + '_show_new_folder_input'] = False
+                st.session_state[KEY_PREFIX + '_new_folder_name'] = "" # Clear input
+
+    with col2:
+        if st.button("📤 Upload Files"): # Changed button text to icon + text
+            st.session_state[KEY_PREFIX + '_show_upload'] = not st.session_state[KEY_PREFIX + '_show_upload'] # Toggle upload section
+
+    with col3:
+        if st.button("🗑️ Delete Folders"):
+            if st.session_state[KEY_PREFIX + '_selected_folders']:
+                folders_to_delete = st.session_state[KEY_PREFIX + '_selected_folders']
+                folders_to_delete = st.session_state[KEY_PREFIX + '_selected_folders']
+                for folder_prefix in folders_to_delete:
+                    if delete_s3_folder(folder_prefix):
+                        st.success(f"Folder '{os.path.basename(folder_prefix.rstrip('/'))}' deleted.")
+                        # --- Folder Delete Update ---
+                        folder_prefix_to_delete = folder_prefix
+                        # Remove deleted folder from selected folders
+                        if folder_prefix_to_delete in st.session_state[KEY_PREFIX + '_selected_folders']:
+                            st.session_state[KEY_PREFIX + '_selected_folders'].remove(folder_prefix_to_delete)
+                        # Filter out files that were in the deleted folder from selected_files_in_folders
+                        st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = [
+                            f for f in st.session_state[KEY_PREFIX + '_selected_files_in_folders']
+                            if not f.startswith(folder_prefix_to_delete)
+                        ]
+                        # Filter out files that were in the deleted folder from selected_files (standalone selected files)
+                        st.session_state[KEY_PREFIX + '_selected_files'] = [
+                            f for f in st.session_state[KEY_PREFIX + '_selected_files']
+                            if not f.startswith(folder_prefix_to_delete)
+                        ]
+                        # --- End Folder Delete Update ---
+                    else:
+                        st.error(f"Failed to delete folder '{os.path.basename(folder_prefix.rstrip('/'))}'. Check logs.")
+                st.session_state[KEY_PREFIX + '_selected_folders'] = []
+                st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = []
+                st.rerun()
+            else:
+                st.warning("No folders selected for deletion.")
+
+
+def render_upload_section():
+    if st.session_state[KEY_PREFIX + '_show_upload']:
+        with st.expander("📤 Upload Files", expanded=True): # Expander for upload section
+            uploaded_files = st.file_uploader("Choose files to upload", accept_multiple_files=True, key=KEY_PREFIX + "_file_uploader")
+            if uploaded_files:
+                for uploaded_file in uploaded_files:
+                    s3_key_upload = os.path.join(st.session_state[KEY_PREFIX + '_current_path'], uploaded_file.name) # Construct S3 key with folder path
+                    if upload_file_to_s3(uploaded_file, s3_key_upload):
+                        st.success(f"File '{uploaded_file.name}' uploaded to '{s3_key_upload}'")
+                        if st.session_state[KEY_PREFIX + '_current_path'] in st.session_state[KEY_PREFIX + '_selected_folders']:
+                            # Re-list files in the current (selected) folder and update selected_files_in_folders
+                            files_in_current_folder = list_files_in_folder(st.session_state[KEY_PREFIX + '_current_path'])
+                            # Remove files from current folder and then add the new list to avoid duplicates
+                            st.session_state[KEY_PREFIX + '_selected_files_in_folders'] = [
+                                f for f in st.session_state[KEY_PREFIX + '_selected_files_in_folders']
+                                if not f.startswith(st.session_state[KEY_PREFIX + '_current_path'])
+                            ]
+                            st.session_state[KEY_PREFIX + '_selected_files_in_folders'].extend(files_in_current_folder)
+                    else:
+                        st.error(f"Failed to upload '{uploaded_file.name}'")
+                st.session_state[KEY_PREFIX + '_show_upload'] = False # Hide upload section after upload
+                st.rerun() # Refresh file list after upload
+
+def render_items_per_page_selector():
+    items_per_page = st.selectbox(
+        "Items per page",
+        options=ITEMS_PER_PAGE_OPTIONS,
+        key=KEY_PREFIX + "items_per_page_selector",
+        label_visibility="collapsed" # Hide label to save space
+    )
+    if items_per_page != st.session_state[KEY_PREFIX + '_items_per_page']:
+        st.session_state[KEY_PREFIX + '_items_per_page'] = items_per_page
+        st.session_state[KEY_PREFIX + '_current_page'] = 1 # Reset to page 1 when items per page changes
+        st.rerun()
+
+
+def sidebar_content_fragment_st_file_manager_component():
+    # Ensure user is logged in
+    if not st.experimental_user.is_logged_in:
+        st.button("Log in with Google", on_click=st.login)
+        st.stop()
+
+    st.subheader(f"📂 {st.experimental_user.name}'s S3 File Manager")
+    _init_session_state() # Initialize session state
+
+    with st.container(border=True): # Container for action buttons and file listing
+        col_header, col_pagination_selector = st.columns([5, 2]) # Adjust ratio as needed for header and selector
+        with col_header:
+            st.subheader("File & Folder Actions") # Moved subheader into container
+        with col_pagination_selector:
+            render_items_per_page_selector() # Items per page selector in line with header
+
+        render_action_buttons()
+        render_upload_section() # Render upload section below actions
+        render_folder_management_ui() # File/folder listing
+    
+    if st.experimental_user.is_logged_in:
+        st.button("Log out", on_click=st.logout)
+
+
+
+@st.fragment
+def sidebar_content_fragment_PydanticAIAgentChat_component():
+    from datetime import datetime, date
+
+    st.header("🤖 Parsely AI Assistant")
+
+    with st.container(border=True, height=600):        
+        # Initialize messages in session state if not present
+        if 'messages' not in st.session_state:
+            st.session_state.messages = []
+
+        st.subheader("🗨️ Chat")
+        # Chat input area
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            # Using st.chat_input instead of text_input
+            prompt = st.chat_input(
+                "Ask about forms or assistance...",
+                key="chat_input"
+            )
+        with col2:
+            clear = st.button("Clear", use_container_width=True)
+                
+        # Divider between chat history and input
+        st.divider()
+        
+        # Create a container for chat history with scrolling
+        chat_container = st.container(height=400)
+        with chat_container:
+            # Display previous messages in reverse order
+            for message in st.session_state.messages[::-1]:
+                # Get timestamp from message or use current time if not present
+                timestamp = message.get("timestamp", datetime.now().strftime("%H:%M:%S"))
+                
+                if message["role"] == "user":
+                    # st.markdown(f"🧑 **You** ({timestamp}):")
+                    # st.markdown(message["content"])
+                    user_message_timestamp = f"🧑 **You** ({timestamp}): \n\n{message['content']}"
+                    
+                    # Display user and assistant message with timestamp
+                    st.markdown(user_message_timestamp)
+                    st.markdown(assistant_message_timestamp)
+                    st.divider()
+                else:
+                    # st.markdown(f"🤖 **Assistant** ({timestamp}):")
+                    # st.markdown(message["content"])
+                    assistant_message_timestamp = f"🤖 **Assistant** ({timestamp}): \n\n{message['content']}"
+        
+        # Handle input
+        if prompt:
+            # Get current timestamp
+            current_time = datetime.now().strftime("%H:%M:%S")
+            
+            # Add user message to chat history with timestamp
+            st.session_state.messages.append({
+                "role": "user",
+                "content": prompt,
+                "timestamp": current_time
+            })
+            
+            # Add assistant response
+            assistant_response = """Here's how I can help you with government forms:
+            
+            1. Form Selection: I can help you choose the right form
+            2. Field Guidance: Explain what information goes where
+            3. Document Requirements: List what you need to prepare
+            4. Eligibility Check: Verify if you qualify
+            5. Submission Help: Guide you through the process
+
+            What specific assistance do you need?"""
+            
+            # Add assistant response to chat history with timestamp
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": assistant_response,
+                "timestamp": current_time
+            })
+            
+            # Rerun to update the chat history
+            st.rerun()
+        
+        # Handle clear button
+        if clear:
+            st.session_state.messages = []
+            st.rerun()
+
+@st.fragment(run_every=10)
+def sidebar_content_fragment_SystemDialog_component():
+    """System Dialog component in sidebar"""
+    st.header("🔔 System Messages")
+    with st.container(border=True, height=300):        
+        # Display system messages
+        if 'system_messages' in st.session_state and st.session_state.system_messages:
+            for message in st.session_state.system_messages[::-1]:
+                st.text(message)
+        else:
+            st.text("No system messages yet")
+
+
+# -- Supabase SQL code to create tables for the Public Dashboard AND Sample Data
+
+# -- Table for Company Data (Master DB, Products, Partnerships, Investors)
+# CREATE TABLE IF NOT EXISTS company_data (
+#     company_name TEXT PRIMARY KEY,
+#     product_name TEXT,
+#     company_url TEXT,
+#     product_type TEXT,
+#     scientific_domain TEXT,
+#     accessibility TEXT,
+#     description_abstract TEXT,
+#     publications_url TEXT,
+#     business_models TEXT,
+#     data_generation_types TEXT,
+#     pipeline_stages TEXT,
+#     organization_type TEXT,
+#     hq_locations TEXT,
+#     relevant_segments TEXT,
+#     bootstrapped_low BOOLEAN,
+#     modest BOOLEAN,
+#     mega BOOLEAN,
+#     significant BOOLEAN,
+#     bootstrapped_stage BOOLEAN,
+#     pre_seed BOOLEAN,
+#     seed BOOLEAN,
+#     series_a BOOLEAN,
+#     series_b BOOLEAN,
+#     series_c BOOLEAN,
+#     series_d BOOLEAN,
+#     series_e BOOLEAN,
+#     series_f BOOLEAN,
+#     public BOOLEAN,
+#     donations_grant BOOLEAN,
+#     acquired BOOLEAN,
+#     subsidiary BOOLEAN,
+#     year_founded INTEGER,
+#     key_person_name TEXT,
+#     key_person_role TEXT,
+#     linkedin_url TEXT,
+#     twitter_url TEXT,
+#     biography TEXT,
+#     investor_name TEXT,
+#     investor_type TEXT,
+#     investment_stage TEXT,
+#     investor_location TEXT,
+#     investor_website TEXT,
+#     investor_description TEXT,
+#     portfolio_companies TEXT,
+#     investor_linkedin TEXT,
+#     investor_twitter TEXT,
+#     focus_areas TEXT,
+#     partnership_company TEXT,
+#     partnership_entities TEXT,
+#     partnership_url TEXT,
+#     url_title TEXT,
+#     partnership_descriptions TEXT,
+#     year_partnership_happened INTEGER,
+#     deal_size TEXT,
+#     royalties_equities TEXT,
+#     female_co_founder BOOLEAN
+# );
+
+# -- Sample Data for company_data
+# INSERT INTO company_data (
+#     company_name, product_name, company_url, product_type, scientific_domain, accessibility, description_abstract, publications_url,
+#     business_models, data_generation_types, pipeline_stages, organization_type, hq_locations, relevant_segments,
+#     bootstrapped_low, modest, mega, significant, bootstrapped_stage, pre_seed, seed, series_a, series_b, series_c, series_d, series_e, series_f, public, donations_grant, acquired, subsidiary,
+#     year_founded, key_person_name, key_person_role, linkedin_url, twitter_url, biography, investor_name, investor_type, investment_stage, investor_location, investor_website, investor_description, portfolio_companies, investor_linkedin, investor_twitter, focus_areas,
+#     partnership_company, partnership_entities, partnership_url, url_title, partnership_descriptions, year_partnership_happened, deal_size, royalties_equities, female_co_founder
+# ) VALUES
+# ('Company A', 'Innovative Drug X', 'https://notion.companyA.com', 'Pharmaceutical', 'Biochemistry', 'Licensed', 'A novel drug targeting cancer', 'https://pubs.companyA.com/drugX',
+#  'Licensing; Service Fees', 'In-house assays; Automated screening', 'Preclinical; Phase I', 'Biotech Startup', 'Boston, MA', 'Molecular Design; AI Scientists',
+#  true, false, false, false, false, true, false, true, false, false, false, false, false, false, false, false, false,
+#  2018, 'Dr. Jane Smith', 'CEO', 'https://linkedin.com/in/janesmith', 'https://twitter.com/janesmith', 'Experienced biotech leader', 'Venture Capital Firm 1', 'Venture Capital', 'Series A', 'New York, NY', 'https://vcfirm1.com', 'Focused on biotech startups', 'Company A; Company C', 'https://linkedin.com/company/vcfirm1', null, 'Biotech; Healthcare',
+#  'Partner X', 'Partner X; Company A', 'https://partnerx.com/announcement', 'Strategic Alliance', 'Alliance for R&D', 2022, '$50M', 'Equity', true),
+# ('Company B', 'AI-Powered Platform Y', 'https://notion.companyB.com', 'Software as a Service', 'Computer Science', 'Open Source', 'An AI platform for data analytics', null,
+#  'Subscription', 'Crowdsourced data', 'Beta; Full Release', 'Tech Startup', 'San Francisco, CA', 'Automation; Data Analytics',
+#  false, true, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false,
+#  2020, 'John Doe', 'CTO', 'https://linkedin.com/in/johndoe', null, 'Tech visionary and innovator', 'Angel Investor 1', 'Angel', 'Seed', 'Los Angeles, CA', 'https://angelinvestor1.com', 'Early-stage tech investments', 'Company B', 'https://linkedin.com/company/angel1', 'https://twitter.com/angel1', 'Tech; AI',
+#  'Partner Y', 'Partner Y; Company B', 'https://partnery.com/press', 'Co-development Agreement', 'Joint product development', 2023, '$30M', 'Royalties', false);
+
+# -- Table for Daily Youtube Transcription Report
+# CREATE TABLE IF NOT EXISTS youtube_transcription_report (
+#     id SERIAL PRIMARY KEY,
+#     video_title TEXT,
+#     transcript TEXT,
+#     published_date DATE
+# );
+
+# -- Sample Data for youtube_transcription_report
+# INSERT INTO youtube_transcription_report (video_title, transcript, published_date) VALUES
+# ('Video 1', 'Transcript snippet 1...', '2023-01-01'),
+# ('Video 2', 'Transcript snippet 2...', '2023-01-02');
+
+# -- Table for News
+# CREATE TABLE IF NOT EXISTS news_data (
+#     id SERIAL PRIMARY KEY,
+#     headline TEXT,
+#     source TEXT,
+#     published_date DATE
+# );
+
+# -- Sample Data for news_data
+# INSERT INTO news_data (headline, source, published_date) VALUES
+# ('News Headline 1', 'Source 1', '2023-01-03'),
+# ('News Headline 2', 'Source 2', '2023-01-04');
+
+# -- Table for Public Discussion Forums
+# CREATE TABLE IF NOT EXISTS public_discussion_forums (
+#     id SERIAL PRIMARY KEY,
+#     forum_topic TEXT,
+#     url TEXT,
+#     last_post_date DATE
+# );
+
+# -- Sample Data for public_discussion_forums
+# INSERT INTO public_discussion_forums (forum_topic, url, last_post_date) VALUES
+# ('Topic 1', 'http://forum1.example.com', '2023-01-05'),
+# ('Topic 2', 'http://forum2.example.com', '2023-01-06');
+
+@st.fragment(run_every=10)
+def main_content_fragment_st_data_editor_public_dashboard():
+    st.subheader("📊 Public Dashboard")
+    st.write("Overview of public financial data and market trends.")
+
+    @st.cache_data(ttl=600)
+    def fetch_company_data():
+        try:
+            response = supabase_client.table("company_data").select("*").execute()
+            return pd.DataFrame(response.data)
+        except Exception as e:
+            st.error(f"Error fetching company data: {e}")
+            return pd.DataFrame()
+
+    @st.cache_data(ttl=600)
+    def fetch_youtube_data():
+        try:
+            response = supabase_client.table("youtube_transcription_report").select("*").execute()
+            return pd.DataFrame(response.data)
+        except Exception as e:
+            st.error(f"Error fetching Youtube report data: {e}")
+            return pd.DataFrame()
+
+    @st.cache_data(ttl=600)
+    def fetch_news_data():
+        try:
+            response = supabase_client.table("news_data").select("*").execute()
+            return pd.DataFrame(response.data)
+        except Exception as e:
+            st.error(f"Error fetching news data: {e}")
+            return pd.DataFrame()
+
+    @st.cache_data(ttl=600)
+    def fetch_forums_data():
+        try:
+            response = supabase_client.table("public_discussion_forums").select("*").execute()
+            return pd.DataFrame(response.data)
+        except Exception as e:
+            st.error(f"Error fetching forum data: {e}")
+            return pd.DataFrame()
+
+    # --- Fetch Data from Supabase ---
+    try:
+        # Fetch Company Data
+        df_enriched = fetch_company_data()
+
+        # Fetch Youtube Report Data
+        df_youtube = fetch_youtube_data()
+
+        # Fetch News Data
+        df_news = fetch_news_data()
+
+        # Fetch Forum Data
+        df_forums = fetch_forums_data()
+
+    except Exception as e:
+        st.error(f"An error occurred while fetching data from Supabase: {e}")
+        df_enriched = pd.DataFrame()
+        df_youtube = pd.DataFrame()
+        df_news = pd.DataFrame()
+        df_forums = pd.DataFrame()
+
+
+    # --- Outer Tabs for High-Level Content ---
+    outer_tabs = st.tabs([
+        "📊 Company Data",
+        "📊 Daily Youtube Transcription Report",
+        "📰 News",
+        "🗣️ Public Discussion Forums",
+        "➕ Add New Data"  # New tab for adding data
+    ])
+
+    # Outer Tab 1: Company Data
+    with outer_tabs[0]:
+        # Inner Tabs for Company Data Details
+        inner_tabs = st.tabs(["📁 Master DB", "📈 Products", "🤝 Partnerships", "💰 Investors"])
+
+        # Master DB: Display the full enriched data (read-only, drop "Select")
+        with inner_tabs[0]:
+            st.subheader("Master DB")
+            if not df_enriched.empty:
+                df_master = df_enriched # No need to drop "Select" as it's not in Supabase table
+                st.dataframe(df_master, use_container_width=True)
+            else:
+                st.info("No company data available.")
+
+        # Products: Display product & related research fields with light-blue styling.
+        with inner_tabs[1]:
+            st.subheader("Products")
+            if not df_enriched.empty:
+                df_products = df_enriched[[
+                    "company_name", # Use database column names
+                    "product_name",
+                    "company_url",
+                    "product_type",
+                    "scientific_domain",
+                    "accessibility",
+                    "description_abstract",
+                    "publications_url",
+                    "business_models",
+                    "data_generation_types",
+                    "pipeline_stages",
+                    "organization_type",
+                    "hq_locations",
+                    "relevant_segments"
+                ]]
+                styled_products = df_products.style.set_properties(**{'background-color': '#D0E1F9'})
+                st.dataframe(styled_products, use_container_width=True)
+            else:
+                st.info("No company data available to display products.")
+
+        # Partnerships: Display partnership details with light-green styling.
+        with inner_tabs[2]:
+            st.subheader("Partnerships")
+            if not df_enriched.empty:
+                df_partnerships = df_enriched[[
+                    "company_name", # Use database column names
+                    "partnership_company",
+                    "partnership_entities",
+                    "partnership_url",
+                    "url_title",
+                    "partnership_descriptions",
+                    "year_partnership_happened",
+                    "deal_size",
+                    "royalties_equities"
+                ]]
+                styled_partnerships = df_partnerships.style.set_properties(**{'background-color': '#D0F9D8'})
+                st.dataframe(styled_partnerships, use_container_width=True)
+            else:
+                st.info("No company data available to display partnerships.")
+
+        # Investors: Display investor details with light-yellow styling.
+        with inner_tabs[3]:
+            st.subheader("Investors")
+            if not df_enriched.empty:
+                df_investors = df_enriched[[
+                    "company_name", # Use database column names
+                    "investor_name",
+                    "investor_type",
+                    "investment_stage",
+                    "investor_location",
+                    "investor_website",
+                    "investor_description",
+                    "portfolio_companies",
+                    "investor_linkedin",
+                    "investor_twitter",
+                    "focus_areas"
+                ]]
+                styled_investors = df_investors.style.set_properties(**{'background-color': '#FFF7CC'})
+                st.dataframe(styled_investors, use_container_width=True)
+            else:
+                st.info("No company data available to display investors.")
+
+        # --- Editable Filtered Table Section ---
+        st.divider()
+        st.subheader("Choose Columns to Display & Apply Filter") 
+        if not df_enriched.empty:
+            available_columns = df_enriched.columns.tolist()
+            
+            with st.expander("Choose Columns to Display"):
+                selected_columns = st.multiselect(
+                    "Choose columns to display:",
+                    options=available_columns,
+                    default=available_columns,
+                    key="columns_selector"
+                )
+                
+            with st.expander("Add Filters"):
+                # Initialize session state for filters if not exists
+                if 'filters' not in st.session_state:
+                    st.session_state.filters = []
+                    # Configure new filter and display current filters side by side
+                left_col, right_col = st.columns(2)
+
+                with left_col:
+                    st.subheader("Configure Filter")
+                    new_filter_column = st.selectbox("Select Column", options=available_columns)
+                    new_filter_operator = st.selectbox("Choose Comparison Method", 
+                        options=['Equals', 'Not Equal', 'Greater Than', 'Less Than', 'Greater Than or Equal', 'Less Than or Equal', 'Contains'])
+                    
+                    # Map friendly names to operators
+                    operator_map = {
+                        'Equals': '==',
+                        'Not Equal': '!=',
+                        'Greater Than': '>',
+                        'Less Than': '<',
+                        'Greater Than or Equal': '>=',
+                        'Less Than or Equal': '<=',
+                        'Contains': 'contains'
+                    }
+                    operator_display = {v: k for k, v in operator_map.items()}
+                    
+                    unique_values = df_enriched[new_filter_column].dropna().unique().tolist()
+                    if len(unique_values) <= 10:
+                        new_filter_value = st.selectbox("Select Value", options=unique_values)
+                    else:
+                        new_filter_value = st.text_input("Enter Value")
+                    
+                    if st.button("Add This Filter"):
+                        if new_filter_value:
+                            st.session_state.filters.append({
+                                'column': new_filter_column,
+                                'operator': operator_map[new_filter_operator],
+                                'value': new_filter_value
+                            })
+                            st.success("Filter added!")
+                            st.rerun()
+                        else:
+                            st.warning("Please enter a value for the filter")
+
+                with right_col:
+                    st.subheader("Current Filters")
+                    if st.session_state.filters:
+                        for i, filter in enumerate(st.session_state.filters):
+                            cols = st.columns([5, 1])
+                            cols[0].write(f"{filter['column']} {operator_display[filter['operator']]} {filter['value']}")
+                            if cols[1].button("🗑️", key=f"remove_filter_{i}"):
+                                st.session_state.filters.pop(i)
+                                st.rerun()
+                        
+                        if st.button("Clear All Filters"):
+                            st.session_state.filters = []
+                            st.rerun()
+                    else:
+                        st.info("No filters applied")
+
+                # Apply filters to dataframe
+                filtered_df = df_enriched[selected_columns].copy()
+                for filter in st.session_state.filters:
+                    try:
+                        if filter['operator'] == '==':
+                            filtered_df = filtered_df[filtered_df[filter['column']].astype(str) == str(filter['value'])]
+                        elif filter['operator'] == '!=':
+                            filtered_df = filtered_df[filtered_df[filter['column']].astype(str) != str(filter['value'])]
+                        elif filter['operator'] == '>':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') > float(filter['value'])]
+                        elif filter['operator'] == '<':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') < float(filter['value'])]
+                        elif filter['operator'] == '>=':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') >= float(filter['value'])]
+                        elif filter['operator'] == '<=':
+                            filtered_df = filtered_df[pd.to_numeric(filtered_df[filter['column']], errors='coerce') <= float(filter['value'])]
+                        elif filter['operator'] == 'contains':
+                            filtered_df = filtered_df[filtered_df[filter['column']].astype(str).str.contains(str(filter['value']), case=False, na=False)]
+                    except Exception as e:
+                        st.warning(f"Error applying filter: {e}")
+            
+            # Display filtered dataframe
+            st.subheader(f"Filtered Data ({len(filtered_df)} rows)")
+            st.data_editor(filtered_df, use_container_width=True)
+        else:
+            st.info("No company data available to filter.")
+    # Outer Tab 2: Daily Youtube Transcription Report
+    with outer_tabs[1]:
+        st.subheader("Daily Youtube Transcription Report")
+        if not df_youtube.empty:
+            st.dataframe(df_youtube, use_container_width=True)
+        else:
+            st.info("No Youtube transcription reports available.")
+
+    # Outer Tab 3: News
+    with outer_tabs[2]:
+        st.subheader("News")
+        if not df_news.empty:
+            st.dataframe(df_news, use_container_width=True)
+        else:
+            st.info("No news data available.")
+
+    # Outer Tab 4: Public Discussion Forums
+    with outer_tabs[3]:
+        st.subheader("Public Discussion Forums")
+        if not df_forums.empty:
+            st.dataframe(df_forums, use_container_width=True)
+        else:
+            st.info("No public discussion forum data available.")
+
+    # New Tab: Add Data
+    with outer_tabs[4]:
+        st.subheader("Add New Data")
+        data_type = st.selectbox(
+            "Select Data Type",
+            ["Company Data", "Youtube Report", "News", "Forum Discussion"]
+        )
+
+        if data_type == "Company Data":
+            with st.form("add_company_data"):
+                st.subheader("Add Company Data")
+                company_name = st.text_input("Company Name*")
+                product_name = st.text_input("Product Name")
+                company_url = st.text_input("Company URL")
+                product_type = st.text_input("Product Type")
+                scientific_domain = st.text_input("Scientific Domain")
+                description_abstract = st.text_area("Description/Abstract")
+                
+                submitted = st.form_submit_button("Submit Company Data")
+                if submitted and company_name:  # Ensure company name is provided
+                    try:
+                        data = {
+                            "company_name": company_name,
+                            "product_name": product_name,
+                            "company_url": company_url,
+                            "product_type": product_type,
+                            "scientific_domain": scientific_domain,
+                            "description_abstract": description_abstract
+                        }
+                        response = supabase_client.table("company_data").insert(data).execute()
+                        st.success("Company data added successfully!")
+                        st.cache_data.clear()  # Clear cache to refresh data
+                    except Exception as e:
+                        st.error(f"Error adding company data: {e}")
+
+        elif data_type == "Youtube Report":
+            with st.form("add_youtube_data"):
+                st.subheader("Add Youtube Report")
+                video_title = st.text_input("Video Title*")
+                channel_name = st.text_input("Channel Name*")
+                transcript_text = st.text_area("Transcript Text")
+                video_url = st.text_input("Video URL")
+                
+                submitted = st.form_submit_button("Submit Youtube Report")
+                if submitted and video_title and channel_name:
+                    try:
+                        data = {
+                            "video_title": video_title,
+                            "channel_name": channel_name,
+                            "transcript_text": transcript_text,
+                            "video_url": video_url
+                        }
+                        response = supabase_client.table("youtube_transcription_report").insert(data).execute()
+                        st.success("Youtube report added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error adding Youtube report: {e}")
+
+        elif data_type == "News":
+            with st.form("add_news_data"):
+                st.subheader("Add News")
+                title = st.text_input("News Title*")
+                source = st.text_input("Source*")
+                content = st.text_area("Content")
+                url = st.text_input("URL")
+                
+                submitted = st.form_submit_button("Submit News")
+                if submitted and title and source:
+                    try:
+                        data = {
+                            "title": title,
+                            "source": source,
+                            "content": content,
+                            "url": url
+                        }
+                        response = supabase_client.table("news_data").insert(data).execute()
+                        st.success("News added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error adding news: {e}")
+
+        elif data_type == "Forum Discussion":
+            with st.form("add_forum_data"):
+                st.subheader("Add Forum Discussion")
+                topic = st.text_input("Topic*")
+                forum_name = st.text_input("Forum Name*")
+                discussion_content = st.text_area("Discussion Content")
+                url = st.text_input("URL")
+                
+                submitted = st.form_submit_button("Submit Forum Discussion")
+                if submitted and topic and forum_name:
+                    try:
+                        data = {
+                            "topic": topic,
+                            "forum_name": forum_name,
+                            "discussion_content": discussion_content,
+                            "url": url
+                        }
+                        response = supabase_client.table("public_discussion_forums").insert(data).execute()
+                        st.success("Forum discussion added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error adding forum discussion: {e}")
+
+def display_architecture_diagram():
+    # Define the Mermaid chart
+    mermaid_code = """
+    flowchart TB
+        subgraph "User Interface"
+            UI[Streamlit Web App]
+            Viz[Data Visualization Layer]
+            Forms[Interactive Forms]
+        end
+        
+        subgraph "Application Layer"
+            AppLogic[Business Logic]
+            Auth[Authentication]
+            StateMan[State Management]
+        end
+        
+        subgraph "Data Processing"
+            ETL[ETL Pipelines]
+            NLP[NLP Processing]
+            VecEmb[Vector Embeddings]
+            EntExt[Entity Extraction]
+        end
+        
+        subgraph "Storage Layer"
+            Supabase[(Supabase SQL DB)]
+            S3[(AWS S3 Storage)]
+            Qdrant[(Qdrant Vector DB)]
+        end
+        
+        subgraph "Data Sources"
+            WebScrap[Web Scrapers]
+            YouTube[YouTube API]
+            UserFiles[User Uploads]
+            APIs[External APIs]
+        end
+        
+        WebScrap --> ETL
+        YouTube --> ETL
+        UserFiles --> ETL
+        APIs --> ETL
+        
+        ETL --> NLP
+        NLP --> VecEmb
+        NLP --> EntExt
+        
+        VecEmb --> Qdrant
+        EntExt --> Supabase
+        ETL --> S3
+        
+        Supabase --> AppLogic
+        S3 --> AppLogic
+        Qdrant --> AppLogic
+        
+        AppLogic --> Auth
+        AppLogic --> StateMan
+        
+        Auth --> UI
+        StateMan --> UI
+        AppLogic --> Viz
+        AppLogic --> Forms
+        
+        classDef primary fill:#f9f,stroke:#333,stroke-width:2px
+        classDef storage fill:#bbf,stroke:#33f,stroke-width:2px
+        classDef process fill:#fbf,stroke:#f33,stroke-width:1px
+        
+        class Supabase,S3,Qdrant storage
+        class ETL,NLP,VecEmb,EntExt process
+        class UI,Viz,Forms primary
+    """
+    
+    # Render the Mermaid chart
+    stmd.st_mermaid(mermaid_code)
+    
+    # Optional: Add explanatory text below the diagram
+    st.markdown("""
+    ### Architecture Components
+    
+    **User Interface Layer**: Built with Streamlit for interactive components
+    
+    **Application Layer**: Handles business logic and state management
+    
+    **Data Processing Layer**: Implements ETL, NLP, and vector embeddings
+    
+    **Storage Layer**: Combines Supabase SQL, AWS S3, and Qdrant Vector DB
+    
+    **Data Sources Layer**: Integrates multiple data sources
+    """)
+
+
+def main():
+    st.set_page_config(
+        page_title="🌱 ParselyFi by Homen Shum",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+
+    with st.sidebar:
+        st.title("🌱 ParselyFi")
+        
+        # Main app description - keep this brief
+        st.markdown("💡 **Financial Intelligence Platform** 📊")
+        st.markdown("Search & analyze data from Crunchbase, Pitchbook, LinkedIn, News, YouTube and more - all in one place.")
+        
+        # First combined expander: About the App (Technical + How it Works)
+        with st.expander("ℹ️ About the App"):
+            st.markdown("### ParselyFi Technical Architecture")
+            
+            # Display the architecture diagram at the top
+            display_architecture_diagram()
+            
+            # Core tech stack overview - more condensed
+            st.markdown("#### Core Technology Stack")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Frontend:**")
+                st.markdown("""
+                - Streamlit web interface
+                - React components
+                - pandas & Plotly
+                """)
+                
+                st.markdown("**Data Processing:**")
+                st.markdown("""
+                - ETL pipelines
+                - NLP processing
+                - Vector embeddings
+                - Entity extraction
+                """)
+            
+            with col2:
+                st.markdown("**Backend:**")
+                st.markdown("""
+                - Supabase SQL DB
+                - Qdrant Vector DB
+                - AWS S3 Storage
+                - Lambda functions
+                """)
+            
+                st.markdown("**Data Flow:**")
+                st.markdown("""
+                1. Acquisition
+                2. Processing
+                3. Storage
+                4. Presentation
+                """)
+        
+        # Second combined expander: About the Creator (Tech Recruiters + About Creator)
+        with st.expander("👨‍💻 About the Creator"):
+            st.markdown("**Homen Shum** is a data-driven professional with expertise in **AI/ML, Data Analytics, and Workflow Automation.**")
+            
+            # Key technical achievements - highlight for recruiters
+            st.markdown("#### Key Technical Achievements")
+            st.markdown("""
+            - **Full-Stack Development**: End-to-end from database design to UI/UX
+            - **Data Engineering**: Normalized schemas, ETL processes, vector search
+            - **AI/ML Integration**: Fine-tuned LLMs, NER models, RAG systems
+            - **Cloud Architecture**: Serverless functions, multi-tenant security
+            - **Modern DevOps**: CI/CD pipeline, IaC, monitoring
+            """)
+            
+            # Personal info
+            st.markdown("#### Experience & Education")
+            st.markdown("""
+            - **Technical Co-Founder**: AI-powered solutions
+            - **JPMC Startup Banking**: GenAI applications & automation
+            - **AWS DeepRacer Global Finalist**: AI/ML expertise
+            - **UC Santa Barbara Graduate**: B.A. Global Studies
+            - **Certifications**: Data Engineering (In Progress), Web Development
+            """)
+            
+            # Links and contact
+            st.markdown("#### Connect")
+            st.markdown("[Personal Website](https://homenshum.com/) | [LinkedIn](https://linkedin.com/in/homen-shum)")
+            
+            # Resume preview - keep if important, but could be removed for space
+            st.markdown("---")
+            image_path = "images/Homen Shum - Resume - March 2025.png"
+            if os.path.exists(image_path):
+                st.image(image_path, caption="Resume Preview", use_container_width=True)
+            else:
+                st.info("Resume preview not available")
+        
+        st.divider()
+        
+        sidebar_content_fragment_st_file_manager_component()
+        
+        st.divider()
+        
+        sidebar_content_fragment_PydanticAIAgentChat_component()
+        
+        st.divider()
+        
+        sidebar_content_fragment_SystemDialog_component()
+        
+    st.header("Feature Selection")
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📊 Public Dashboard", 
+        "📁 File Works", 
+        "🔍 Company Search & Analysis", 
+        "📰 News & Youtube", 
+        "🎙️ Transcription & Summaries"
+    ])
+    
+    with tab1:
+        with st.container(border=True):
+            main_content_fragment_st_data_editor_public_dashboard()
+    
+    with tab2:
+        st.subheader("📁 File Works")
+        
+        if 'selected_files' not in st.session_state:
+            st.session_state['selected_files'] = []
+        
+        for idx, file_path in enumerate(st.session_state['selected_files']):
+            with st.expander(f"📄 File: {os.path.basename(file_path)}"):
+                if file_path.endswith(".pdf"):
+                    with open(file_path, 'rb') as f:
+                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="500px" type="application/pdf"></iframe>'
+                    st.markdown(pdf_display, unsafe_allow_html=True)
+                elif file_path.endswith((".csv", ".tsv", ".xlsx", ".xls")):
+                    df = pd.read_csv(file_path) if file_path.endswith((".csv", ".tsv")) else pd.read_excel(file_path)
+                    st.dataframe(df)
+                elif file_path.endswith((".doc", ".docx", ".txt", ".html", ".md", ".rtf")):
+                    with open(file_path, "r") as f:
+                        st.markdown(f.read())
+                else:
+                    st.write("File preview not available for this type.")
+    
+    with tab3:
+        st.subheader("🔍 Company Search & Analysis")
+        company = st.text_input("Enter company name:")
+        if company:
+            st.write(f"Displaying analysis for {company}")
+    
+    with tab4:
+        st.subheader("📰 News & Youtube")
+        st.subheader("📢 News Alerts")
+        st.write("Latest financial news and alerts will appear here.")
+        st.subheader("🎥 Youtube Daily Reports")
+        st.write("Daily financial reports from Youtube will be displayed here.")
+    
+    with tab5:
+        st.subheader("🎙️ Transcription & Summaries")
+        uploaded_file = st.file_uploader("Upload an audio file for transcription", type=['mp3', 'wav'])
+        if uploaded_file is not None:
+            st.write("Transcription will appear here.")
+            st.write("Summary of the transcription will appear here.")
+                    
+                    
+if __name__ == '__main__':
+    main()

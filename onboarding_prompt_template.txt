@@ -1,0 +1,444 @@
+---
+
+**Ultimate Generalized Social Media Profile Analysis Prompt (Platform-Specific Schemas & MANDATORY UI Element Extraction)**
+
+**Objective:** To conduct an exhaustive, multi-faceted analysis of the online presence for `[Target Individual/Profile Name]` based *exclusively* on the provided detailed data extractions from the following social media platforms: `[List of Platforms Analyzed, e.g., LinkedIn, Instagram, Twitter/X, Facebook, TikTok, Reddit, etc.]`. This analysis **mandates** the inclusion of data extracted directly from specific user interface elements (Inbox/DM Preview, Network/Follower Tabs, Recommendations) and aims to generate an extremely detailed report. The report will synthesize their projected persona(s), skills/expertise/interests, engagement patterns, cross-platform consistency, potential professional profile (if applicable), relevant market/trend insights (if applicable), a detailed enumeration and analysis of their individual connections (where provided), **and a critical analysis derived from the mandatory capture of suggested/recommended entities presented by the platform's interface.** The output **must** conform to the platform-specific JSON schema structure defined below.
+
+**Critical Input Data Requirements:**
+*   **The following data points derived directly from the user interface during observation are MANDATORY inputs for this analysis where the corresponding UI elements are present and visible on a given platform. Failure to provide this data if visible will result in an incomplete analysis for that platform:**
+    *   **A. Inbox / Direct Message Sidebar / Messaging Preview Data:** Detailed list of individuals/conversations visible in the direct messaging inbox preview (or equivalent interface element). Capture **full names**, visible message snippets, timestamps (if shown), status indicators (e.g., unread, sponsored), and any other displayed details precisely as they appear.
+    *   **B. My Network / Connections / Followers Tab Visibility Data:** Detailed list of individuals, companies, or other entities prominently displayed within the dedicated "My Network," "Connections," "Followers," "Following," or equivalent sections (beyond just simple counts). Capture **full names/titles**, brief context provided by the platform (e.g., "shared connection," "attended same event," "recent activity," "follows you"), and any associated details shown.
+    *   **C. Platform Suggestions & Recommendations Data:** Comprehensive capture of *all* explicitly labeled "Recommended," "Suggested," "People Also Viewed," "People You May Know," "Who to Follow," "Discover," or similarly identified entities presented by the platform. This includes suggestions shown on profile pages, feeds, sidebars, dedicated recommendation areas, or within network tabs. Capture entity type (person, page, company, group, event, topic, hashtag, sound, etc.), **full name/title**, headline/description/snippet, URL (if possible), and any stated reason for the suggestion (e.g., "From your school," "Because you follow X," "Popular"). Note the location context where the suggestion appeared.
+*   **In addition to the mandatory UI elements above, the input data MUST also include, where available on the specific platform:**
+    *   Profile fundamentals (username, name, bio, location, links, profile picture/banner descriptions, verification status, etc.)
+    *   Skills, interests, tagged topics, hashtags used in bio
+    *   Detailed experience, education, projects sections (especially for professional platforms)
+    *   Activity logs (posting frequency, content types - posts, tweets, reels, stories, videos, comments, shares, reposts/retweets - specific post examples)
+    *   Engagement data (likes/reactions, comments given/received, shares/retweets, saves, views)
+    *   Network information (follower/following counts and overall characteristics, group/community/subreddit memberships)
+    *   A detailed list of individual connections/followers/following (name, URL, headline, etc.) for the `detailedConnectionsList` field (if obtainable and ethically permissible).
+    *   Observed content consumption (feed content, explore/discovery/For You page themes and examples)
+    *   Usage of platform-specific features (Stories highlights, Reels tabs, Twitter Spaces, Lists, Fleets (archived), TikTok Duets/Stitches, Reddit AMAs, etc.)
+    *   Privacy setting indicators (e.g., public, private, protected tweets)
+
+**Important Considerations & Disclaimer:**
+*   **Data Acquisition:** The responsibility for acquiring this data, including the mandatory UI element extractions and connection lists, lies entirely with the entity providing the input. This prompt assumes the data *has been* accurately and ethically obtained according to platform Terms of Service and privacy regulations. Automated scraping is often prohibited and risky.
+*   **Privacy & Ethics:** Ensure you have the legitimate right and ethical justification to possess and process all provided data, especially detailed connection lists and UI captures.
+*   **Scalability:** Analyzing large volumes of connection or recommendation data can be intensive.
+
+**Instructions:**
+Generate a comprehensive analytical report on `[Target Individual/Profile Name]`, leveraging *every specific detail* available in the provided data for *each* platform analyzed. Connect information across platforms and data types wherever possible. **Crucially, the analysis MUST heavily incorporate and explicitly reference the data extracted from the mandatory UI elements (Inbox/DM Preview, Network/Follower Tab Visibility, Platform Suggestions/Recommendations) specific to each platform.** These elements are considered primary signals for understanding network context and algorithmic perception. Structure the report according to the **platform-specific JSON schema structure** defined below, ensuring all requested fields within the relevant platform schema are populated with maximum detail derived *only* from the input data.
+
+**The analysis within the report structure MUST cover (synthesized across relevant platform sections):**
+
+**I. Platform-Specific Deep Dives (Using the dedicated schema for EACH platform analyzed):**
+    *   Analyze all fields within the specific JSON schema defined for that platform (e.g., use the `linkedInProfileAnalysis` schema for LinkedIn data, `instagramProfileAnalysis` for Instagram data, etc.).
+    *   Ensure all mandatory UI element data (`inboxSidebarPreview`, `myNetworkTabVisibility`, `platformSuggestions` and their associated analyses) are thoroughly populated and analyzed within the context of that platform.
+
+**II. Cross-Platform Synthesis & Holistic Analysis:**
+    *   **A. Consistency versus Variation:** Compare profile elements, content, tone, persona *across all analyzed platforms*.
+    *   **B. Content Overlap & Strategy:** Identify cross-posting and infer strategy.
+    *   **C. Synthesized Expertise & Interests:** Create unified list of skills/interests.
+    *   **D. Overall Online Persona Narrative:** Construct overarching impression.
+    *   **E. Professional Evaluation (Conditional):** Assess professional profile using data primarily from platforms like LinkedIn, informed by network/recommendation data.
+    *   **F. Market/Trend Insights (Conditional):** Identify key tech/topics/trends informed by activity, consumption, network, and recommendations across platforms.
+    *   **G. Inferred Algorithmic Perception:** Based on *all* data, **with strong emphasis on the mandatory UI element extractions specific to each platform**, hypothesize how *each* platform's algorithm categorizes the user. Explicitly link recommendations to the hypothesis for each platform.
+    *   **H. Cross-Platform Network Analysis:** Identify overlapping connections/recommendations. Compare network/recommendation composition across platforms.
+
+**III. Final Comprehensive Summary:**
+    *   Provide a concise (one-to-two paragraphs) high-level summary consolidating the most critical findings, **specifically highlighting the insights derived from the mandatory UI element data across platforms**, the interplay between platforms, and the overall synthesized impression.
+
+---
+
+**JSON Schema for Output Report (with Dedicated Platform Schemas & MANDATORY UI Element Extraction)**
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Comprehensive Social Media Profile Analysis Report (Platform-Specific Schemas & MANDATORY UI Element Extraction)",
+  "description": "Detailed analysis of an individual's online presence, using dedicated schemas for each platform and mandating inclusion/analysis of specific UI element data (Inbox/DM Preview, Network Tabs, Recommendations) and individual connections.",
+  "type": "object",
+  "properties": {
+    "targetIndividual": {
+      "description": "Name or identifier of the individual being analyzed.",
+      "type": "string"
+    },
+    "analyzedPlatforms": {
+      "description": "List of social media platforms included in this analysis (e.g., 'LinkedIn', 'Instagram', 'Twitter/X', 'Facebook', 'TikTok', 'Reddit').",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["LinkedIn", "Instagram", "Twitter/X", "Facebook", "TikTok", "Reddit", "Other"]
+      }
+    },
+    "platformSpecificAnalysis": {
+      "description": "Detailed analysis for each individual platform, using the specific schema defined for that platform type.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/platformSchemas/linkedInProfileAnalysis" },
+          { "$ref": "#/definitions/platformSchemas/instagramProfileAnalysis" },
+          { "$ref": "#/definitions/platformSchemas/twitterProfileAnalysis" },
+          { "$ref": "#/definitions/platformSchemas/facebookProfileAnalysis" },
+          { "$ref": "#/definitions/platformSchemas/tiktokProfileAnalysis" },
+          { "$ref": "#/definitions/platformSchemas/redditProfileAnalysis" },
+          { "$ref": "#/definitions/platformSchemas/otherPlatformAnalysis" }
+        ]
+      }
+    },
+    "crossPlatformSynthesis": {
+       "description": "Holistic analysis combining insights from all platforms, heavily weighting mandatory UI element data.",
+       "type": "object",
+       "properties": {
+         "consistencyVsVariation": {
+           "description": "Comparison of profile elements, content, and persona across platforms.",
+           "type": "object",
+           "properties": {
+             "profileElementConsistency": {"description": "Analysis of consistency in username, picture, bio, etc.", "type": "string"},
+             "contentTonePersonaConsistency": {"description": "Analysis of consistency in content themes, tone, and projected persona.", "type": "string"},
+             "notableDifferences": {"description": "Description of significant differences observed and potential reasons.", "type": "string"}
+           },
+           "required": ["profileElementConsistency", "contentTonePersonaConsistency", "notableDifferences"]
+         },
+         "contentOverlapStrategy": {"description": "Analysis of cross-posting behavior and inferred content strategy.", "type": "string"},
+         "synthesizedExpertiseInterests": {
+           "description": "Unified list of core skills and interests derived from all platforms.",
+           "type": "object",
+           "properties": {
+             "coreProfessionalSkills": {"description": "Consolidated list of key professional skills and expertise.", "type": "array", "items": {"type": "string"}},
+             "corePersonalInterests": {"description": "Consolidated list of key personal interests, hobbies, and non-professional knowledge areas.", "type": "array", "items": {"type": "string"}}
+           },
+           "required": ["coreProfessionalSkills", "corePersonalInterests"]
+         },
+         "overallOnlinePersonaNarrative": {"description": "The synthesized overarching story or dominant impression projected by the combined online presence.", "type": "string"},
+         "professionalEvaluation": {
+           "description": "Professional assessment based on data from relevant platforms (e.g., LinkedIn), contingent on sufficient data.",
+           "type": ["object", "null"],
+           "properties": { /* ... (same fields as previous schema) ... */ }
+         },
+         "marketTrendInsights": {
+           "description": "Insights into market trends, technologies, or topics relevant to the individual's field, contingent on sufficient data.",
+           "type": ["object", "null"],
+           "properties": { /* ... (same fields as previous schema) ... */ }
+         },
+         "inferredAlgorithmicPerception": {
+            "description": "Hypothesized algorithmic categorization for each platform, strongly based on mandatory UI data.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "platformName": {"description": "The platform being analyzed.", "type": "string"},
+                    "categorizationHypothesis": {"description": "Hypothesized categorization (interests, demographics, professional profile, consumer behavior, network needs) strongly based on MANDATORY UI element data (Inbox, Network Tab, Recommendations), connections, and other profile/activity data for this platform. Explicitly link recommendations to the hypothesis.", "type": "string"}
+                },
+                "required": ["platformName", "categorizationHypothesis"]
+            }
+         },
+         "crossPlatformNetworkAnalysis": {
+            "description": "Comparison of network and recommendation data across multiple platforms, if available.",
+            "type": ["object", "null"],
+            "properties": { /* ... (same fields as previous schema) ... */ }
+         }
+       },
+       "required": ["consistencyVsVariation", "contentOverlapStrategy", "synthesizedExpertiseInterests", "overallOnlinePersonaNarrative", "inferredAlgorithmicPerception"]
+    },
+    "finalComprehensiveSummary": {
+      "description": "High-level summary of the entire analysis, specifically highlighting insights derived from mandatory UI element data across platforms.",
+      "type": "string"
+    }
+  },
+  "required": ["targetIndividual", "analyzedPlatforms", "platformSpecificAnalysis", "crossPlatformSynthesis", "finalComprehensiveSummary"],
+  "definitions": {
+    "commonStructures": {
+        "profileFundamentals": {
+          "description": "Core identifying information and visual elements of the profile.",
+          "type": "object",
+          "properties": {
+            "username": {"description": "The user's handle or username on the platform.", "type": ["string", "null"]},
+            "fullName": {"description": "The full name displayed on the profile.", "type": ["string", "null"]},
+            "pronouns": {"description": "Pronouns displayed on the profile.", "type": ["string", "null"]},
+            "location": {"description": "Location listed on the profile.", "type": ["string", "null"]},
+            "profileURL": {"description": "The direct URL to the user's profile.", "type": ["string", "null"]},
+            "profileLanguage": {"description": "The language setting of the profile, if discernible.", "type": ["string", "null"]},
+            "verificationStatus": {"description": "Indicates if the profile is verified (e.g., blue checkmark).", "type": ["boolean", "null"]},
+            "contactInfoVisible": {"description": "Indicates if a link or section for contact info is explicitly visible.", "type": ["boolean", "null"]},
+            "profilePictureDescription": {"description": "Description of the profile picture's content and style.", "type": ["string", "null"]},
+            "bannerImageDescription": {"description": "Description of the banner or cover image's content and style.", "type": ["string", "null"]},
+            "linkedWebsites": {
+              "description": "List of external website URLs linked from the profile.",
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          },
+          "required": ["username", "profileURL"]
+        },
+        "bioAnalysis": {
+          "description": "Analysis of the primary descriptive text sections (Bio, Headline, About).",
+          "type": "object",
+          "properties": {
+            "fullText": {"description": "The complete text from the bio/headline/about section(s).", "type": ["string", "null"]},
+            "identifiedKeywords": {"description": "List of significant keywords extracted.", "type": "array", "items": {"type": "string"}},
+            "hashtagsInBio": {"description": "Hashtags included directly in the bio text.", "type": "array", "items": {"type": "string"}},
+            "statedPurposeFocus": {"description": "Summary of the main purpose or focus conveyed.", "type": ["string", "null"]},
+            "tone": {"description": "Overall tone identified.", "type": ["string", "null"]},
+            "callToAction": {"description": "Any explicit calls to action found.", "type": ["string", "null"]}
+          }
+        },
+        "engagementPatterns": {
+            "description": "Analysis of user interaction patterns.",
+            "type": "object",
+            "properties": {
+              "outgoingInteractionStyle": {"description": "How the user engages with others' content.", "type": ["string", "null"]},
+              "typesOfContentEngagedWith": {"description": "Types of content the user tends to interact with.", "type": "array", "items": {"type": "string"}},
+              "incomingEngagementHighlights": {"description": "Observations on which types of the user's posts receive the most engagement.", "type": ["string", "null"]},
+              "typicalIncomingCommentTypes": {"description": "Nature of comments typically received.", "type": "array", "items": {"type": "string"}}
+            }
+        },
+        "networkCommunityRecommendations": {
+            "description": "Analysis of the user's network, community involvement, and MANDATORY capture of platform-driven UI elements.",
+            "type": "object",
+            "properties": {
+              "followerCount": {"description": "Number of followers or connections.", "type": ["number", "string", "null"]},
+              "followingCount": {"description": "Number of accounts the user is following.", "type": ["number", "string", "null"]},
+              "audienceDescription": {"description": "Inferred description of the user's primary audience or network composition.", "type": ["string", "null"]},
+              "groupCommunityMemberships": {
+                "description": "List of groups, communities, or lists the user is part of.",
+                "type": "array",
+                "items": { "$ref": "#/definitions/commonStructures/groupMembershipItem" }
+              },
+              "inboxSidebarPreview": {
+                 "description": "Data captured from the messaging inbox/DM sidebar preview. MANDATORY input if visible.",
+                 "type": "array",
+                 "items": { "$ref": "#/definitions/commonStructures/sidebarPreviewItem" }
+              },
+              "inboxSidebarAnalysis": { "description": "Analysis derived from the inbox sidebar preview data.", "type": ["string", "null"] },
+              "myNetworkTabVisibility": {
+                 "description": "Data captured from the 'My Network'/'Connections'/'Followers' or equivalent section. MANDATORY input if visible.",
+                 "type": "array",
+                 "items": { "$ref": "#/definitions/commonStructures/networkTabItem" }
+              },
+              "myNetworkTabAnalysis": { "description": "Analysis derived from the 'My Network' tab visibility data.", "type": ["string", "null"] },
+              "platformSuggestions": {
+                 "description": "Comprehensive capture of all platform-driven suggestions/recommendations observed. MANDATORY input if visible.",
+                 "type": "object",
+                 "properties": {
+                     "suggestedPeople": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedPersonItem" }},
+                     "suggestedCompaniesOrPages": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedCompanyPageItem" }},
+                     "suggestedGroups": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedGroupItem" }},
+                     "peopleAlsoViewed": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedPersonItem" }},
+                     "otherSuggestions": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/genericSuggestionItem" }}
+                 }
+              },
+              "platformRecommendationsAnalysis": { "description": "CRITICAL analysis interpreting the complete set of captured platform recommendations.", "type": ["string", "null"] },
+              "detailedConnectionsList": {
+                "description": "Detailed list of individual connections/followers/following, if provided.",
+                "type": ["array", "null"],
+                "items": { "$ref": "#/definitions/commonStructures/connectionItem" }
+              },
+              "detailedConnectionsAnalysis": { "description": "Summary analysis based on the detailedConnectionsList, if provided.", "type": ["string", "null"] }
+            },
+             "required": ["inboxSidebarPreview", "myNetworkTabVisibility", "platformSuggestions"]
+        },
+        "privacyPresentation": {
+           "description": "Notes on the observed privacy settings or specific presentation choices.",
+           "type": ["string", "null"]
+        },
+        "observedConsumption": {
+            "description": "Analysis of content the user appears to consume.",
+            "type": "object",
+            "properties": {
+              "feedTopics": {"description": "Topics observed in the user's main feed.", "type": "array", "items": {"type": "string"}},
+              "feedPosters": {"description": "Specific users/pages whose content appeared in the user's feed.", "type": "array", "items": {"type": "string"}},
+              "discoveryThemes": {"description": "Recurring themes observed in discovery/explore/For You sections.", "type": "array", "items": {"type": "string"}},
+              "discoveryExamples": {"description": "Specific examples of content seen in discovery sections.", "type": "array", "items": {"type": "string"}}
+            }
+        },
+      "experienceItem": { /* ... (same as previous schema) ... */ },
+      "educationItem": { /* ... (same as previous schema) ... */ },
+      "projectItem": { /* ... (same as previous schema) ... */ },
+      "featureUsageItem": { /* ... (same as previous schema) ... */ },
+      "groupMembershipItem": { /* ... (same as previous schema) ... */ },
+      "sidebarPreviewItem": { /* ... (same as previous schema, incl. timestamp, otherDetails) ... */ },
+      "networkTabItem": { /* ... (same as previous schema, incl. headlineOrDetail) ... */ },
+       "suggestedPersonItem": { /* ... (same as previous schema, incl. locationContext) ... */ },
+       "suggestedCompanyPageItem": { /* ... (same as previous schema, incl. locationContext) ... */ },
+       "suggestedGroupItem": { /* ... (same as previous schema, incl. locationContext) ... */ },
+       "genericSuggestionItem": { /* ... (same as previous schema, incl. locationContext) ... */ },
+       "connectionItem": { /* ... (same as previous schema) ... */ }
+    },
+    "platformSchemas": {
+      "linkedInProfileAnalysis": {
+          "description": "Detailed analysis specific to a LinkedIn profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "LinkedIn"},
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" },
+            "skillsInterestsExpertise": {
+              "description": "Skills section, endorsements, interests listed.",
+              "type": "array", "items": {"type": "string"}
+            },
+            "featuredPinnedContent": { "$ref": "#/definitions/commonStructures/featuredPinnedContent" },
+            "professionalHistory": {
+              "description": "LinkedIn specific Experience, Education, Licenses & Certifications, Projects sections.",
+              "type": "object",
+              "properties": {
+                "experience": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/experienceItem" } },
+                "education": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/educationItem" } },
+                "licensesCertifications": { "type": "array", "items": { /* Define structure if needed */ } },
+                "projects": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/projectItem" } }
+              }
+            },
+            "contentGenerationActivity": {
+              "description": "Analysis of posts, articles, comments, shares.",
+              "type": "object",
+              "properties": { /* ... Common fields + LinkedIn specifics like 'articlesPublished' ... */ }
+            },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" },
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" },
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonStructures/networkCommunityRecommendations" },
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" },
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      },
+      "instagramProfileAnalysis": {
+          "description": "Detailed analysis specific to an Instagram profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Instagram"},
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" },
+            "storyHighlights": {
+              "description": "Details about saved story highlights.",
+              "type": "array",
+              "items": { "type": "object", "properties": {"highlightName": {"type": "string"}, "contentDescription": {"type": "string"}} }
+            },
+             "contentGenerationActivity": {
+              "description": "Analysis of posts (photos, videos), Reels, Stories.",
+              "type": "object",
+              "properties": { /* ... Common fields + IG specifics like 'gridAesthetic', 'reelsPerformance', 'storiesFrequency' ... */ }
+            },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" },
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" }, // e.g., Usage of Reels, Guides, Shopping tags
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonStructures/networkCommunityRecommendations" }, // Terminology adapts: DM Preview, Suggested Accounts
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" }, // e.g., Public vs Private account
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" } // Focus on Explore feed
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      },
+      "twitterProfileAnalysis": {
+          "description": "Detailed analysis specific to a Twitter/X profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Twitter/X"},
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" },
+            "pinnedTweet": { /* Define structure for pinned tweet analysis */ },
+            "contentGenerationActivity": {
+              "description": "Analysis of Tweets, Retweets, Quote Tweets, Replies, Media shared.",
+              "type": "object",
+              "properties": { /* ... Common fields + Twitter specifics like 'tweetFrequency', 'replyRatio', 'mediaUsage' ... */ }
+            },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" }, // Likes, Retweets, Replies
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" }, // e.g., Usage of Lists, Spaces, Bookmarks
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonStructures/networkCommunityRecommendations" }, // Terminology adapts: DM Preview, Who to Follow, Suggested Topics
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" }, // e.g., Public vs Protected tweets
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" } // Focus on Home timeline
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      },
+       "facebookProfileAnalysis": {
+          "description": "Detailed analysis specific to a Facebook profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Facebook"},
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" }, // Includes Intro section
+             "professionalHistory": { /* Optional inclusion if profile used professionally */ },
+             "contentGenerationActivity": {
+              "description": "Analysis of posts (text, photos, videos, links), shares, life events.",
+              "type": "object",
+              "properties": { /* ... Common fields + FB specifics like 'checkIns', 'lifeEvents' ... */ }
+            },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" }, // Reactions, Comments, Shares
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" }, // e.g., Usage of Stories, Marketplace, Events
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonStructures/networkCommunityRecommendations" }, // Terminology adapts: Messenger Preview, People You May Know, Suggested Pages/Groups
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" }, // Audience settings per post if observed
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" } // Focus on News Feed
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      },
+       "tiktokProfileAnalysis": {
+          "description": "Detailed analysis specific to a TikTok profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "TikTok"},
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" },
+             "pinnedVideos": { /* Define structure for pinned video analysis */ },
+             "contentGenerationActivity": {
+              "description": "Analysis of video posts, sounds used, effects, trends participated in.",
+              "type": "object",
+              "properties": { /* ... Common fields + TikTok specifics like 'soundsUsed', 'effectsUsed', 'videoLengthPatterns', 'trendParticipation' ... */ }
+            },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" }, // Likes, Comments, Shares, Saves
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" }, // e.g., Usage of Duets, Stitches, Filters, LIVE
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonStructures/networkCommunityRecommendations" }, // Terminology adapts: DM Preview, Suggested Accounts, Suggested Sounds/Effects
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" },
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" } // Focus on For You Page (FYP) themes
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      },
+       "redditProfileAnalysis": {
+          "description": "Detailed analysis specific to a Reddit profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Reddit"},
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" }, // Often minimal/anonymous
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" }, // Profile description
+            "karmaScores": { /* Define structure for post/comment karma */ },
+             "contentGenerationActivity": {
+              "description": "Analysis of posts and comments within specific subreddits.",
+              "type": "object",
+              "properties": { /* ... Common fields + Reddit specifics like 'subredditActivity', 'postTypes', 'commentTone' ... */ }
+            },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" }, // Upvotes/Downvotes received/given (hard to observe 'given')
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" }, // e.g., Participation in AMAs, Modding activity
+            "networkCommunityRecommendations": {
+                "description": "Analysis of subscribed subreddits and platform suggestions.",
+                "type": "object",
+                 "properties": {
+                    "subscribedSubreddits": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/groupMembershipItem" } }, // Using group item for subreddits
+                    "inboxSidebarPreview": { /* ... (as defined in common) ... */ }, // Reddit Chat/Messages
+                    "myNetworkTabVisibility": { /* ... (Potentially 'Following' users section) ... */ },
+                    "platformSuggestions": { /* ... (Suggested Subreddits, Users) ... */ },
+                    "platformRecommendationsAnalysis": { /* ... (as defined in common) ... */ }
+                 },
+                 "required": ["inboxSidebarPreview", "myNetworkTabVisibility", "platformSuggestions"]
+            },
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" },
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" } // Focus on Home feed (subscribed subs) or r/all
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      },
+       "otherPlatformAnalysis": {
+          "description": "Generic structure for analyzing platforms not explicitly defined above.",
+          "type": "object",
+          "properties": {
+            "platformName": {"type": "string"}, // Identifier for the other platform
+            "profileFundamentals": { "$ref": "#/definitions/commonStructures/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonStructures/bioAnalysis" },
+            "platformSpecificSections": { "type": "object", "description": "Use additionalProperties or define specific fields relevant to this 'Other' platform." },
+            "contentGenerationActivity": { /* ... (Generic fields) ... */ },
+            "engagementPatterns": { "$ref": "#/definitions/commonStructures/engagementPatterns" },
+            "platformFeatureUsage": { "$ref": "#/definitions/commonStructures/featureUsageItem" },
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonStructures/networkCommunityRecommendations" },
+            "privacyPresentation": { "$ref": "#/definitions/commonStructures/privacyPresentation" },
+            "observedConsumption": { "$ref": "#/definitions/commonStructures/observedConsumption" }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations"]
+      }
+    }
+  }
+}
+```

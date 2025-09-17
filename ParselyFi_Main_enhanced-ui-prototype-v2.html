@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Report UI Prototype</title>
+    <style>
+        /* Basic Reset & Global Styles */
+        :root {
+            /* --- Coffee Card Theme Palette (From Streamlit CSS) --- */
+            --cc-bg-main: #fff8f0;
+            --cc-bg-exp: #fffaf5;
+            --cc-bg-tag: #ffe8d6;
+            --cc-bg-progress-track: #eee;
+            --cc-bg-btn-delete-hover: #fdf7f7;
+            --cc-bg-btn-default-hover: #fff0e0;
+
+            --cc-accent-dark-brown: #6b4f4f;
+            --cc-accent-theme-brown: #b36b00;
+            --cc-accent-light-tan: #e6ccb2;
+
+            --cc-text-name: #4a3f3f;
+            --cc-text-title: #555;
+            --cc-text-exp: #333;
+            --cc-text-tag: var(--cc-accent-dark-brown);
+            --cc-text-progress: #555;
+            --cc-text-placeholder: #999;
+            --cc-text-missing-summary: #666;
+            --cc-text-general: #37352F;
+            --cc-text-secondary: #6B6B6B;
+
+            --cc-btn-delete-text: #d9534f;
+            --cc-btn-delete-hover-text: #c9302c;
+            --cc-btn-delete-hover-border: #ac2925;
+            --cc-btn-default-text: var(--cc-accent-theme-brown);
+            --cc-btn-default-hover-text: #8a5a00;
+            --cc-btn-default-hover-border: #8a5a00;
+
+            /* --- Original Theme Variables (kept for non-card elements) --- */
+            --primary-color: #376f4e; /* Plant Green */
+            --secondary-color: #69380a; /* Coffee Brown */
+            --background-color: #fcf9f8; /* Original Page Background */
+            --sidebar-bg: #f1e9dd;
+            --text-color: #4d2907; /* Original Page Text */
+            --border-color: rgba(105, 56, 10, 0.15); /* Original Page Border */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --border-radius: 6px; /* Original border radius for general elements */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fdfbf7; /* Streamlit theme body background */
+            color: var(--text-color); /* Original page default text color */
+            line-height: 1.6;
+        }
+
+        /* Layout - Remains mostly original */
+        .container {
+            display: grid;
+            grid-template-columns: 260px 1fr 240px;
+            min-height: 100vh;
+            gap: 1px;
+            background-color: var(--border-color);
+        }
+
+        .left-sidebar, .main-content, .right-sidebar {
+            padding: 1.5rem;
+            overflow-y: auto;
+            background-color: var(--background-color);
+        }
+
+        .left-sidebar {
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .right-sidebar {
+            background-color: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+        }
+
+        .sidebar-section { margin-bottom: 2rem; }
+        .sidebar-section h4 {
+            margin-bottom: 1rem; color: var(--primary-color); font-size: 1.1rem;
+            padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Projects Panel - Unchanged from previous */
+        .projects-list { font-size: 0.9rem; }
+        .project-item { margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; }
+        .project-item.active { border-color: var(--primary-color); }
+        .project-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background-color: rgba(255, 255, 255, 0.5); cursor: pointer; }
+        .project-item.active .project-header { background-color: rgba(55, 111, 78, 0.1); }
+        .project-toggle { color: var(--secondary-color); font-size: 0.7rem; }
+        .project-files { padding: 0 0 5px 0; max-height: 300px; overflow-y: auto; }
+        .project-item:not(.active) .project-files { display: none; }
+        .file-group { margin-bottom: 5px; }
+        .file-group-header { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; font-size: 0.85rem; color: var(--secondary-color); background-color: rgba(105, 56, 10, 0.05); }
+        .file-count { background-color: rgba(105, 56, 10, 0.2); border-radius: 10px; padding: 1px 6px; font-size: 0.75rem; }
+        .file-list { list-style: none; padding: 0; margin: 0; }
+        .file-item { display: flex; align-items: center; padding: 5px 10px 5px 15px; font-size: 0.85rem; position: relative; cursor: pointer; border-left: 3px solid transparent; }
+        .file-item:hover { background-color: rgba(255, 255, 255, 0.7); }
+        .file-item.processed { border-left-color: #4caf50; }
+        .file-item.processing { border-left-color: #ff9800; }
+        .file-item.queued { border-left-color: #9e9e9e; }
+        .file-icon { margin-right: 5px; font-size: 1rem; }
+        .status-badge { font-size: 0.7rem; background-color: #ffe0b2; padding: 1px 4px; border-radius: 3px; margin-left: 5px; color: #e65100; }
+        .file-item.queued .status-badge { background-color: #e0e0e0; color: #616161; }
+        .add-project { text-align: center; padding: 8px; background-color: rgba(55, 111, 78, 0.1); border-radius: var(--border-radius); cursor: pointer; margin-top: 10px; }
+        .add-project:hover { background-color: rgba(55, 111, 78, 0.2); }
+
+        /* Coffee Card Trigger (sidebar) */
+        .coffee-card-trigger {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: rgba(255, 255, 255, 0.5); border-radius: var(--border-radius);
+            margin-bottom: 1rem; cursor: pointer;
+        }
+        .coffee-card-trigger-avatar { /* Avatar in the trigger */
+            width: 40px; height: 40px; background-color: var(--cc-accent-dark-brown);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: var(--cc-bg-main); font-weight: bold; overflow: hidden;
+        }
+        .coffee-card-trigger-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .coffee-card-trigger-details { font-size: 0.9rem; color: var(--text-color); }
+        .coffee-card-trigger-name { font-weight: 600; }
+
+        /* Coffee Card Popup - APPLYING STREAMLIT THEME */
+        .coffee-card-popup {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; max-width: 700px; max-height: 85vh; /* Kept existing sizing for popup */
+            background: var(--cc-bg-main);
+            border: 2px solid var(--cc-accent-dark-brown);
+            border-radius: 12px; /* Streamlit card radius */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* Streamlit card shadow */
+            z-index: 1000; display: flex; flex-direction: column;
+            overflow: hidden; /* For the ::before element and internal scroll */
+        }
+        .coffee-card-popup::before { /* Top accent bar */
+            content: ""; position: absolute; top: 0; left: 0;
+            width: 100%; height: 8px;
+            background: var(--cc-accent-dark-brown);
+            opacity: 1; /* Solid accent */
+        }
+
+        .coffee-card-header {
+            display: flex; align-items: flex-start; gap: 1rem; /* Streamlit card header gap */
+            padding: 20px 20px 16px 20px; /* Adjusted padding, accounting for ::before */
+            border-bottom: 1px solid var(--cc-accent-light-tan); /* Separator from theme */
+        }
+        img#coffeeCardPic { /* Avatar in popup */
+            width: 80px; height: 80px; /* Kept popup avatar size */
+            border-radius: 50%;
+            border: 2px solid var(--cc-accent-light-tan);
+            object-fit: cover; flex-shrink: 0;
+            box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px; /* Simpler shadow */
+        }
+        .coffee-card-header .profile-info { flex-grow: 1; }
+        h3#coffeeCardName {
+            color: var(--cc-text-name); margin: 0 0 4px 0;
+            font-size: 1.4em; /* Streamlit name size */ font-weight: bold;
+        }
+        p#coffeeCardTitle {
+            font-size: 1em; color: var(--cc-text-title); /* Streamlit title size/color */
+            margin: 0 0 4px 0; line-height: 1.4;
+        }
+        p#coffeeCardLocation {
+            font-size: 0.9em; color: var(--cc-text-title); /* Streamlit title color */
+            margin: 0;
+        }
+        .coffee-card-popup .close-button {
+            margin-left: auto; padding: 0; background: none; border: none;
+            font-size: 1.8rem; cursor: pointer; color: var(--cc-text-secondary);
+            line-height: 1; align-self: flex-start;
+        }
+        .coffee-card-popup .close-button:hover { color: var(--cc-accent-dark-brown); }
+
+        .coffee-card-body { padding: 16px 20px; overflow-y: auto; }
+        p#coffeeCardTagline {
+            font-size: 0.95em; color: var(--cc-text-exp); /* Using experiences text color */
+            margin-bottom: 16px; line-height: 1.5;
+        }
+        a#coffeeCardCTA.cta-button {
+            display: inline-block;
+            background-color: transparent;
+            color: var(--cc-accent-theme-brown); border: 1px solid var(--cc-accent-theme-brown);
+            padding: 4px 10px; font-size: 0.9em; border-radius: 4px; /* Streamlit button style */
+            text-decoration: none; margin-bottom: 16px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        a#coffeeCardCTA.cta-button:hover {
+            background-color: var(--cc-bg-btn-default-hover);
+            color: var(--cc-btn-default-hover-text);
+            border-color: var(--cc-btn-default-hover-border);
+        }
+
+        .coffee-card-section { margin-bottom: 12px; } /* Spacing for <details> */
+        .coffee-card-section summary {
+            font-weight: bold; font-size: 0.95em; color: var(--cc-accent-dark-brown); /* Streamlit tag header style */
+            margin-bottom: 6px; cursor: pointer; list-style: none; position: relative;
+            padding: 6px 0; /* Give summary some breathing room */
+            border-bottom: 1px solid var(--cc-accent-light-tan);
+            display: flex; align-items: center;
+        }
+        .coffee-card-section summary::-webkit-details-marker { display: none; }
+        .coffee-card-section summary { list-style-type: none; }
+        .coffee-card-section summary::before { /* Custom marker */
+            content: '▶'; font-size: 0.8em; margin-right: 8px;
+            color: var(--cc-accent-dark-brown);
+        }
+        .coffee-card-section[open] summary::before { content: '▼'; }
+
+        .coffee-card-section .details-content {
+            padding: 8px 0 12px 0; font-size: 0.9em; /* Consistent font size */
+        }
+        
+        /* Styling for lists (Interests, Skills, Hobbies, Achievements) as pills */
+        .coffee-card-section .details-content ul {
+            list-style: none; padding-left: 0;
+            display: flex; flex-wrap: wrap; gap: 6px; /* Streamlit tag gap */
+            margin-top: 0;
+        }
+        .coffee-card-section .details-content ul li span.coffee-keyword-expandable,
+        .coffee-card-section .details-content ul li { /* Targets both expandable and non-expandable list items */
+            background: var(--cc-bg-tag); padding: 4px 8px; /* Streamlit tag padding */
+            border-radius: 12px; /* Streamlit tag radius */
+            font-size: 0.8em; /* Streamlit tag font size */
+            display: inline-block; color: var(--cc-text-tag);
+            border: 1px solid var(--cc-accent-light-tan); /* Streamlit tag border */
+            white-space: nowrap; cursor: default;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+         .coffee-card-section .details-content ul li span.coffee-keyword-expandable { cursor: pointer; }
+        .coffee-card-section .details-content ul li span.coffee-keyword-expandable:hover,
+        .coffee-card-section .details-content ul li:hover {
+            background: #f7e1ce; /* Slightly darker from theme for hover */
+            transform: translateY(-1px);
+        }
+        .missing-pill { /* For "Not specified" in pill lists */
+            font-style: italic; color: var(--cc-text-placeholder); background: transparent !important; border: none !important; padding: 4px 0 !important;
+        }
+
+        /* Experience, Education, Project Items */
+        .coffee-card-experience-item, .coffee-card-education-item, .coffee-card-project-item {
+            margin-bottom: 16px; padding-bottom: 12px;
+            border-bottom: 1px dashed var(--cc-accent-light-tan); /* Dashed separator */
+        }
+        .coffee-card-experience-item:last-child,
+        .coffee-card-education-item:last-child,
+        .coffee-card-project-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .coffee-card-experience-item h5, .coffee-card-education-item h5, .coffee-card-project-item h5 {
+            color: var(--cc-text-name); margin: 0 0 2px 0; font-size: 1em; font-weight: bold;
+        }
+        .coffee-card-experience-item p.company-name,
+        .coffee-card-education-item p.institution-name {
+             color: var(--cc-text-title); font-size: 0.9em; margin-bottom: 2px;
+        }
+        .coffee-card-experience-item .dates, .coffee-card-education-item .dates, .coffee-card-project-item .dates {
+            font-size: 0.8em; color: var(--cc-text-secondary); margin-bottom: 6px;
+        }
+        /* Experience block specific styling */
+        .coffee-card-experience-item .description {
+            border: 1px solid var(--cc-accent-light-tan); border-radius: 4px;
+            min-height: 60px; padding: 8px; background: var(--cc-bg-exp);
+            white-space: pre-wrap; font-size: 0.9em; color: var(--cc-text-exp);
+            line-height: 1.5; max-height: 150px; overflow-y: auto; /* From .experiences-display */
+            margin-top: 4px;
+        }
+        /* General description for education/projects */
+        .coffee-card-education-item .description, .coffee-card-project-item .description {
+            font-size: 0.9em; line-height: 1.5; color: var(--cc-text-exp);
+            margin-top: 4px;
+        }
+        .coffee-card-project-item .skills-used { margin-top: 6px; } /* Container for project skill pills */
+        .coffee-card-project-item .skills-used span.coffee-keyword-expandable { /* Skills in projects as pills */
+            font-size: 0.75em; /* Smaller pills for project skills */
+        }
+        .coffee-card-project-item .project-link {
+            font-size: 0.9em; text-decoration: none; color: var(--cc-accent-theme-brown); margin-left: 8px;
+        }
+        .coffee-card-project-item .project-link:hover { color: var(--cc-accent-dark-brown); }
+
+        /* Expandable Keyword in Coffee Card (general text) */
+        .coffee-keyword-expandable {
+            color: var(--cc-accent-theme-brown); text-decoration: underline dotted;
+            cursor: pointer; font-weight: 500;
+        }
+        .coffee-keyword-expandable:hover {
+            background-color: var(--cc-bg-tag); color: var(--cc-accent-dark-brown);
+        }
+
+        /* Coffee Keyword Popup Detail */
+        #coffeeKeywordPopupDetail {
+            font-size:0.9em; background-color: var(--cc-bg-main);
+            border: 1px solid var(--cc-accent-dark-brown);
+            color: var(--cc-text-general);
+            border-radius: 8px; padding: 12px;
+        }
+        #coffeeKeywordPopupDetail h5 { color: var(--cc-accent-dark-brown); font-size: 1.1em; }
+        #coffeeKeywordPopupDetail strong { color: var(--cc-accent-theme-brown); }
+        #coffeeKeywordPopupDetail #coffeeKeywordPopupContextSnippet {
+            border-left: 2px solid var(--cc-accent-theme-brown);
+            color: var(--cc-text-exp); background-color: var(--cc-bg-exp); padding: 6px 10px;
+            border-radius: 3px; font-size: 0.95em;
+        }
+        #coffeeKeywordPopupDetail #coffeeKeywordPopupRelatedSkills .related-skill-tag {
+            background-color: var(--cc-bg-tag); color: var(--cc-text-tag);
+            border: 1px solid var(--cc-accent-light-tan);
+            padding: 3px 7px; font-size: 0.9em; border-radius: 10px;
+            margin-right: 4px; margin-bottom: 4px; display: inline-block;
+        }
+
+        /* Chapter Nav - Unchanged */
+        .chapter-nav ul { list-style: none; padding-left: 10px; }
+        .chapter-nav li { margin-bottom: 0.3rem; }
+        .chapter-nav a { text-decoration: none; color: var(--secondary-color); font-size: 0.95rem; }
+        .chapter-nav a:hover { color: var(--primary-color); }
+        .chapter-nav .active { font-weight: 600; color: var(--primary-color); }
+        .chapter-nav ul ul { padding-left: 15px; font-size: 0.9em; margin-top: 5px; }
+
+        /* Agent Chat - Unchanged */
+        .agent-chat { position: relative; }
+        .agent-chat-messages { height: 100px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 8px; margin-bottom: 8px; background-color: #fff; font-size: 0.9rem; }
+        .agent-message { margin-bottom: 6px; padding: 4px 8px; border-radius: 12px; max-width: 90%; display: inline-block; clear: both; }
+        .user-message { background-color: #e1f5fe; float: right; border-bottom-right-radius: 0; text-align: right; }
+        .bot-message { background-color: #f0f0f0; float: left; border-bottom-left-radius: 0; }
+        .agent-chat textarea { width: 100%; height: 60px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 5px; font-size: 0.9rem; }
+        .agent-chat button { padding: 5px 10px; background-color: var(--primary-color); color: white; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 0.9rem; }
+        .agent-chat button:hover { background-color: #2a5a3d; }
+
+        /* Main Content Specifics - Unchanged */
+        .main-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .main-header h1 { color: var(--primary-color); font-size: 1.8rem; }
+        .chapter { background-color: #fff; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
+        .chapter h3 { color: var(--primary-color); margin-top: 0; margin-bottom: 0.5rem; }
+        .source-info { font-size: 0.85rem; color: #666; margin-bottom: 1rem; }
+        .summary p { margin-bottom: 0.8rem; }
+
+        /* Original Interactive Elements - Unchanged */
+        .keyword-expandable { color: var(--primary-color); text-decoration: underline dotted; cursor: pointer; font-weight: 500; }
+        .keyword-expandable:hover { background-color: rgba(55, 111, 78, 0.1); }
+        #keyword-popup { position: absolute; display: none; background-color: white; border: 1px solid #ccc; border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); padding: 12px; width: 300px; font-size: 0.9rem; z-index: 1000; color: var(--text-color); }
+        #keyword-popup h5 { margin: 0 0 8px 0; font-size: 1rem; color: var(--primary-color); }
+        #keyword-popup p { margin: 0 0 5px 0; }
+        #keyword-popup strong { color: var(--secondary-color); }
+        #keyword-popup .context-snippet { font-style: italic; color: #555; border-left: 2px solid var(--primary-color); padding-left: 8px; margin-top: 8px; font-size: 0.85rem; }
+        #keyword-popup .related-terms { margin-top: 10px; font-size: 0.85rem; }
+        #keyword-popup .related-terms span { display: inline-block; margin-right: 5px; margin-bottom: 5px; padding: 2px 6px; background-color: rgba(55, 111, 78, 0.1); border-radius: 10px; cursor: pointer; }
+        #keyword-popup .related-terms span:hover { background-color: rgba(55, 111, 78, 0.2); }
+
+        /* Original details/summary elements - Unchanged */
+        details:not(.coffee-card-section) { margin-top: 1rem; cursor: pointer; }
+        summary:not(.coffee-card-section summary) { font-weight: 600; color: var(--secondary-color); padding: 5px 0; list-style: none; position: relative; padding-left: 1.5em; }
+        summary:not(.coffee-card-section summary)::before { content: '▶'; position: absolute; left: 0; top: 5px; font-size: 0.8em; }
+        details:not(.coffee-card-section)[open] summary:not(.coffee-card-section summary)::before { content: '▼'; }
+        .details-content:not(.coffee-card-section .details-content) { padding: 10px; border-left: 2px solid var(--sidebar-bg); margin-left: 5px; margin-top: 5px; font-size: 0.9rem; }
+        .details-content:not(.coffee-card-section .details-content) ul { padding-left: 20px; }
+        .details-content:not(.coffee-card-section .details-content) li { margin-bottom: 8px; }
+        .qna-item strong { color: var(--primary-color); }
+        .keyword-item strong { color: var(--primary-color); }
+        
+        /* Other elements - Unchanged from previous */
+        .visuals-placeholder { border: 1px dashed var(--border-color); padding: 20px; text-align: center; color: #999; margin-top: 1rem; font-size: 0.9rem; background-color: #fafafa; border-radius: var(--border-radius); }
+        #knowledge-graph { height: 400px; margin-top: 1rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fafafa; overflow: hidden; }
+        .code-block { background-color: #282c34; color: #abb2bf; padding: 15px; border-radius: var(--border-radius); font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; line-height: 1.4; overflow-x: auto; margin: 15px 0; }
+        .code-block .comment { color: #5c6370; } .code-block .keyword { color: #c678dd; } .code-block .string { color: #98c379; } .code-block .function { color: #61afef; } .code-block .number { color: #d19a66; }
+        .media-clips { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; }
+        .media-clip { flex: 0 0 auto; width: 160px; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; }
+        .media-clip img { width: 100%; height: 100px; object-fit: cover; }
+        .media-clip .clip-info { padding: 8px; font-size: 0.8rem; background-color: #fff; }
+        .media-clip .clip-time { color: #666; font-size: 0.75rem; }
+        .timeline { height: 30px; background-color: #eee; border-radius: var(--border-radius); margin: 15px 0; position: relative; }
+        .timeline-marker { position: absolute; width: 10px; height: 30px; background-color: var(--primary-color); opacity: 0.7; }
+        .timeline-current { position: absolute; width: 2px; height: 30px; background-color: red; left: 20%; }
+        .search-results { display: none; position: absolute; top: 100%; right: 0; width: 250px; max-height: 300px; overflow-y: auto; background-color: white; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-sm); z-index: 100; }
+        .search-result-item { padding: 8px 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+        .search-result-item:hover { background-color: rgba(55, 111, 78, 0.1); }
+        .search-result-item .result-title { font-weight: 600; font-size: 0.9rem; color: var(--primary-color); }
+        .search-result-item .result-context { font-size: 0.8rem; color: #666; margin-top: 3px; }
+        .callout-block { padding: 15px; border-radius: var(--border-radius); margin: 15px 0; border-left: 4px solid; }
+        .callout-info { background-color: rgba(33, 150, 243, 0.1); border-left-color: #2196f3; }
+        .callout-warning { background-color: rgba(255, 152, 0, 0.1); border-left-color: #ff9800; }
+        .mindmap-container { border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background-color: #fcfcfc; height: 180px; position: relative; margin-bottom: 1rem; }
+        .mindmap-container svg { width: 100%; height: 100%; }
+        .mindmap-node text { font-size: 8px; fill: var(--text-color); }
+        .mindmap-node circle { fill: white; stroke: var(--primary-color); stroke-width: 1.5; }
+        .mindmap-node.active circle { fill: var(--primary-color); }
+        .mindmap-node.active text { fill: white; font-weight: bold; }
+        .mindmap-link { fill: none; stroke: var(--border-color); stroke-width: 1; }
+        .source-filters button { background: none; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 4px 8px; margin-right: 5px; margin-bottom: 5px; border-radius: 15px; font-size: 0.85rem; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
+        .source-filters button:hover, .source-filters button.active { background-color: var(--primary-color); color: white; }
+        .glossary-list ul { list-style: none; font-size: 0.9rem; }
+        .glossary-list li { margin-bottom: 5px; }
+        .glossary-list a { color: var(--secondary-color); text-decoration: none; }
+        .glossary-list a:hover { color: var(--primary-color); text-decoration: underline;}
+        .search-box { position: relative; }
+        .search-box input { width: 100%; padding: 8px; font-size: 0.9rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); }
+
+        /* Responsive */
+        @media (max-width: 992px) { .container { grid-template-columns: 220px 1fr 200px; } }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .left-sidebar, .right-sidebar { display: none; }
+            .main-content { padding: 1rem; }
+            #keyword-popup, #coffeeKeywordPopupDetail { width: 90% !important; max-width: 300px !important; left: 5% !important; }
+            .coffee-card-popup { width: 95%; max-height: 90vh; } /* Adjust popup for smaller screens */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <aside class="left-sidebar">
+            <div class="sidebar-section">
+                <!-- Coffee Card Trigger: content injected by JS -->
+                <div class="coffee-card-trigger"></div>
+                <button style="width: 100%; padding: 8px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Settings</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Projects</h4>
+                <div class="projects-list">
+                    <div class="project-item active">
+                        <div class="project-header">
+                            <span class="project-name">Trauma & Neurodiversity</span>
+                            <span class="project-toggle">▼</span>
+                        </div>
+                        <div class="project-files">
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">PDF Documents</span>
+                                    <span class="file-count">3</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📄</span>
+                                        <span class="file-name">Polyvagal_Theory_Overview.pdf</span>
+                                    </li>
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📄</span>
+                                        <span class="file-name">Trauma_Informed_Care.pdf</span>
+                                    </li>
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📄</span>
+                                        <span class="file-name">System_Design_Doc.pdf</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">Audio/Video</span>
+                                    <span class="file-count">2</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item processed">
+                                        <span class="file-icon">🎧</span>
+                                        <span class="file-name">Lecture_Neuroception.mp3</span>
+                                    </li>
+                                    <li class="file-item processing">
+                                        <span class="file-icon">🎬</span>
+                                        <span class="file-name">Interview_Porges.mp4</span>
+                                        <span class="status-badge">Transcribing...</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">Code Files</span>
+                                    <span class="file-count">2</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📝</span>
+                                        <span class="file-name">file_ingestor.py</span>
+                                    </li>
+                                    <li class="file-item processed">
+                                        <span class="file-icon">📝</span>
+                                        <span class="file-name">report_assembler.py</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="file-group">
+                                <div class="file-group-header">
+                                    <span class="file-group-name">Web Sources</span>
+                                    <span class="file-count">1</span>
+                                </div>
+                                <ul class="file-list">
+                                    <li class="file-item queued">
+                                        <span class="file-icon">🌐</span>
+                                        <span class="file-name">stephenporges.com/research</span>
+                                        <span class="status-badge">Queued</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-header">
+                            <span class="project-name">Cognitive Development</span>
+                            <span class="project-toggle">▶</span>
+                        </div>
+                    </div>
+                    <div class="add-project">+ New Project</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Chapters</h4>
+                <nav class="chapter-nav">
+                    <ul>
+                        <li><a href="#chapter1" class="active">1. Introduction & Setup</a></li>
+                        <li><a href="#chapter2">2. Core Concepts</a>
+                            <ul>
+                                <li><a href="#topic2.1">2.1 Polyvagal Theory</a></li>
+                                <li><a href="#topic2.2">2.2 Neuroception</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#chapter3">3. Processing Modalities</a>
+                            <ul>
+                                <li><a href="#topic3.1">3.1 File Processing</a></li>
+                                <li><a href="#topic3.2">3.2 Audio/Video Analysis</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#chapter4">4. Code Implementation</a></li>
+                        <li><a href="#chapter5">5. Report Assembly</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Agent Chat</h4>
+                <div class="agent-chat">
+                    <div class="agent-chat-messages" id="chat-messages">
+                        <div class="agent-message bot-message">Hello! I'm your report assistant. How can I help you understand this information?</div>
+                    </div>
+                    <textarea id="chat-input" placeholder="Ask about the report... (e.g., 'Summarize chapter 2')"></textarea>
+                    <button id="chat-send">Send</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Project Report: Trauma & Neurodiversity Synthesis</h1>
+            </header>
+
+            <div class="chapters-container">
+                <article class="chapter" id="chapter1">
+                    <h3>1. Introduction & System Setup</h3>
+                    <p class="source-info">Source: Design Documentation | Type: PDF</p>
+                    <div class="summary">
+                        <p>This report synthesizes information from various sources on the intersection of trauma care and neurodiversity. The system utilizes <span class="keyword-expandable" data-keyword="PocketFlow">PocketFlow</span> principles for modular processing. Key inputs include research papers (PDFs), lecture transcripts (Audio), and code summaries related to <span class="keyword-expandable" data-keyword="Neurofeedback">Neurofeedback</span> tools.</p>
+                        <p>The initial setup involves file ingestion and classification, followed by modality-specific extraction like transcription and text parsing.</p>
+                    </div>
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="qna-item"><strong>Q:</strong> What is the primary goal of this report generator? <br><strong>A:</strong> To create structured, chapter-based reports from diverse multimodal sources using PocketFlow's modular architecture.</li>
+                                <li class="qna-item"><strong>Q:</strong> Which file type requires transcription? <br><strong>A:</strong> Audio and Video files are processed by the `BatchTranscriber` node.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                         <div class="details-content">
+                             <ul>
+                                 <li class="keyword-item"><strong>PocketFlow:</strong> Minimalist LLM framework for modular agent workflows.</li>
+                                 <li class="keyword-item"><strong>Neurofeedback:</strong> Brain training technique using real-time EEG display.</li>
+                                 <li class="keyword-item"><strong>File Ingestion:</strong> Initial step of scanning and classifying input files.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <div id="knowledge-graph">
+                        <!-- D3.js graph will be rendered here -->
+                    </div>
+                </article>
+
+                <article class="chapter" id="chapter2">
+                    <h3>2. Core Concepts: Polyvagal Theory & Neuroception</h3>
+                    <p class="source-info">Source: Research Paper Summary | Type: DOCX | Page: 3-5</p>
+                    <div class="summary">
+                        <p>Central to understanding trauma responses is the <span class="keyword-expandable" data-keyword="Polyvagal Theory">Polyvagal Theory</span>, developed by Stephen Porges. It explains how the <span class="keyword-expandable" data-keyword="Autonomic Nervous System">Autonomic Nervous System</span> (ANS), particularly the vagus nerve, mediates responses to safety and threat.</p>
+                        <p><span class="keyword-expandable" data-keyword="Neuroception">Neuroception</span> describes the subconscious neural process of evaluating risk. In individuals with trauma or certain neurodevelopmental profiles like <span class="keyword-expandable" data-keyword="ASD">ASD</span>, neuroceptive processes might be altered, leading to states of <span class="keyword-expandable" data-keyword="Hyperarousal">Hyperarousal</span> or <span class="keyword-expandable" data-keyword="Hypoarousal">Hypoarousal</span>.</p>
+                    </div>
+                     <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> What are the three main states described by Polyvagal Theory? <br><strong>A:</strong> Social Engagement (Ventral Vagal), Fight/Flight (Sympathetic), and Freeze/Shutdown (Dorsal Vagal).</li>
+                                <li class="qna-item"><strong>Q:</strong> How does Neuroception relate to PTSD? <br><strong>A:</strong> Faulty neuroception can lead individuals with PTSD to perceive threat in safe environments, triggering maladaptive ANS responses.</li>
+                            </ul>
+                        </div>
+                    </details>
+                     <details class="keywords-section">
+                        <summary>Keywords</summary>
+                         <div class="details-content">
+                             <ul>
+                                 <li class="keyword-item"><strong>Polyvagal Theory:</strong> Explains ANS hierarchy in response to safety/threat.</li>
+                                 <li class="keyword-item"><strong>Autonomic Nervous System:</strong> Regulates involuntary functions (heart rate, digestion). Includes Sympathetic and Parasympathetic branches.</li>
+                                 <li class="keyword-item"><strong>Neuroception:</strong> Subconscious detection of safety vs. danger cues.</li>
+                                 <li class="keyword-item"><strong>ASD:</strong> Autism Spectrum Disorder, neurodevelopmental condition impacting social communication and behavior.</li>
+                                 <li class="keyword-item"><strong>Hyperarousal:</strong> State of high alert, anxiety (fight/flight).</li>
+                                 <li class="keyword-item"><strong>Hypoarousal:</strong> State of shutdown, disconnection (freeze).</li>
+                                 <li class="keyword-item"><strong>Ventral Vagal Complex:</strong> Part of the vagus nerve that supports social engagement and self-regulation.</li>
+                                 <li class="keyword-item"><strong>Dorsal Vagal Complex:</strong> Part of the vagus nerve associated with immobilization and shutdown responses.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    <div class="visuals-placeholder">ANS Diagram showing connections between Nervous System states</div>
+                </article>
+                
+                <article class="chapter" id="chapter3">
+                    <h3>3. Processing Modalities</h3>
+                    <p class="source-info">Source: System Documentation, Audio Lecture | Type: PDF, MP3 | Page: 8-12, Timestamp: 00:15:30-00:28:45</p>
+                    <div class="summary">
+                        <p>This chapter explores the different processing modalities used in our multimodal system. Each file type requires specific handling through dedicated <span class="keyword-expandable" data-keyword="PocketFlow Nodes">PocketFlow Nodes</span> to extract content effectively.</p>
+                        
+                        <div class="callout-block callout-info">
+                            <strong>Information:</strong> Processing times vary significantly by modality. Audio/video transcription is the most resource-intensive process in the pipeline.
+                        </div>
+                        
+                        <p>For audio and video content, the <span class="keyword-expandable" data-keyword="BatchTranscriber">BatchTranscriber</span> node handles conversion to text, while maintaining timestamps for synchronization with the original media. PDF and document processing use the <span class="keyword-expandable" data-keyword="TextExtractor">TextExtractor</span> to parse content while preserving structural elements.</p>
+                    </div>
+                    
+                    <div class="timeline">
+                        <div class="timeline-marker" style="left: 10%; width: 5%;" title="Introduction"></div>
+                        <div class="timeline-marker" style="left: 25%; width: 15%;" title="File Processing"></div>
+                        <div class="timeline-marker" style="left: 50%; width: 20%;" title="Audio Extraction"></div>
+                        <div class="timeline-marker" style="left: 75%; width: 15%;" title="System Integration"></div>
+                        <div class="timeline-current"></div>
+                    </div>
+                    
+                    <div class="media-clips">
+                        <div class="media-clip">
+                            <img src="https://via.placeholder.com/160x100.png?text=Audio+Wave" alt="Audio waveform visualization">
+                            <div class="clip-info">
+                                <div>Audio Processing</div>
+                                <div class="clip-time">00:15:30</div>
+                            </div>
+                        </div>
+                        <div class="media-clip">
+                            <img src="https://via.placeholder.com/160x100.png?text=PDF+Diagram" alt="PDF extraction diagram">
+                            <div class="clip-info">
+                                <div>PDF Structure</div>
+                                <div class="clip-time">00:19:45</div>
+                            </div>
+                        </div>
+                        <div class="media-clip">
+                            <img src="https://via.placeholder.com/160x100.png?text=Code+Analysis" alt="Code analysis">
+                            <div class="clip-info">
+                                <div>Code Analysis</div>
+                                <div class="clip-time">00:24:10</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> Which processing modality requires the most computational resources? <br><strong>A:</strong> Audio/video transcription, especially for longer files with background noise.</li>
+                                <li class="qna-item"><strong>Q:</strong> How are timestamps preserved in the final report? <br><strong>A:</strong> Through the media_map in the final_index, which links media sources to chapter sections.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="keyword-item"><strong>PocketFlow Nodes:</strong> Individual processing components in the PocketFlow framework.</li>
+                                <li class="keyword-item"><strong>BatchTranscriber:</strong> Node responsible for converting audio/video to text with timestamps.</li>
+                                <li class="keyword-item"><strong>TextExtractor:</strong> Node that processes textual documents (PDF, DOCX, etc.).</li>
+                            </ul>
+                        </div>
+                    </details>
+                </article>
+                
+                <article class="chapter" id="chapter4">
+                    <h3>4. Code Implementation</h3>
+                    <p class="source-info">Source: GitHub Repository | Type: Python Code</p>
+                    <div class="summary">
+                        <p>This chapter focuses on the implementation details of the key <span class="keyword-expandable" data-keyword="PocketFlow">PocketFlow</span> nodes. Below is a simplified version of the <span class="keyword-expandable" data-keyword="FileIngestor">FileIngestor</span> node that handles the initial classification of files by type.</p>
+                    </div>
+                    
+                    <div class="code-block">
+<span class="keyword">class</span> <span class="function">FileIngestor</span>(Node):
+    <span class="comment"># Node responsible for scanning project folder and classifying files</span>
+    
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, config=None):
+        <span class="keyword">super</span>().<span class="function">__init__</span>(config)
+        self.supported_types = {
+            <span class="string">"pdf"</span>: [<span class="string">".pdf"</span>],
+            <span class="string">"docx"</span>: [<span class="string">".docx"</span>, <span class="string">".doc"</span>],
+            <span class="string">"text"</span>: [<span class="string">".txt"</span>, <span class="string">".md"</span>],
+            <span class="string">"audio_video"</span>: [<span class="string">".mp3"</span>, <span class="string">".mp4"</span>, <span class="string">".wav"</span>, <span class="string">".avi"</span>],
+            <span class="string">"code"</span>: [<span class="string">".py"</span>, <span class="string">".js"</span>, <span class="string">".html"</span>, <span class="string">".css"</span>, <span class="string">".java"</span>]
+        }
+    
+    <span class="keyword">def</span> <span class="function">process</span>(self, context):
+        <span class="comment"># Get input from context</span>
+        project_folder = context.get(<span class="string">"project_folder"</span>)
+        
+        <span class="keyword">if not</span> os.path.exists(project_folder):
+            <span class="keyword">raise</span> <span class="function">ValueError</span>(<span class="string">f"Project folder {project_folder} does not exist"</span>)
+            
+        <span class="comment"># Initialize result structure</span>
+        files_by_type = {k: [] <span class="keyword">for</span> k <span class="keyword">in</span> self.supported_types.keys()}
+        
+        <span class="comment"># Scan files recursively</span>
+        <span class="keyword">for</span> root, dirs, files <span class="keyword">in</span> os.<span class="function">walk</span>(project_folder):
+            <span class="keyword">for</span> file <span class="keyword">in</span> files:
+                file_path = os.<span class="function">path.join</span>(root, file)
+                file_ext = os.<span class="function">path.splitext</span>(file)[<span class="number">1</span>].lower()
+                
+                <span class="comment"># Classify file by extension</span>
+                <span class="keyword">for</span> file_type, extensions <span class="keyword">in</span> self.supported_types.items():
+                    <span class="keyword">if</span> file_ext <span class="keyword">in</span> extensions:
+                        files_by_type[file_type].<span class="function">append</span>(file_path)
+                        <span class="keyword">break</span>
+        
+        <span class="comment"># Store result in context</span>
+        context[<span class="string">"files_by_type"</span>] = files_by_type
+        <span class="keyword">return</span> context
+                    </div>
+                    
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> What is the purpose of the FileIngestor class? <br><strong>A:</strong> It scans a project folder, identifies file types by extension, and categorizes them for subsequent processing by specialized nodes.</li>
+                                <li class="qna-item"><strong>Q:</strong> How does PocketFlow handle state between nodes? <br><strong>A:</strong> Through a shared context dictionary that each node can read from and write to.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="keyword-item"><strong>FileIngestor:</strong> PocketFlow node that classifies files by type for processing.</li>
+                                <li class="keyword-item"><strong>Node:</strong> Base class for all processing components in PocketFlow.</li>
+                                <li class="keyword-item"><strong>context:</strong> Shared dictionary used to pass data between nodes.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </article>
+                
+                <article class="chapter" id="chapter5">
+                    <h3>5. Report Assembly</h3>
+                    <p class="source-info">Source: System Documentation | Type: PDF | Page: 25-30</p>
+                    <div class="summary">
+                        <p>The final step in the processing pipeline is performed by the <span class="keyword-expandable" data-keyword="ReportAssembler">ReportAssembler</span> node. This node aggregates all the processed components into a structured JSON format suitable for rendering in the UI.</p>
+                        
+                        <div class="callout-block callout-warning">
+                            <strong>Note:</strong> The final JSON structure must follow the schema exactly for the UI to properly render all components.
+                        </div>
+                        
+                        <p>The <span class="keyword-expandable" data-keyword="Output Schema">Output Schema</span> includes sections for chapters, Q&A pairs, keywords with context, visual elements, and a cross-reference index. Additional <span class="keyword-expandable" data-keyword="Notion-style blocks">Notion-style blocks</span> can be included for enhanced formatting.</p>
+                    </div>
+                    
+                    <details class="qna-section">
+                        <summary>Q&A</summary>
+                        <div class="details-content">
+                             <ul>
+                                <li class="qna-item"><strong>Q:</strong> What is the primary function of the ReportAssembler? <br><strong>A:</strong> To combine all generated insights and components into a unified JSON structure that follows the output schema.</li>
+                                <li class="qna-item"><strong>Q:</strong> How are cross-references between chapters handled? <br><strong>A:</strong> Through the cross_chapter_links array in the final_index section of the output.</li>
+                            </ul>
+                        </div>
+                    </details>
+                    
+                    <details class="keywords-section">
+                        <summary>Keywords</summary>
+                        <div class="details-content">
+                            <ul>
+                                <li class="keyword-item"><strong>ReportAssembler:</strong> Final node in the pipeline that creates the structured report output.</li>
+                                <li class="keyword-item"><strong>Output Schema:</strong> The JSON structure specification for the final report.</li>
+                                <li class="keyword-item"><strong>Notion-style blocks:</strong> Content formatting options like callouts, toggles, and lists.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </article>
+            </div>
+
+            <!-- Keyword Popup Structure (Hidden) -->
+            <div id="keyword-popup">
+                <h5 id="popup-title">Keyword</h5>
+                <p><strong>Definition:</strong> <span id="popup-definition">Definition loading...</span></p>
+                <p><strong>Source:</strong> <span id="popup-source">Source loading...</span></p>
+                <div class="context-snippet">
+                    <strong>Context:</strong> <span id="popup-context">Context loading...</span>
+                </div>
+                <div class="related-terms">
+                    <strong>Related Terms:</strong> <span id="popup-related"></span>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <div class="sidebar-section">
+                <h4>Concept Map</h4>
+                <div class="mindmap-container" id="mindmap-container">
+                    <!-- Mindmap will be rendered here -->
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h4>Search Report</h4>
+                 <div class="search-box">
+                    <input type="search" id="search-input" placeholder="Search keywords or text...">
+                    <div class="search-results" id="search-results">
+                        <!-- Search results will appear here -->
+                    </div>
+                 </div>
+            </div>
+            <div class="sidebar-section">
+                <h4>Filter by Source</h4>
+                <div class="source-filters">
+                    <button class="active">All</button>
+                    <button>PDF</button>
+                    <button>DOCX</button>
+                    <button>Audio</button>
+                    <button>Code</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Glossary / Index</h4>
+                 <div class="glossary-list">
+                    <ul>
+                        <li><a href="#" data-keyword="PocketFlow">PocketFlow</a></li>
+                        <li><a href="#" data-keyword="Neurofeedback">Neurofeedback</a></li>
+                        <li><a href="#" data-keyword="Polyvagal Theory">Polyvagal Theory</a></li>
+                        <li><a href="#" data-keyword="Autonomic Nervous System">Autonomic Nervous System</a></li>
+                        <li><a href="#" data-keyword="Neuroception">Neuroception</a></li>
+                        <li><a href="#" data-keyword="ASD">ASD</a></li>
+                        <li><a href="#" data-keyword="Hyperarousal">Hyperarousal</a></li>
+                        <li><a href="#" data-keyword="Hypoarousal">Hypoarousal</a></li>
+                        <li><a href="#" data-keyword="BatchTranscriber">BatchTranscriber</a></li>
+                        <li><a href="#" data-keyword="TextExtractor">TextExtractor</a></li>
+                        <li><a href="#" data-keyword="FileIngestor">FileIngestor</a></li>
+                        <li><a href="#" data-keyword="ReportAssembler">ReportAssembler</a></li>
+                        <li><a href="#" data-keyword="Output Schema">Output Schema</a></li>
+                        <li><a href="#" data-keyword="Notion-style blocks">Notion-style blocks</a></li>
+                        <li><a href="#" data-keyword="Ventral Vagal Complex">Ventral Vagal Complex</a></li>
+                        <li><a href="#" data-keyword="Dorsal Vagal Complex">Dorsal Vagal Complex</a></li>
+                    </ul>
+                </div>
+            </div>
+             <div class="sidebar-section">
+                <h4>Export Options</h4>
+                <button style="width: 100%; padding: 8px; margin-bottom: 5px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Export as PDF</button>
+                <button style="width: 100%; padding: 8px; margin-bottom: 5px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Download JSON</button>
+                <button style="width: 100%; padding: 8px; background-color: #ddd; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Generate Audio Summary</button>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.0.0/d3.min.js"></script>
+    <script>
+        // Store the JSON data directly in the script for this example
+        const jsonData = {
+          "targetIndividual": {
+            "nameOrIdentifier": "Homen Shum",
+            "primaryProfileURL": "https://www.linkedin.com/in/homen-shum"
+          },
+          "analyzedPlatforms": [
+            "LinkedIn",
+            "Instagram"
+          ],
+          "yourCoffeeCard": {
+            "name": "Homen Shum",
+            "title": "Ex-PM Startup, Banking Associate, Data/ML/GenAI Engineering for FinAdvizly | Ex-Healthtech | UC Berkeley | Co-founder @ CafeCorner LLC",
+            "profilePictureUrlForCard": "https://media.licdn.com/dms/image/D0303AQFHvLdu3n6hsg/profile-displayphoto-shrink_400_400/0/1683415797155?e=1724284800&v=beta&t=vYkL4V1hR5Y7F2sP6z0wXkQ8_n_y2B5uP9b7Jq8sY0o", // Example placeholder
+            "taglineOrBriefSummary": "Versatile professional with expertise in Generative AI, Large Language Models, and data analytics, driving innovation in finance and healthcare through leadership in startup ventures and impactful projects at JPMorgan Chase.",
+            "primaryProfileUrlForCard": "https://www.linkedin.com/in/homen-shum",
+            "callToActionForCard": "Connect on LinkedIn",
+            "location": "Fremont, California, United States",
+            "interests": [
+              "Generative AI", "Large Language Models", "FinTech", "HealthTech", "Data Science",
+              "Machine Learning", "Cloud Computing", "Startups", "Investment", "Technology Trends"
+            ],
+            "hobbies": [ "Exploring new AI technologies", "Hackathons", "Content Creation (technical blogs/videos - inferred)" ],
+            "skills": [
+              "Large Language Models (LLMs)", "Python (Programming Language)", "Generative AI", "Data Analysis",
+              "Machine Learning", "Pandas (Software)", "Microsoft Azure", "Google Cloud Platform (GCP)",
+              "Amazon Web Services (AWS)", "Automation", "Financial Analysis", "Startup Development"
+            ],
+            "experiences": [
+              {
+                "role": "Founder", "company": "FinAdvizly LLC", "dates": "Dec 2021 - Present (2 yrs 5 mos)",
+                "isCurrentOrPrimary": true,
+                "briefSummaryForMiniCard": "Leading FinAdvizly in developing GenAI-powered sales recommendation, workflow automation, and financial research tools.",
+                "description": "Built and deployed sales recommendation and workflow automation applications across GCP, Azure, AWS, and Render using Docker. Led a team of 5 people to win Top-25 placement at UC Berkeley AI Hackathon (Jun 2023) by implementing medical code matching with real-time transcription and RAG (Retrieval Augmented Generation) implementation for healthcare, subsequently becoming Technical Co-Founder of FinAdvizly's new GenAI product for healthcare. Currently (Nov 2023-Present), developing FinAdvizly's capabilities by integrating multi-agent architecture for comprehensive financial research, featuring cross-validation with web data and structured output processing for report generation.",
+                "skillDetails": [
+                  {"skillName": "Large Language Models (LLMs)", "contextualSnippet": "subsequently becoming Technical Co-Founder of FinAdvizly's new GenAI product for healthcare.", "relatedSkillsInThisExperience": ["Generative AI", "RAG", "GCP", "Azure", "AWS", "Docker", "Python", "Multi-agent architecture"]},
+                  {"skillName": "Generative AI", "contextualSnippet": "subsequently becoming Technical Co-Founder of FinAdvizly's new GenAI product for healthcare.", "relatedSkillsInThisExperience": ["LLMs", "RAG", "Python"]},
+                  {"skillName": "GCP", "contextualSnippet": "Built and deployed sales recommendation and workflow automation applications across GCP, Azure, AWS...", "relatedSkillsInThisExperience": ["Azure", "AWS", "Docker", "Workflow Automation"]},
+                  {"skillName": "Azure", "contextualSnippet": "Built and deployed sales recommendation and workflow automation applications across GCP, Azure, AWS...", "relatedSkillsInThisExperience": ["GCP", "AWS", "Docker", "Workflow Automation"]},
+                  {"skillName": "AWS", "contextualSnippet": "Built and deployed sales recommendation and workflow automation applications across GCP, Azure, AWS...", "relatedSkillsInThisExperience": ["GCP", "Azure", "Docker", "Workflow Automation"]},
+                  {"skillName": "Docker", "contextualSnippet": "Built and deployed sales recommendation and workflow automation applications across GCP, Azure, AWS, and Render using Docker.", "relatedSkillsInThisExperience": ["GCP", "Azure", "AWS"]},
+                  {"skillName": "RAG (Retrieval Augmented Generation)", "contextualSnippet": "implementing medical code matching with real-time transcription and RAG (Retrieval Augmented Generation) implementation for healthcare.", "relatedSkillsInThisExperience": ["LLMs", "Generative AI", "Medical Code Matching", "Real-time Transcription"]},
+                  {"skillName": "Multi-agent architecture", "contextualSnippet": "integrating multi-agent architecture for comprehensive financial research...", "relatedSkillsInThisExperience": ["LLMs", "Financial Research"]},
+                  {"skillName": "Large-scale Data Analytics", "contextualSnippet": "featuring cross-validation with web data and structured output processing for report generation.", "relatedSkillsInThisExperience": ["Financial Research"]}
+                ]
+              },
+              {
+                "role": "Rotation 3: Healthcare and Life Science Banking Team", "company": "JPMorgan Chase & Co.", "dates": "May 2023 - Feb 2024 (10 mos)",
+                "description": "Initiated collaborations between internal teams such as CC / SF Risk and Fin/ML Team to streamline client onboarding / management / servicing. Key projects included: (Oct 2023) Automated classification system for JPM Healthcare Banking team using GPT and Embeddings, implementing structured outputs to populate an instruction matrix and DPT 3.5 turbo, reducing processing time for 2,000+ companies from two weeks to under 30 seconds. (Feb 2024) Designed real-time AI transcription application for JPM internal meetings and assumed LLM Application Pilot role within AI ML Technology team.",
+                "skillDetails": [
+                  {"skillName": "GPT", "contextualSnippet": "Automated classification system for JPM Healthcare Banking team using GPT and Embeddings...", "relatedSkillsInThisExperience": ["Embeddings", "DPT 3.5 turbo", "LLMs", "AI Transcription", "Automation"]},
+                  {"skillName": "Embeddings", "contextualSnippet": "Automated classification system for JPM Healthcare Banking team using GPT and Embeddings...", "relatedSkillsInThisExperience": ["GPT", "DPT 3.5 turbo", "LLMs"]},
+                  {"skillName": "Large Language Models (LLMs)", "contextualSnippet": "assumed LLM Application Pilot role within AI ML Technology team.", "relatedSkillsInThisExperience": ["GPT", "AI Transcription", "Automation"]},
+                  {"skillName": "AI Transcription", "contextualSnippet": "Designed real-time AI transcription application for JPM internal meetings...", "relatedSkillsInThisExperience": ["LLMs", "Automation"]},
+                  {"skillName": "Automation", "contextualSnippet": "Automated classification system for JPM Healthcare Banking team...", "relatedSkillsInThisExperience": ["GPT", "LLMs"]},
+                  {"skillName": "Cloud Computing", "contextualSnippet": "Initiated collaborations between internal teams such as CC / SF Risk and Fin/ML Team to streamline client onboarding / management / servicing.", "relatedSkillsInThisExperience": ["Amazon Web Services (AWS)"]},
+                  {"skillName": "Amazon Web Services (AWS)", "contextualSnippet": "Initiated collaborations between internal teams such as CC / SF Risk and Fin/ML Team to streamline client onboarding / management / servicing.", "relatedSkillsInThisExperience": ["Cloud Computing"]}
+                ]
+              }
+            ],
+            "education": [
+              {"institution": "UC Santa Barbara", "degree": "Certificate", "fieldOfStudy": "Business Administration and Management, General", "dates": "2020 - 2021", "description": "Cooperated with professors on personal project, recommended by 2 professors and a graduate student."},
+              {"institution": "Financial Edge Training", "degree": "Certificate", "fieldOfStudy": "Commercial Banking, Budget Training, Accounting and Finance", "dates": "2021", "description": null}
+            ],
+            "projects": [
+              {"projectName": "Startup Search API", "datesOrDuration": "Oct 2023 - Nov 2023", "description": "Developed a Startup Search API. Demo: https://hbrt-qphm-server-4psnwpfyqf-wl.a.run.app/search?q=[your search query...]. This project involved creating a web service API...", "skillsUsed": ["Web Services API", "Docker"], "projectUrl": "https://hbrt-qphm-server-4psnwpfyqf-wl.a.run.app/"},
+              {"projectName": "Celebrity Voice AI Platform", "datesOrDuration": "Oct 2023", "description": "Developed Celebrity Voice AI Platform using GPT-3, Flask, and AutoML, implementing cosine similarity matching for celebrity speech pattern replication.", "skillsUsed": ["GPT-3", "Flask", "AutoML", "Cosine Similarity", "Voice AI"], "projectUrl": null},
+              {"projectName": "Nation's Cybersecurity Challenge", "datesOrDuration": "Mar 2023", "description": "Achieved 2nd place in Nation's Cybersecurity challenge with 95% accuracy in semantic matching and unified representation of multi-vendor security alerts.", "skillsUsed": ["Semantic Matching", "Cybersecurity", "Data Representation"], "projectUrl": null}
+            ],
+            "keyAchievementsOverall": [
+              "Co-founded FinAdvizly LLC, developing Generative AI solutions for finance and healthcare.",
+              "Achieved Top-25 placement in UC Berkeley AI Hackathon and 2nd place in Nation's Cybersecurity Challenge.",
+              "Pioneered AI applications within JPMorgan Chase, including automated systems and LLM pilots."
+            ]
+          }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const coffeeCardData = jsonData.yourCoffeeCard;
+            const coffeeCardTriggerContainer = document.querySelector('.left-sidebar .sidebar-section:first-child .coffee-card-trigger');
+
+            if (coffeeCardTriggerContainer) {
+                 coffeeCardTriggerContainer.innerHTML = `
+                    <div class="coffee-card-trigger-avatar">
+                        ${coffeeCardData.profilePictureUrlForCard && coffeeCardData.profilePictureUrlForCard !== "https://example.com/homen_shum_linkedin_profile.jpg" ? `<img src="${coffeeCardData.profilePictureUrlForCard}" alt="${coffeeCardData.name ? coffeeCardData.name.substring(0,2).toUpperCase() : 'HS'}">` : (coffeeCardData.name ? coffeeCardData.name.substring(0,2).toUpperCase() : 'HS')}
+                    </div>
+                    <div class="coffee-card-trigger-details">
+                        <div class="coffee-card-trigger-name">${coffeeCardData.name || "User Profile"}</div>
+                        <div>View Profile</div>
+                    </div>
+                `;
+            } else {
+                const firstSidebarSection = document.querySelector('.left-sidebar .sidebar-section:first-child');
+                if (firstSidebarSection) {
+                    const newTrigger = document.createElement('div');
+                    newTrigger.className = 'coffee-card-trigger';
+                    newTrigger.innerHTML = `
+                        <div class="coffee-card-trigger-avatar">
+                             ${coffeeCardData.profilePictureUrlForCard && coffeeCardData.profilePictureUrlForCard !== "https://example.com/homen_shum_linkedin_profile.jpg" ? `<img src="${coffeeCardData.profilePictureUrlForCard}" alt="${coffeeCardData.name ? coffeeCardData.name.substring(0,2).toUpperCase() : 'HS'}">` : (coffeeCardData.name ? coffeeCardData.name.substring(0,2).toUpperCase() : 'HS')}
+                        </div>
+                        <div class="coffee-card-trigger-details">
+                            <div class="coffee-card-trigger-name">${coffeeCardData.name || "User Profile"}</div>
+                            <div>View Profile</div>
+                        </div>`;
+                    const settingsButton = firstSidebarSection.querySelector('button');
+                    if (settingsButton) firstSidebarSection.insertBefore(newTrigger, settingsButton);
+                    else firstSidebarSection.appendChild(newTrigger);
+                }
+            }
+            
+            const coffeeCardPopupHTML = `
+            <div id="coffeeCardPopup" class="coffee-card-popup" style="display:none;">
+                <div class="coffee-card-header">
+                    <img id="coffeeCardPic" src="" alt="Profile Picture">
+                    <div class="profile-info">
+                        <h3 id="coffeeCardName"></h3>
+                        <p id="coffeeCardTitle"></p>
+                        <p id="coffeeCardLocation"></p>
+                    </div>
+                    <button id="closeCoffeeCardPopup" class="close-button">×</button>
+                </div>
+                <div class="coffee-card-body">
+                    <p id="coffeeCardTagline"></p>
+                    <a id="coffeeCardCTA" href="#" target="_blank" class="cta-button"></a>
+
+                    <details class="coffee-card-section" open> <summary>Interests</summary> <div id="coffeeCardInterests" class="details-content"></div> </details>
+                    <details class="coffee-card-section"> <summary>Hobbies</summary> <div id="coffeeCardHobbies" class="details-content"></div> </details>
+                    <details class="coffee-card-section" open> <summary>Skills</summary> <div id="coffeeCardSkills" class="details-content"></div> </details>
+                    <details class="coffee-card-section" open> <summary>Experience</summary> <div id="coffeeCardExperiences" class="details-content"></div> </details>
+                    <details class="coffee-card-section"> <summary>Education</summary> <div id="coffeeCardEducation" class="details-content"></div> </details>
+                    <details class="coffee-card-section"> <summary>Projects</summary> <div id="coffeeCardProjects" class="details-content"></div> </details>
+                    <details class="coffee-card-section"> <summary>Key Achievements</summary> <div id="coffeeCardKeyAchievements" class="details-content"></div> </details>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', coffeeCardPopupHTML);
+
+            const coffeeKeywordPopupHTML = `
+            <div id="coffeeKeywordPopupDetail" style="display:none; position:absolute; background:white; border:1px solid #ccc; padding:10px; z-index:1001; box-shadow: 0 2px 5px rgba(0,0,0,0.2); max-width: 300px;">
+                <h5 id="coffeeKeywordPopupTitle"></h5>
+                <p><strong>Definition:</strong> <span id="coffeeKeywordPopupDefinition"></span></p>
+                <div id="coffeeKeywordPopupContextContainer" style="display:none;">
+                  <p style="margin-top: 5px;"><strong>Contextual Snippet:</strong></p>
+                  <em id="coffeeKeywordPopupContextSnippet"></em>
+                  <p style="margin-top: 5px;"><strong>Related in this Experience:</strong></p>
+                  <div id="coffeeKeywordPopupRelatedSkills"></div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', coffeeKeywordPopupHTML);
+
+            const coffeeCardPopupEl = document.getElementById('coffeeCardPopup');
+            const closeCoffeeCardPopupBtn = document.getElementById('closeCoffeeCardPopup');
+            const coffeeCardPicEl = document.getElementById('coffeeCardPic');
+            const coffeeCardNameEl = document.getElementById('coffeeCardName');
+            const coffeeCardTitleEl = document.getElementById('coffeeCardTitle');
+            const coffeeCardLocationEl = document.getElementById('coffeeCardLocation');
+            const coffeeCardTaglineEl = document.getElementById('coffeeCardTagline');
+            const coffeeCardCTAEl = document.getElementById('coffeeCardCTA');
+            const coffeeCardInterestsEl = document.getElementById('coffeeCardInterests');
+            const coffeeCardHobbiesEl = document.getElementById('coffeeCardHobbies');
+            const coffeeCardSkillsEl = document.getElementById('coffeeCardSkills');
+            const coffeeCardExperiencesEl = document.getElementById('coffeeCardExperiences');
+            const coffeeCardEducationEl = document.getElementById('coffeeCardEducation');
+            const coffeeCardProjectsEl = document.getElementById('coffeeCardProjects');
+            const coffeeCardKeyAchievementsEl = document.getElementById('coffeeCardKeyAchievements');
+
+            const coffeeKeywordPopupDetailEl = document.getElementById('coffeeKeywordPopupDetail');
+            const coffeeKeywordPopupTitleEl = document.getElementById('coffeeKeywordPopupTitle');
+            const coffeeKeywordPopupDefinitionEl = document.getElementById('coffeeKeywordPopupDefinition');
+            const coffeeKeywordPopupContextContainerEl = document.getElementById('coffeeKeywordPopupContextContainer');
+            const coffeeKeywordPopupContextSnippetEl = document.getElementById('coffeeKeywordPopupContextSnippet');
+            const coffeeKeywordPopupRelatedSkillsEl = document.getElementById('coffeeKeywordPopupRelatedSkills');
+
+            function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+            function createCoffeeKeywordSpan(text, type, contextData = null) {
+                const span = document.createElement('span');
+                span.className = 'coffee-keyword-expandable';
+                span.textContent = text;
+                span.dataset.keywordText = text;
+                span.dataset.keywordType = type;
+                if (contextData && type === 'experience_skill') {
+                    span.dataset.contextSnippet = contextData.contextualSnippet;
+                    span.dataset.relatedSkills = JSON.stringify(contextData.relatedSkillsInThisExperience || []);
+                    span.dataset.skillName = contextData.skillName; 
+                }
+                return span;
+            }
+
+            function populateCoffeeCard(data) {
+                const defaultAvatarText = data.name ? data.name.substring(0,2).toUpperCase() : 'P';
+                coffeeCardPicEl.src = (data.profilePictureUrlForCard && data.profilePictureUrlForCard !== "https://example.com/homen_shum_linkedin_profile.jpg") ? data.profilePictureUrlForCard : `https://via.placeholder.com/80.png?text=${defaultAvatarText}`;
+                coffeeCardPicEl.alt = data.name || "Profile";
+                coffeeCardNameEl.textContent = data.name || "Name Not Provided";
+                coffeeCardTitleEl.textContent = data.title || "Title Not Provided";
+                coffeeCardLocationEl.textContent = data.location ? `📍 ${data.location}` : "";
+                coffeeCardTaglineEl.textContent = data.taglineOrBriefSummary || "";
+                coffeeCardCTAEl.href = data.primaryProfileUrlForCard || "#";
+                coffeeCardCTAEl.textContent = data.callToActionForCard || "View Profile";
+
+                function populatePills(element, items, type) {
+                    if (items && items.length > 0) {
+                        const ul = document.createElement('ul');
+                        items.forEach(itemStr => {
+                            const li = document.createElement('li');
+                            if (['general_skill', 'interest', 'hobby', 'project_skill'].includes(type)) { // project_skill also as pills
+                                li.appendChild(createCoffeeKeywordSpan(itemStr, type));
+                            } else { // achievements as simple text list items, not styled as pills
+                                li.textContent = itemStr;
+                                li.style.background = "transparent"; // Override pill style if any
+                                li.style.border = "none";
+                                li.style.padding = "2px 0";
+                                li.style.color = "var(--cc-text-exp)"; // Use a general text color
+                            }
+                            ul.appendChild(li);
+                        });
+                        element.innerHTML = '';
+                        element.appendChild(ul);
+                    } else { element.innerHTML = '<ul><li class="missing-pill">Not specified.</li></ul>'; }
+                }
+                
+                populatePills(coffeeCardInterestsEl, data.interests, 'interest');
+                populatePills(coffeeCardHobbiesEl, data.hobbies, 'hobby');
+                populatePills(coffeeCardSkillsEl, data.skills, 'general_skill');
+                
+                coffeeCardExperiencesEl.innerHTML = '';
+                if (data.experiences && data.experiences.length > 0) {
+                    data.experiences.forEach(exp => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'coffee-card-experience-item';
+                        let descriptionHTML = exp.description || 'No description provided.';
+                        
+                        const skillDetailsForHighlight = [...(exp.skillDetails || [])].sort((a, b) => b.skillName.length - a.skillName.length);
+
+                        skillDetailsForHighlight.forEach(sd => {
+                            const skillNameRegex = new RegExp(`\\b(${escapeRegExp(sd.skillName)})\\b`, 'gi');
+                            descriptionHTML = descriptionHTML.replace(skillNameRegex, (match) => {
+                                const span = createCoffeeKeywordSpan(match, 'experience_skill', sd);
+                                return span.outerHTML;
+                            });
+                        });
+                        itemDiv.innerHTML = `
+                            <h5>${exp.role || 'Role N/A'}</h5>
+                            <p class="company-name">${exp.company || 'Company N/A'}</p>
+                            <p class="dates">${exp.dates || 'Dates N/A'}</p>
+                            <div class="description">${descriptionHTML}</div>
+                            ${exp.briefSummaryForMiniCard ? `<p style="font-style:italic; font-size:0.85em; margin-top:5px; color: var(--cc-text-secondary);">Summary: ${exp.briefSummaryForMiniCard}</p>` : ''}
+                        `;
+                        coffeeCardExperiencesEl.appendChild(itemDiv);
+                    });
+                } else { coffeeCardExperiencesEl.innerHTML = '<p style="color: var(--cc-text-placeholder);">Not specified.</p>'; }
+
+                coffeeCardEducationEl.innerHTML = '';
+                if (data.education && data.education.length > 0) {
+                    data.education.forEach(edu => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'coffee-card-education-item';
+                        itemDiv.innerHTML = `
+                            <h5>${edu.degree || 'Degree N/A'} - ${edu.fieldOfStudy || 'Field N/A'}</h5>
+                            <p class="institution-name">${edu.institution || 'Institution N/A'}</p>
+                            <p class="dates">${edu.dates || 'Dates N/A'}</p>
+                            ${edu.description ? `<p class="description">${edu.description}</p>` : ''}
+                        `;
+                        coffeeCardEducationEl.appendChild(itemDiv);
+                    });
+                } else { coffeeCardEducationEl.innerHTML = '<p style="color: var(--cc-text-placeholder);">Not specified.</p>'; }
+
+                coffeeCardProjectsEl.innerHTML = '';
+                if (data.projects && data.projects.length > 0) {
+                    data.projects.forEach(proj => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'coffee-card-project-item';
+                        let skillsUsedHTML = '';
+                        if (proj.skillsUsed && proj.skillsUsed.length > 0) {
+                           // Wrap skills in a ul to get pill styling
+                           skillsUsedHTML = `<div class="skills-used"><strong>Skills:</strong><ul>${proj.skillsUsed.map(s => `<li>${createCoffeeKeywordSpan(s, 'project_skill').outerHTML}</li>`).join('')}</ul></div>`;
+                        }
+                        itemDiv.innerHTML = `
+                            <h5>${proj.projectName || 'Project N/A'} ${proj.projectUrl ? `<a href="${proj.projectUrl}" target="_blank" title="Visit project" class="project-link">🔗</a>` : ''}</h5>
+                            <p class="dates">${proj.datesOrDuration || 'Duration N/A'}</p>
+                            <p class="description">${proj.description || 'No description provided.'}</p>
+                            ${skillsUsedHTML}
+                        `;
+                        coffeeCardProjectsEl.appendChild(itemDiv);
+                    });
+                } else { coffeeCardProjectsEl.innerHTML = '<p style="color: var(--cc-text-placeholder);">Not specified.</p>'; }
+
+                populatePills(coffeeCardKeyAchievementsEl, data.keyAchievementsOverall, 'achievement');
+            }
+
+            const coffeeCardTriggerEl = document.querySelector('.coffee-card-trigger');
+            if (coffeeCardTriggerEl) {
+                coffeeCardTriggerEl.addEventListener('click', () => {
+                    populateCoffeeCard(coffeeCardData);
+                    coffeeCardPopupEl.style.display = 'flex';
+                });
+            }
+
+
+            closeCoffeeCardPopupBtn.addEventListener('click', () => {
+                coffeeCardPopupEl.style.display = 'none';
+            });
+
+            coffeeCardPopupEl.addEventListener('click', function(event) {
+                const target = event.target;
+                if (target.classList.contains('coffee-keyword-expandable')) {
+                    const keywordText = target.dataset.keywordText;
+                    const keywordType = target.dataset.keywordType;
+                    
+                    coffeeKeywordPopupTitleEl.textContent = keywordText;
+                    coffeeKeywordPopupContextContainerEl.style.display = 'none'; 
+                    coffeeKeywordPopupContextSnippetEl.textContent = '';
+                    coffeeKeywordPopupRelatedSkillsEl.innerHTML = '';
+
+                    if (keywordType === 'experience_skill') {
+                        const skillName = target.dataset.skillName || keywordText; 
+                        coffeeKeywordPopupTitleEl.textContent = skillName;
+                        coffeeKeywordPopupDefinitionEl.textContent = `A skill demonstrated in professional experience.`;
+                        const contextSnippet = target.dataset.contextSnippet;
+                        const relatedSkills = JSON.parse(target.dataset.relatedSkills || "[]");
+
+                        if (contextSnippet && contextSnippet !== "null" && contextSnippet.trim() !== "") {
+                            coffeeKeywordPopupContextSnippetEl.textContent = contextSnippet;
+                            coffeeKeywordPopupContextContainerEl.style.display = 'block';
+                        }
+                        if (relatedSkills.length > 0) {
+                            relatedSkills.forEach(rs => {
+                                const rsSpan = document.createElement('span');
+                                rsSpan.className = 'related-skill-tag';
+                                rsSpan.textContent = rs;
+                                coffeeKeywordPopupRelatedSkillsEl.appendChild(rsSpan);
+                            });
+                             if(coffeeKeywordPopupContextContainerEl.style.display === 'none') coffeeKeywordPopupContextContainerEl.style.display = 'block';
+                        }
+                         if ((!contextSnippet || contextSnippet === "null" || contextSnippet.trim() === "") && relatedSkills.length === 0) {
+                             coffeeKeywordPopupContextContainerEl.style.display = 'none';
+                         }
+                    } else if (keywordType === 'general_skill') {
+                        coffeeKeywordPopupDefinitionEl.textContent = `A general professional skill.`;
+                        let foundContextsHTML = [];
+                        if (coffeeCardData.experiences) {
+                            coffeeCardData.experiences.forEach(exp => {
+                                if (exp.skillDetails) {
+                                    exp.skillDetails.forEach(sd => {
+                                        if (sd.skillName.toLowerCase() === keywordText.toLowerCase() && sd.contextualSnippet && sd.contextualSnippet !== "null") {
+                                            foundContextsHTML.push(`<strong>In '${exp.role} at ${exp.company}':</strong> <em>"${sd.contextualSnippet}"</em>`);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        if (foundContextsHTML.length > 0) {
+                             coffeeKeywordPopupContextSnippetEl.innerHTML = foundContextsHTML.join('<br><br>');
+                             coffeeKeywordPopupRelatedSkillsEl.innerHTML = '';
+                             coffeeKeywordPopupContextContainerEl.style.display = 'block';
+                        }
+                    } else if (keywordType === 'interest') {
+                        coffeeKeywordPopupDefinitionEl.textContent = `A stated professional or personal interest.`;
+                    } else if (keywordType === 'hobby') {
+                        coffeeKeywordPopupDefinitionEl.textContent = `A personal hobby or leisure activity.`;
+                    } else if (keywordType === 'project_skill') {
+                        coffeeKeywordPopupDefinitionEl.textContent = `A skill utilized in a specific project.`;
+                    } else {
+                        coffeeKeywordPopupDefinitionEl.textContent = `Information about "${keywordText}".`;
+                    }
+
+                    const rect = target.getBoundingClientRect();
+                    coffeeKeywordPopupDetailEl.style.display = 'block';
+                    const popupHeight = coffeeKeywordPopupDetailEl.offsetHeight;
+                    const popupWidth = coffeeKeywordPopupDetailEl.offsetWidth;
+                    let top = rect.bottom + window.scrollY + 5;
+                    let left = rect.left + window.scrollX;
+                    if (top + popupHeight > window.innerHeight + window.scrollY -10) { top = rect.top + window.scrollY - popupHeight - 5; }
+                    if (left + popupWidth > window.innerWidth + window.scrollX -10) { left = rect.right + window.scrollX - popupWidth; }
+                    if (left < window.scrollX + 5) { left = window.scrollX + 5; }
+                    if (top < window.scrollY + 5) { top = window.scrollY + 5; }
+                    coffeeKeywordPopupDetailEl.style.top = `${top}px`;
+                    coffeeKeywordPopupDetailEl.style.left = `${left}px`;
+                    event.stopPropagation(); 
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                if (coffeeKeywordPopupDetailEl.style.display === 'block' && !coffeeKeywordPopupDetailEl.contains(event.target) && !event.target.classList.contains('coffee-keyword-expandable')) {
+                    coffeeKeywordPopupDetailEl.style.display = 'none';
+                }
+                 if (coffeeCardPopupEl.style.display === 'flex' && !coffeeCardPopupEl.contains(event.target) && !event.target.closest('.coffee-card-trigger')) {
+                    coffeeCardPopupEl.style.display = 'none';
+                }
+            });
+            coffeeKeywordPopupDetailEl.addEventListener('mouseleave', function() {
+                 setTimeout(() => { if (!coffeeKeywordPopupDetailEl.matches(':hover')) { coffeeKeywordPopupDetailEl.style.display = 'none'; } }, 300);
+            });
+
+            // --- Existing JavaScript from the original template below (no functional changes to this part) ---
+            // Dummy function to represent original D3 code
+            function renderMindmap() { console.log("Original mindmap render call"); }
+            const projectHeaders = document.querySelectorAll('.project-header');
+            const fileItems = document.querySelectorAll('.file-item');
+            projectHeaders.forEach(header => { header.addEventListener('click', () => {/* original logic */}) });
+            fileItems.forEach(item => { item.addEventListener('click', () => {/* original logic */}) });
+            const addProjectButton = document.querySelector('.add-project');
+            if(addProjectButton) addProjectButton.addEventListener('click', () => { alert('This would open a dialog to create a new project.'); });
+            
+            const keywordSpans = document.querySelectorAll('.main-content .keyword-expandable');
+            const glossaryLinks = document.querySelectorAll('.glossary-list a');
+            const popup = document.getElementById('keyword-popup');
+            // Ensure popup elements exist before trying to access textContent
+            const popupTitle = popup ? document.getElementById('popup-title') : null;
+            const popupDefinition = popup ? document.getElementById('popup-definition') : null;
+            const popupSource = popup ? document.getElementById('popup-source') : null;
+            const popupContext = popup ? document.getElementById('popup-context') : null;
+            const popupRelated = popup ? document.getElementById('popup-related') : null;
+
+            const keywordData = { "PocketFlow": { definition: "...", source: "...", context: "...", related: [] } /*... more data ...*/ };
+            function showMainKeywordPopup(keyword, event) { if(popupTitle) { /*... Original main keyword popup logic ...*/ } }
+            keywordSpans.forEach(span => { span.addEventListener('mouseenter', (e) => showMainKeywordPopup(span.dataset.keyword, e)); /*... mouseleave ...*/ });
+            glossaryLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showMainKeywordPopup(link.dataset.keyword, e); }); });
+            
+            if(popup) { popup.addEventListener('mouseleave', () => { popup.style.display = 'none'; }); }
+            document.addEventListener('click', function(event) {
+                if (popup && popup.style.display === 'block' && !popup.contains(event.target) && !event.target.classList.contains('keyword-expandable') && !event.target.closest('.glossary-list')) {
+                    popup.style.display = 'none';
+                }
+            });
+            
+            const chatInput = document.getElementById('chat-input');
+            const chatSend = document.getElementById('chat-send');
+            const chatMessages = document.getElementById('chat-messages');
+            if(chatSend) { chatSend.addEventListener('click', () => { /* ... Original chat logic ... */ }); }
+            if(chatInput) { chatInput.addEventListener('keypress', (e) => { /* ... Original chat logic ... */ }); }
+            
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            if(searchInput) { searchInput.addEventListener('input', () => { /* ... Original search logic ... */ }); }
+            document.addEventListener('click', (e) => {
+                if (searchResults && searchInput && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            function renderKnowledgeGraph() { console.log("Original knowledge graph render call"); }
+            try { renderKnowledgeGraph(); } catch (error) { console.error("Error rendering knowledge graph:", error); }
+            try { renderMindmap(); } catch (error) { console.error("Error rendering mindmap:", error); }
+            
+            const sourceFilterButtons = document.querySelectorAll('.source-filters button');
+            sourceFilterButtons.forEach(button => {  button.addEventListener('click', () => {/* original logic */})});
+            
+            document.querySelectorAll('.right-sidebar .sidebar-section button:not(.source-filters button)').forEach(button => {
+                if (!button.closest('.source-filters')) { button.addEventListener('click', () => { alert(`This would ${button.textContent.toLowerCase()} in a real implementation.`); }); }
+            });
+            const settingsButton = document.querySelector('.left-sidebar .sidebar-section:first-child > button');
+            if(settingsButton) { settingsButton.addEventListener('click', () => { alert('This would open settings in a real implementation.'); }); }
+        });
+    </script>
+
+</body>
+</html>

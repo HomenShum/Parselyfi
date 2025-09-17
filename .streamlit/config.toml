@@ -1,8 +1,8 @@
 [theme]
-primaryColor="#75c9ff"
-backgroundColor="#fcf9f8"
-secondaryBackgroundColor="#DBF1FF"
-textColor="#111953"
+primaryColor = "#CBA35B"
+backgroundColor = "#FAF9F7"
+secondaryBackgroundColor = "#F8F4E6"
+textColor = "#4E342E"
 
 [server]
 runOnSave = true

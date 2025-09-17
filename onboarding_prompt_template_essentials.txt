@@ -1,0 +1,354 @@
+**Streamlined Social Media Profile Analysis Prompt (Essentials for Self-Analysis)**
+
+**Objective:** To extract the essential, direct information fields from `[Target Individual/Profile Name]`'s social media profiles (`[List of Platforms Analyzed]`) for self-analysis by students and professionals. The focus is on core identity, cross-platform presentation, **all visible network interactions presented by the platform UI** (Inbox Previews, Network Tabs, Suggestions/Recommendations), and **detailed content consumption** (specifically topics and visual examples like memes).
+
+**Target Audience:** Students and Professionals interested in understanding their own digital footprint, cross-platform consistency, the people/content surfaced to them, and the types of content (like memes, news topics) they consume.
+
+**Critical Input Data Requirements (MANDATORY where visible/applicable):**
+*   **A. Inbox / Direct Message Sidebar Preview Data:** Capture **ALL** visible individuals/conversations, including **full names**, snippets, and timestamps.
+*   **B. My Network / Connections / Followers Tab Visibility Data:** Capture **ALL** entities (people, companies, etc.) displayed prominently in these sections, including **full names/titles** and context.
+*   **C. Platform Suggestions & Recommendations Data:** Capture **ALL** suggested/recommended entities (People, Pages, Groups, Topics, etc.) shown anywhere on the interface. Include **full names/titles**, details, reasons, and location context. **This is crucial for LinkedIn.**
+*   **D. Detailed Content Consumption Observations:**
+    *   **Main Feed/Timeline:** List key `Feed Topics` (especially for Twitter, Reddit) and notable `Feed Posters`.
+    *   **Discovery Feed (Explore/FYP/Reels/Discover):** List broad `Discovery Themes`, and **numerous, specific examples** of content, **especially visual memes or notable clips** (crucial for Instagram, TikTok).
+
+*   **Also include necessary context:**
+    *   Core profile fundamentals (username, name, URL, profile pic/banner description).
+    *   Bio/Headline/About text.
+    *   Listed Skills and explicit Interests (especially for LinkedIn).
+    *   Key professional history summaries (Titles, Companies, Institutions from LinkedIn).
+
+**Instructions:**
+Generate a report for `[Target Individual/Profile Name]` focusing *only* on extracting and structuring the data points outlined above and defined in the essential JSON schema below. Populate the fields accurately based *only* on the provided input data.
+
+1.  For each platform, fill out its corresponding essential schema section.
+2.  **Prioritize complete capture of all data points listed under "Critical Input Data Requirements."** Extract *all* names from Inbox previews and suggestions. List *multiple specific examples* of consumed memes/topics.
+3.  Fill in the `crossPlatformSynthesis` section focusing on comparing the core identity elements and interests derived directly from the extracted data.
+4.  Populate the `inferredAlgorithmicPerception` based primarily on the captured **Recommendations and Content Consumption** data.
+
+**Do NOT include deep analysis beyond what's required for categorization (e.g., no market trends, candidate evaluation, detailed engagement analysis, or feature usage analysis unless directly requested by the schema fields). Focus on direct data retrieval and structuring for self-reflection.**
+
+---
+
+**Essential JSON Schema for Self-Analysis Report**
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Essential Social Media Profile Analysis Report for Self-Reflection",
+  "description": "Streamlined analysis focusing on core identity, mandatory UI element data (Inbox Preview, Network Tabs, Recommendations), content consumption (topics, memes), and cross-platform synthesis for self-analysis.",
+  "type": "object",
+  "properties": {
+    "targetIndividual": {
+      "description": "Name or identifier of the individual being analyzed.",
+      "type": "string"
+    },
+    "analyzedPlatforms": {
+      "description": "List of social media platforms included in this analysis.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["LinkedIn", "Instagram", "Twitter/X", "Facebook", "TikTok", "Reddit", "Other"]
+      }
+    },
+    "platformSpecificAnalysis": {
+      "description": "Essential data extracted for each platform, using the specific essential schema defined for that platform type.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/platformSchemas/linkedInEssentials" },
+          { "$ref": "#/definitions/platformSchemas/instagramEssentials" },
+          { "$ref": "#/definitions/platformSchemas/twitterEssentials" },
+          { "$ref": "#/definitions/platformSchemas/facebookEssentials" },
+          { "$ref": "#/definitions/platformSchemas/tiktokEssentials" },
+          { "$ref": "#/definitions/platformSchemas/redditEssentials" },
+          { "$ref": "#/definitions/platformSchemas/otherEssentials" }
+        ]
+      }
+    },
+    "crossPlatformSynthesis": {
+      "description": "Essential synthesis comparing identity, interests, and algorithmic perception across platforms.",
+      "type": "object",
+      "properties": {
+        "consistencyVsVariation": {
+           "description": "Comparison of core profile elements (username, name, pic, bio) and overall persona.",
+           "type": "object",
+           "properties": {
+             "profileElementConsistency": {"description": "Summary of consistency in username, picture, bio.", "type": "string"},
+             "personaConsistency": {"description": "Summary of consistency in projected persona/tone.", "type": "string"},
+             "notableDifferences": {"description": "Key differences observed.", "type": "string"}
+           },
+           "required": ["profileElementConsistency", "personaConsistency", "notableDifferences"]
+        },
+        "synthesizedExpertiseInterests": {
+           "description": "Unified list of core skills and interests derived from all platforms.",
+           "type": "object",
+           "properties": {
+             "coreProfessionalSkills": {"description": "Consolidated list of key professional skills/expertise.", "type": "array", "items": {"type": "string"}},
+             "corePersonalInterestsTopics": {"description": "Consolidated list of key personal interests, hobbies, consumed topics/memes.", "type": "array", "items": {"type": "string"}}
+           },
+           "required": ["coreProfessionalSkills", "corePersonalInterestsTopics"]
+        },
+        "overallOnlinePersonaNarrative": {"description": "Brief summary of the dominant impression from the combined essential data.", "type": "string"},
+        "inferredAlgorithmicPerception": {
+            "description": "Hypothesized algorithmic categorization for each platform, based *primarily* on Recommendations and Content Consumption.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "platformName": {"description": "The platform being analyzed.", "type": "string", "enum": ["LinkedIn", "Instagram", "Twitter/X", "Facebook", "TikTok", "Reddit", "Other"]},
+                    "categorizationHypothesis": {"description": "How the algorithm likely sees the user based *mainly* on observed recommendations and content consumption (interests, potential demographics).", "type": "string"}
+                },
+                "required": ["platformName", "categorizationHypothesis"]
+            }
+        }
+      },
+      "required": ["consistencyVsVariation", "synthesizedExpertiseInterests", "overallOnlinePersonaNarrative", "inferredAlgorithmicPerception"]
+    }
+  },
+  "required": ["targetIndividual", "analyzedPlatforms", "platformSpecificAnalysis", "crossPlatformSynthesis"],
+  "definitions": {
+    "commonEssentials": {
+        "profileFundamentals": {
+          "description": "Core identifying information.",
+          "type": "object",
+          "properties": {
+            "username": {"type": ["string", "null"]},
+            "fullName": {"type": ["string", "null"]},
+            "profileURL": {"type": ["string", "null"]},
+            "profilePictureDescription": {"type": ["string", "null"]},
+            "bannerImageDescription": {"type": ["string", "null"]}
+          },
+          "required": ["username", "profileURL"]
+        },
+        "bioAnalysis": {
+          "description": "Bio/Headline/About text.",
+          "type": "object",
+          "properties": {
+            "fullText": {"type": ["string", "null"]},
+            "identifiedKeywords": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "networkCommunityRecommendations": {
+            "description": "MANDATORY capture of platform-driven UI elements related to network/community.",
+            "type": "object",
+            "properties": {
+              "followerCount": {"type": ["number", "string", "null"]},
+              "followingCount": {"type": ["number", "string", "null"]},
+              "inboxSidebarPreview": {
+                 "description": "ALL visible individuals/conversations from the inbox/DM preview. MANDATORY.",
+                 "type": "array",
+                 "items": { "$ref": "#/definitions/commonEssentials/sidebarPreviewItem" }
+              },
+              "myNetworkTabVisibility": {
+                 "description": "ALL entities shown in the 'My Network' or equivalent section. MANDATORY.",
+                 "type": "array",
+                 "items": { "$ref": "#/definitions/commonEssentials/networkTabItem" }
+              },
+              "platformSuggestions": {
+                 "description": "ALL platform-driven suggestions/recommendations observed (People, Pages, etc.). MANDATORY.",
+                 "type": "object",
+                 "properties": {
+                     "suggestedPeople": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/suggestedPersonItem" }},
+                     "suggestedCompaniesOrPages": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/suggestedCompanyPageItem" }},
+                     "suggestedGroups": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/suggestedGroupItem" }},
+                     "peopleAlsoViewed": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/suggestedPersonItem" }},
+                     "otherSuggestions": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/genericSuggestionItem" }}
+                 }
+              }
+            },
+            "required": ["inboxSidebarPreview", "myNetworkTabVisibility", "platformSuggestions"]
+        },
+        "observedConsumption": {
+            "description": "Detailed observation of consumed content. MANDATORY.",
+            "type": "object",
+            "properties": {
+              "mainFeed": {
+                "description": "Observations from the primary feed.",
+                "type": "object",
+                "properties": {
+                    "observedTopics": {"description": "Key topics observed (esp. for Twitter/Reddit).", "type": "array", "items": {"type": "string"}},
+                    "observedPosters": {
+                        "description": "Notable posters observed.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": { "posterName": {"type": "string"} }
+                        }
+                    }
+                }
+              },
+              "discoveryFeed": {
+                "description": "Observations from discovery feeds (Explore/FYP/Reels).",
+                "type": "object",
+                "properties": {
+                    "observedThemes": {"description": "Broad recurring themes identified.", "type": "array", "items": {"type": "string"}},
+                    "specificExamples": {"description": "Numerous, specific examples, **especially visual memes/clips** (esp. for IG/TikTok).","type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "required": ["mainFeed", "discoveryFeed"]
+        },
+      "experienceItemSummary": {
+          "description": "Summary of a professional experience.",
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "organization": {"type": "string"},
+            "durationOrDates": {"type": ["string", "null"]}
+          },
+          "required": ["title", "organization"]
+      },
+      "educationItemSummary": {
+           "description": "Summary of an education entry.",
+           "type": "object",
+           "properties": {
+            "institution": {"type": "string"},
+            "degreeField": {"type": ["string", "null"]},
+            "dates": {"type": ["string", "null"]}
+           },
+           "required": ["institution"]
+      },
+      "sidebarPreviewItem": {
+          "type": "object",
+          "properties": { "name": {"type": "string"}, "detailSnippet": {"type": ["string", "null"]}, "timestamp": {"type": ["string", "null"]} },
+          "required": ["name"]
+      },
+      "networkTabItem": {
+          "type": "object",
+          "properties": { "entityName": {"type": "string"}, "entityType": {"type": "string"}, "context": {"type": ["string", "null"]}, "headlineOrDetail": {"type": ["string", "null"]} },
+          "required": ["entityName", "entityType"]
+      },
+       "suggestedPersonItem": {
+           "type": "object",
+           "properties": { "name": {"type": "string"}, "headlineOrDetail": {"type": ["string", "null"]}, "reasonForSuggestion": {"type": ["string", "null"]}, "locationContext": {"type": ["string", "null"]} },
+           "required": ["name"]
+       },
+       "suggestedCompanyPageItem": {
+           "type": "object",
+           "properties": { "name": {"type": "string"}, "descriptionOrIndustry": {"type": ["string", "null"]}, "reasonForSuggestion": {"type": ["string", "null"]}, "locationContext": {"type": ["string", "null"]} },
+           "required": ["name"]
+       },
+       "suggestedGroupItem": {
+           "type": "object",
+           "properties": { "name": {"type": "string"}, "topicOrMemberCount": {"type": ["string", "null"]}, "reasonForSuggestion": {"type": ["string", "null"]}, "locationContext": {"type": ["string", "null"]} },
+           "required": ["name"]
+       },
+       "genericSuggestionItem": { // For topics, hashtags, sounds, etc.
+           "type": "object",
+           "properties": { "suggestionType": {"type": "string"}, "nameOrTitle": {"type": "string"}, "description": {"type": ["string", "null"]}, "reasonForSuggestion": {"type": ["string", "null"]}, "locationContext": {"type": ["string", "null"]} },
+           "required": ["suggestionType", "nameOrTitle"]
+       }
+    },
+    "platformSchemas": {
+      "linkedInEssentials": {
+          "description": "Essential data extraction for a LinkedIn profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "LinkedIn"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonEssentials/bioAnalysis" }, // Headline + About
+            "skillsInterestsExpertise": {
+              "description": "Key skills and explicitly listed interests.",
+              "type": "object",
+              "properties": {
+                  "skillsList": { "type": "array", "items": {"type": "string"}}, // Just names
+                  "followedEntitiesSummary": {"description": "Brief note on types of entities followed (influencers, companies, etc.) if available.", "type": ["string", "null"]}
+              }
+            },
+            "professionalHistorySummary": {
+              "description": "Summaries of recent experience and education.",
+              "type": "object",
+              "properties": {
+                "experience": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/experienceItemSummary" } },
+                "education": { "type": "array", "items": { "$ref": "#/definitions/commonEssentials/educationItemSummary" } }
+              }
+            },
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations", "description": "MANDATORY: Inbox Preview, My Network Tab, People Also Viewed, People You May Know, Other Suggestions." },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption", "description": "Focus on feed topics and posters." }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations", "observedConsumption"]
+      },
+      "instagramEssentials": {
+          "description": "Essential data extraction for an Instagram profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Instagram"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonEssentials/bioAnalysis" },
+             "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations", "description": "MANDATORY: DM Preview, Suggested Accounts." },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption", "description": "MANDATORY: Focus on Main Feed posters/topics and **detailed Discovery Feed themes and examples (Memes, Clips).**" }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations", "observedConsumption"]
+      },
+      "twitterEssentials": {
+          "description": "Essential data extraction for a Twitter/X profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Twitter/X"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonEssentials/bioAnalysis" },
+            "recurringTopicsInOutgoingContent": { "description": "Key topics the user tweets/retweets about.", "type": "array", "items": {"type": "string"} },
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations", "description": "MANDATORY: DM Preview, Who to Follow, Suggested Topics." },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption", "description": "MANDATORY: Focus on **Main Feed topics** and posters, and Discovery Feed themes." }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations", "observedConsumption"]
+      },
+       "facebookEssentials": {
+          "description": "Essential data extraction for a Facebook profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Facebook"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonEssentials/bioAnalysis" }, // Intro section
+             "interestsSummary": {
+                 "description": "Key interests based on About info and liked Pages.",
+                 "type": "array", "items": {"type": "string"}
+             },
+             "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations", "description": "MANDATORY: Messenger Preview, People You May Know, Suggested Pages/Groups." },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption", "description": "MANDATORY: Focus on News Feed topics/posters and Discovery Feed themes/examples." }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations", "observedConsumption"]
+      },
+       "tiktokEssentials": {
+          "description": "Essential data extraction for a TikTok profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "TikTok"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonEssentials/bioAnalysis" },
+             "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations", "description": "MANDATORY: DM Preview, Suggested Accounts, Suggested Sounds/Effects." },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption", "description": "MANDATORY: Focus on Following feed topics/posters and **detailed For You Page (FYP) themes and examples (Memes, Trends, Clips).**" }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations", "observedConsumption"]
+      },
+       "redditEssentials": {
+          "description": "Essential data extraction for a Reddit profile.",
+          "type": "object",
+          "properties": {
+            "platformName": {"const": "Reddit"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "subscribedSubreddits": { "description": "List of key subscribed subreddits.", "type": "array", "items": {"type": "string"} },
+            "activeSubredditsTopics": { "description": "Key topics discussed in active subreddits (based on user's posts/comments).", "type": "array", "items": {"type": "string"} },
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations", "description": "MANDATORY: Chat/Messages Preview, Suggested Subreddits/Users." },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption", "description": "MANDATORY: Focus on **Home feed topics** (from subscriptions) and Popular/All themes." }
+          },
+          "required": ["platformName", "profileFundamentals", "subscribedSubreddits", "networkCommunityRecommendations", "observedConsumption"]
+      },
+       "otherEssentials": {
+          "description": "Generic essential structure for other platforms.",
+          "type": "object",
+          "properties": {
+            "platformName": {"type": "string"},
+            "profileFundamentals": { "$ref": "#/definitions/commonEssentials/profileFundamentals" },
+            "bioAnalysis": { "$ref": "#/definitions/commonEssentials/bioAnalysis" },
+            "keyTopicsOrInterests": { "type": "array", "items": {"type": "string"} },
+            "networkCommunityRecommendations": { "$ref": "#/definitions/commonEssentials/networkCommunityRecommendations" },
+            "observedConsumption": { "$ref": "#/definitions/commonEssentials/observedConsumption" }
+          },
+          "required": ["platformName", "profileFundamentals", "networkCommunityRecommendations", "observedConsumption"]
+      }
+    }
+  }
+}
+```

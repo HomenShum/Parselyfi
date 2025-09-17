@@ -1,0 +1,1157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Comprehensive Social Media Profile Analysis Report (Platform-Specific Schemas & MANDATORY UI/Consumption Data)",
+  "description": "Detailed analysis using dedicated schemas per platform, mandating inclusion/analysis of specific UI element data (Inbox/DM Preview, Network Tabs, Recommendations), detailed content consumption observations, and individual connections.",
+  "type": "object",
+  "properties": {
+    "targetIndividual": {
+      "description": "Name or identifier of the individual being analyzed.",
+      "type": "string",
+      "value": "Homen Shum"
+    },
+    "analyzedPlatforms": {
+      "description": "List of social media platforms included in this analysis.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "LinkedIn",
+          "Instagram",
+          "Twitter/X",
+          "Facebook",
+          "TikTok",
+          "Reddit",
+          "Other"
+        ]
+      },
+      "value": [
+        "LinkedIn",
+        "Instagram"
+      ]
+    },
+    "platformSpecificAnalysis": {
+      "description": "Detailed analysis for each individual platform, using the specific schema defined for that platform type found in definitions/platformSchemas.",
+      "type": "array",
+      "items": [
+        {
+          "platformName": "LinkedIn",
+          "profileFundamentals": {
+            "username": "homenshum",
+            "fullName": "Homen Shum",
+            "pronouns": "(He/Him)",
+            "location": "Fremont, California, United States",
+            "profileURL": "https://www.linkedin.com/in/homenshum",
+            "profileLanguage": "English",
+            "verificationStatus": null,
+            "contactInfoVisible": true,
+            "profilePictureDescription": "Professional headshot of Homen Shum, smiling, wearing a dark top, blurred cityscape background.",
+            "bannerImageDescription": "Stylized photo of a modern cityscape, possibly San Francisco, during daytime/sunset.",
+            "linkedWebsites": [
+              "CafeCorner LLC",
+              "Financial Edge Training"
+            ]
+          },
+          "bioAnalysis": {
+            "fullText": "Headline: “Do something great with data and finance” | Ex-PM Startup Banking Associate | LLM/Data/Backend Engineering for FinTech/AdTech | Ex-HealthTech Founder (Data/ML focused) | CafeCorner LLC. About: Experience with LLM APIs and Generative AI tools. I've been working with LLM APIs and generation AI tools since December 2022, progressing through increasingly complex implementations across multiple domains... Mar 2023: Achieved 2nd place in Hakation Cybersecurity challenge with 96% accuracy vs semantic matching and unified generation of multi-vendor security alerts... 2023 Healthcare AI Application... 2023-Ongoing Financial Sector Implementation... 2024-Present: Advanced Applications... My Latest Web Applications... Here’s to embracing growth, bridging gaps, and making technology more accessible - together.",
+            "identifiedKeywords": [
+              "LLM",
+              "Generative AI",
+              "Data",
+              "Finance",
+              "FinTech",
+              "AdTech",
+              "HealthTech",
+              "Backend Engineering",
+              "Startup Banking",
+              "Founder",
+              "Cybersecurity",
+              "Semantic Matching",
+              "RAG",
+              "NLP",
+              "Python",
+              "SQL",
+              "Azure",
+              "GCP",
+              "Large Language Models",
+              "AWS",
+              "Risk Management",
+              "High-Frequency Trading"
+            ],
+            "hashtagsInBio": [],
+            "mentionedUsersInBio": [],
+            "statedPurposeFocus": "Focus on applying data science, LLM/AI, and engineering skills within Finance, Technology (FinTech, AdTech, HealthTech), and startup environments. Emphasizes project execution, growth, and accessibility.",
+            "tone": "Professional, technical, results-oriented, forward-looking",
+            "callToAction": "Implicit: Connect, view projects, consider for roles ('Show recruiters you're open to work'). Explicit: 'Get started' buttons for profile sections."
+          },
+          "skillsInterestsExpertise": {
+            "skillsList": [
+              {
+                "skillName": "Python (Programming Language)",
+                "endorsementCount": null
+              },
+              {
+                "skillName": "Pandas (Software)",
+                "endorsementCount": null
+              },
+              {
+                "skillName": "Microsoft Azure",
+                "endorsementCount": null
+              },
+              {
+                "skillName": "Google Cloud Platform (GCP)",
+                "endorsementCount": null
+              },
+              {
+                "skillName": "Large Language Models (LLM)",
+                "endorsementCount": null
+              }
+            ],
+            "licensesCertifications": [],
+            "courses": [],
+            "recommendationsReceivedCount": null,
+            "recommendationsGivenCount": null,
+            "followedInfluencers": [],
+            "followedCompanies": [],
+            "followedGroups": [],
+            "followedSchools": []
+          },
+          "featuredPinnedContent": [
+            {
+              "contentType": "Link",
+              "title": "The Limits of Public Data Flow (LLM Struggle)",
+              "description": null,
+              "link": "(partially visible GitHub link)",
+              "imageURL": "(Screenshot/diagram visible)"
+            },
+            {
+              "contentType": "Link",
+              "title": "Fluency Blast #1 - Filescore Hackathon Entry",
+              "description": "Hackathon link: https://devpost.com/software/fluency-blast... This is a chatbot that can answer questions about medical advice...",
+              "link": "https://devpost.com/software/fluency-blast...",
+              "imageURL": "(Screenshot of UI visible)"
+            },
+            {
+              "contentType": "Link",
+              "title": "Semantic Search Pairing Method with Dimension Reduction",
+              "description": "Provided 86.17% high performance accuracy by the end of the hackathon... Find out more at... 1. Solution Presentation with...",
+              "link": "(Not fully visible)",
+              "imageURL": "(Diagram/Flowchart visible)"
+            }
+          ],
+          "professionalHistory": {
+            "experience": [
+              {
+                "title": "Founder",
+                "organization": "CafeCorner LLC",
+                "duration": "2 yrs 5 mos",
+                "dates": "Dec 2021 - Present",
+                "location": null,
+                "description": "Built and deployed sales recommendation and workflow automation applications across GCP, Azure, AWS, and Vendor using Docker...",
+                "associatedSkills": [
+                  "Large Language Model Operations (LLMOps)",
+                  "Large-scale Data Analysis",
+                  "+1 skills"
+                ]
+              },
+              {
+                "title": "Startup Banking Associate",
+                "organization": "JPMorgan Chase & Co.",
+                "duration": null,
+                "dates": "Fall 2021 - Nov 2024",
+                "location": "San Francisco Bay Area - Hybrid",
+                "description": "As a JPM Startup Banking Associate in the Bay Area, I treasure the opportunity to work with some of the best financial capitals and minds of the most ambitious people. To speak with Startup founders and C-level...",
+                "associatedSkills": [
+                  "Data Analysis, Automation Lead",
+                  "+6 skills"
+                ]
+              },
+              {
+                "title": "Rotation 1: Healthcare and Life Science Banking Team",
+                "organization": "JPMorgan Chase & Co.",
+                "duration": null,
+                "dates": "May 2021 - Feb 2024",
+                "location": "San Francisco Bay Area - Hybrid",
+                "description": "Initiated collaboration between internal teams such as CB ISF Risk and Treasury/AML Team to streamline client...",
+                "associatedSkills": [
+                  "Amazon Web Services (AWS)",
+                  "Cloud Computing",
+                  "+1 skills"
+                ]
+              },
+              {
+                "title": "JPM AWS DesignRacer Palo Alto Team Lead, Lead AI Engineer (Seasoned)",
+                "organization": "JPMorgan Chase & Co.",
+                "duration": "1 mo",
+                "dates": "Oct 2023 - Oct 2023",
+                "location": "Palo Alto, California, United States - Hybrid",
+                "description": "Pitched JPMC Tech, C-suite, and hired functions to enhance AI model performance...",
+                "associatedSkills": [
+                  "Amazon Web Services (AWS)",
+                  "Cloud Computing",
+                  "+1 skills"
+                ]
+              },
+              {
+                "title": "Risk Management Challenge",
+                "organization": "Equitician",
+                "duration": "7 mos",
+                "dates": "Dec 2020 - Jun 2021",
+                "location": null,
+                "description": "Build risk management skills while managing the daily fluctuations to less than 1% +/- of a $100k portfolio...",
+                "associatedSkills": []
+              },
+              {
+                "title": "High-Frequency Trading Challenge",
+                "organization": "Equitician",
+                "duration": "2 mos",
+                "dates": "Nov 2020 - Dec 2020",
+                "location": null,
+                "description": "Generated 13% total profit within 20 market trading days by November 17th, 2020. Demonstrated proper utilization of risk management strategy, understanding/tracking moving averages, sim...",
+                "associatedSkills": []
+              },
+              {
+                "title": "Asia Pacific Investment Challenge",
+                "organization": "...",
+                "duration": "3 mos",
+                "dates": "Sep 2020 - Nov 2020",
+                "location": null,
+                "description": "Researched top market options with quantitative analytical skills...",
+                "associatedSkills": []
+              },
+              {
+                "title": "Internal VP/Educator",
+                "organization": "Delta Sigma Pi - Rho Sigma Chapter",
+                "duration": "1 yr 1 mo",
+                "dates": "May 2020 - May 2021",
+                "location": null,
+                "description": "Collaborated with on-campus organizations to plan professional networking events and discussion meals...",
+                "associatedSkills": []
+              },
+              {
+                "title": "Recruitment Assistant",
+                "organization": "Delta Sigma Pi - Rho Sigma Chapter",
+                "duration": "1 yr 3 mos",
+                "dates": "Mar 2020 - May 2021",
+                "location": null,
+                "description": "Planned, scripted, and facilitated a fraternal mentoring pairing event with a committee. Booked rooms and requested funding by vouching the student body...",
+                "associatedSkills": []
+              },
+              {
+                "title": "Professional Event Assistant",
+                "organization": "Delta Sigma Pi - Rho Sigma Chapter",
+                "duration": "4 mos",
+                "dates": "Jan 2019 - Apr 2019",
+                "location": null,
+                "description": "Invited and met with $100,000 start-up organization to speak at the professional event held for the professionals at Delta Sigma Pi meeting.",
+                "associatedSkills": []
+              },
+              {
+                "title": "Academic Advisor",
+                "organization": "Vietnamese Student Association - UC Santa Barbara",
+                "duration": "1 yr 1 mo",
+                "dates": "Apr 2019 - Apr 2020",
+                "location": null,
+                "description": "Supervised members with up to $2000 from AS DSP Grant, Emergency Grant, CEF Grant, Young Entrepreneur Scholarship...",
+                "associatedSkills": []
+              }
+            ],
+            "education": [
+              {
+                "institution": "Financial Edge Training",
+                "degreeField": "Commercial Banking Analyst Training, Accounting and Finance",
+                "dates": "2021",
+                "description": null,
+                "activities": null
+              },
+              {
+                "institution": "UC Santa Barbara",
+                "degreeField": "Certificate, Business Administration and Management, General",
+                "dates": "2020 - 2021",
+                "description": "Cooperated with professors on personal project, recommended by 2 professors and a graduate study...",
+                "activities": null
+              }
+            ],
+            "projects": [
+              {
+                "name": "Startup Search API",
+                "dates": "Oct 2023 - Nov 2023",
+                "description": "Demo: https://hzn-qdrant-server-4ppnayg6xa-uc.a.run.app/applications/search?q=(your search query for the top 5 start up names akin to your demand company search descriptions)...",
+                "link": "https://hzn-qdrant-server-4ppnayg6xa-uc.a.run.app/applications/search?...",
+                "associatedSkills": [
+                  "Web Services API",
+                  "Docker",
+                  "+1 skills"
+                ],
+                "contributors": []
+              }
+            ]
+          },
+          "contentGenerationActivity": {
+            "postingFrequency": "Infrequent based on limited view of activity section.",
+            "dominantContentTypes": [
+              "Reposts",
+              "Comments"
+            ],
+            "contentExamples": [
+              "Reposted David Myriel's post about Qdrant 1.9 release.",
+              "Commented on LIN Pendley's post about LLM latency/knowledge drift."
+            ],
+            "recurringThemesTopics": [
+              "AI",
+              "LLMs",
+              "Vector Databases (Qdrant)",
+              "Technology performance"
+            ],
+            "overallToneVoice": "Technical, engaged with industry topics",
+            "recentActivityExamples": [
+              "Homen Shum reposted this",
+              "Homen Shum commented on this"
+            ],
+            "articlesPublishedCount": null
+          },
+          "engagementPatterns": {
+            "outgoingInteractionStyle": "Comments on relevant technical posts (LLMs, Vector DBs), Reposts technical news (Qdrant). Seems focused on specific technical areas.",
+            "typesOfContentEngagedWith": [
+              "Technical posts related to AI/LLMs",
+              "Specific technologies (Qdrant)",
+              "Posts from connections or industry leaders"
+            ],
+            "incomingEngagementHighlights": "Limited view - The reposted post had 4 comments, the comment had 2 replies.",
+            "typicalIncomingCommentTypes": []
+          },
+          "platformFeatureUsage": [
+            {
+              "featureName": "Featured Section",
+              "usageDescription": "Actively used to highlight key projects and links."
+            },
+            {
+              "featureName": "Projects Section",
+              "usageDescription": "Used to detail specific project work with links."
+            },
+            {
+              "featureName": "Skills Section",
+              "usageDescription": "Populated with key technical skills."
+            },
+            {
+              "featureName": "Experience Section",
+              "usageDescription": "Extensively detailed with multiple roles and descriptions."
+            },
+            {
+              "featureName": "Education Section",
+              "usageDescription": "Lists relevant education and training."
+            }
+          ],
+          "networkCommunityRecommendations": {
+            "followerCount": "500+",
+            "followingCount": null,
+            "audienceDescription": "Likely technology professionals, particularly in AI/ML, data science, FinTech, potential recruiters.",
+            "groupCommunityMemberships": [],
+            "inboxSidebarPreview": [
+              {
+                "name": "Chao Riu",
+                "detailSnippet": "Hi Homen, MATCHA is hiring...",
+                "timestamp": "Apr 19",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Cristina McCarthy",
+                "detailSnippet": "Who's Hiring in Ann Arbor",
+                "timestamp": "Apr 19",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Computer Talent Solutions",
+                "detailSnippet": "Hope to see you there! Invited you...",
+                "timestamp": "Apr 18",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Yuan Julian, PhD",
+                "detailSnippet": "Hi Homen, thank you for connecting! Yuan, the founder...",
+                "timestamp": "Apr 17",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "James (Shiwei) Niklos...",
+                "detailSnippet": "Loren is throwing financial...",
+                "timestamp": "Apr 17",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Boris Kanders",
+                "detailSnippet": "See you soon!",
+                "timestamp": "Apr 17",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Diana Gingley Verberten",
+                "detailSnippet": "Hi Homen - You might be a great fit...",
+                "timestamp": "Apr 17",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Andrei Zayvyi",
+                "detailSnippet": "Hi Homen, This role is aligned...",
+                "timestamp": "Apr 17",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Tursun Aliskerov, PhD",
+                "detailSnippet": "Talent Dawn is a trade show...",
+                "timestamp": "Apr 17",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Vincent Yamada",
+                "detailSnippet": "Hi Homen, I'm taking EAIT Level 1...",
+                "timestamp": "Apr 16",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Trendown Kan",
+                "detailSnippet": "Hi Homen, We're a branch of...",
+                "timestamp": "Mar 31",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "[Li... Name Partially Obscured]",
+                "detailSnippet": "Saw your instagram post and curious about what work...",
+                "timestamp": "Mar 29",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Kevin Girado",
+                "detailSnippet": "Hi Homen, Hope you are doing well. A FinTech...",
+                "timestamp": "Mar 28",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Rosalescu Roxel-Fing...",
+                "detailSnippet": "Aliquam bibendum",
+                "timestamp": "Mar 27",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Rahul Agarwal",
+                "detailSnippet": "https://github.com/compare/...",
+                "timestamp": "Mar 27",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Cristian Kleider",
+                "detailSnippet": "Hi Homen, We have an open Lead Application Architect...",
+                "timestamp": "Mar 27",
+                "conversationURL": null,
+                "otherDetails": null
+              },
+              {
+                "name": "Otnam Kader",
+                "detailSnippet": "Hi Homen. There is an exciting...",
+                "timestamp": "Mar 26",
+                "conversationURL": null,
+                "otherDetails": null
+              }
+            ],
+            "inboxSidebarAnalysis": "The inbox preview is heavily dominated by messages indicative of professional outreach, particularly recruitment efforts ('hiring', 'great fit', 'role is aligned', 'open Lead Application Architect') and networking ('thank you for connecting'). There are also mentions of events and potential project discussions (GitHub link, query about work). This strongly suggests Homen Shum is perceived by his network and the platform as possessing in-demand skills, leading to significant inbound professional interest.",
+            "myNetworkTabVisibility": [],
+            "myNetworkTabAnalysis": "The 'My Network' tab was not visited in the recording, so no analysis is possible.",
+            "platformSuggestions": {
+              "suggestedPeople": [
+                {
+                  "name": "Rania Hussain",
+                  "headlineOrDetail": "Barnard College | Incoming Investment Banking Analyst at Goldman Sachs",
+                  "profileURL": null,
+                  "reasonForSuggestion": "From your school",
+                  "locationContext": "Profile Page Right Sidebar ('People you may know')"
+                },
+                {
+                  "name": "Leah Varughese",
+                  "headlineOrDetail": "Digital Product Associate at JPMorgan Chase & Co.",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Profile Page Right Sidebar ('People you may know')"
+                },
+                {
+                  "name": "Giuliana Joseph",
+                  "headlineOrDetail": "Economics Student at UCLA | Membership Committee...",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Profile Page Right Sidebar ('People you may know')"
+                },
+                {
+                  "name": "Albert Qian",
+                  "headlineOrDetail": "MBA Candidate @ Columbia Business School | Data...",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Profile Page Right Sidebar ('People you may know')"
+                },
+                {
+                  "name": "T. Arged Tshemey",
+                  "headlineOrDetail": "Incoming analyst at Nomura | Senior at Trinity College | VIM...",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Profile Page Right Sidebar ('People you may know')"
+                }
+              ],
+              "suggestedCompaniesOrPages": [],
+              "suggestedGroups": [],
+              "peopleAlsoViewed": [
+                {
+                  "name": "Sonya Chiang",
+                  "headlineOrDetail": "Product @ Frame.io (Acquired by Adobe) | Product Designer (Digital Assets...",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Profile Page Right Sidebar ('Who's viewed your profile')"
+                },
+                {
+                  "name": "Anyichika Achufusi Jr.",
+                  "headlineOrDetail": "[Headline obscured/short]",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Profile Page Right Sidebar ('Who's viewed your profile')"
+                }
+              ],
+              "otherSuggestions": []
+            },
+            "platformRecommendationsAnalysis": "LinkedIn's recommendations reinforce Homen's connection to the finance industry (JPMC, Goldman Sachs, Nomura associates/students suggested) and prestigious universities (Barnard, UCLA, Columbia, Trinity). The 'From your school' tag suggests a linkage through educational background (likely UCSB). The 'People Also Viewed' featuring product roles hints that his profile attracts viewers interested in tech product development alongside engineering. Overall, the recommendations paint a picture of someone networked within finance, tech, and university circles, particularly around early-career talent.",
+            "detailedConnectionsList": null,
+            "detailedConnectionsAnalysis": "Detailed connections list was not available in the recording."
+          },
+          "privacyPresentation": "Profile appears public. Detailed and professionally structured using standard LinkedIn features.",
+          "observedConsumption": {
+            "mainFeed": {
+              "observedTopics": [
+                "AI",
+                "Machine Learning",
+                "Startups",
+                "Personalized AI Agents",
+                "Temporal Knowledge Graphs",
+                "Vector Databases (Qdrant)",
+                "Job seeking/hiring discussions (implied)",
+                "General Tech News (OpenAI)"
+              ],
+              "observedPosters": [
+                {
+                  "posterName": "Maryam Miosdi, PhD",
+                  "exampleContentSummary": "Post about GraphMemory, Temporal Knowledge Graph, Personalized AI Agents."
+                },
+                {
+                  "posterName": "Milda Valiulis",
+                  "exampleContentSummary": "Comment on Maryam Miosdi's post."
+                },
+                {
+                  "posterName": "LIN Pendley",
+                  "exampleContentSummary": "Post commented on by Homen Shum (topic likely related to LLMs)."
+                },
+                {
+                  "posterName": "David Myriel",
+                  "exampleContentSummary": "Post about Qdrant 1.9 release (reposted by Homen Shum)."
+                },
+                {
+                  "posterName": "Richard Huston",
+                  "exampleContentSummary": "Post about OpenAI/Sam Altman."
+                },
+                {
+                  "posterName": "Philomena Ejiogu-Okereke",
+                  "exampleContentSummary": "Post mentioning Eduardo Ordax Such."
+                },
+                {
+                  "posterName": "Eduardo Ordax",
+                  "exampleContentSummary": "Post about Netflix using LLMs."
+                },
+                {
+                  "posterName": "Snehanshu Raj",
+                  "exampleContentSummary": "Post about website tracking/privacy."
+                }
+              ],
+              "otherFeedObservations": "The feed is heavily focused on technical AI/ML concepts, industry news, and specific tools (like vector databases). Content appears to be from connections and potentially followed experts/companies in the field."
+            },
+            "discoveryFeed": null,
+            "consumptionAnalysisNotes": "Main feed consumption directly aligns with the professional profile's focus on AI, data science, and related technologies. Engagement (reposts, comments) clearly mirrors this consumption pattern."
+          },
+          "platformSpecificConclusions": "Homen Shum's LinkedIn profile strongly projects a technically adept professional specializing in AI/ML, data science, and backend development within FinTech/HealthTech/AdTech. Project work and hackathon results are prominently featured. The profile details a career path involving finance (JPMC) and entrepreneurial/engineering roles. High inbound message volume (visible in sidebar) and focused feed consumption/engagement underscore his active involvement and desirability within the AI/tech community."
+        },
+        {
+          "platformName": "Instagram",
+          "profileFundamentals": {
+            "username": "homenshum",
+            "fullName": "Homen Shum",
+            "pronouns": null,
+            "location": null,
+            "profileURL": "https://www.instagram.com/homenshum/",
+            "profileLanguage": null,
+            "verificationStatus": null,
+            "contactInfoVisible": null,
+            "profilePictureDescription": "Small icon suggests the same professional headshot from LinkedIn.",
+            "bannerImageDescription": null,
+            "linkedWebsites": []
+          },
+          "bioAnalysis": null,
+          "skillsInterestsExpertise": [],
+          "storyHighlights": [],
+          "contentGenerationActivity": {
+            "postingFrequency": null,
+            "dominantContentTypes": null,
+            "contentExamples": [],
+            "recurringThemesTopics": [],
+            "overallToneVoice": null,
+            "recentActivityExamples": [
+              "Liked a post from 'konrad' approx 1 hour prior to recording. Post text: \"If you're willing to suck at anything for 100 days in a row, you can beat most people at most things.\""
+            ],
+            "gridAesthetic": null,
+            "reelsPerformanceIndicators": null,
+            "storiesFrequencyEngagement": null
+          },
+          "engagementPatterns": {
+            "outgoingInteractionStyle": "Likes content related to perseverance or motivational themes (based on single observed like).",
+            "typesOfContentEngagedWith": [
+              "Motivational/philosophical graphic posts"
+            ],
+            "incomingEngagementHighlights": null,
+            "typicalIncomingCommentTypes": []
+          },
+          "platformFeatureUsage": [
+            {
+              "featureName": "Main Feed Browsing",
+              "usageDescription": "Observed scrolling the main feed."
+            },
+            {
+              "featureName": "Reels/Explore Tab Browsing",
+              "usageDescription": "Observed actively scrolling the discovery feed."
+            }
+          ],
+          "networkCommunityRecommendations": {
+            "followerCount": null,
+            "followingCount": null,
+            "audienceDescription": null,
+            "groupCommunityMemberships": [],
+            "inboxSidebarPreview": [],
+            "inboxSidebarAnalysis": "Instagram DM preview was not visible in the recording.",
+            "myNetworkTabVisibility": [],
+            "myNetworkTabAnalysis": "Instagram network/following tabs were not visited.",
+            "platformSuggestions": {
+              "suggestedPeople": [
+                {
+                  "name": "homenshum",
+                  "headlineOrDetail": "Homen Shum",
+                  "profileURL": null,
+                  "reasonForSuggestion": null,
+                  "locationContext": "Feed Right Sidebar"
+                },
+                {
+                  "name": "kokopark",
+                  "headlineOrDetail": null,
+                  "profileURL": null,
+                  "reasonForSuggestion": "Suggested for you",
+                  "locationContext": "Feed Right Sidebar"
+                },
+                {
+                  "name": "dorothypark_",
+                  "headlineOrDetail": null,
+                  "profileURL": null,
+                  "reasonForSuggestion": "Suggested for you",
+                  "locationContext": "Feed Right Sidebar"
+                },
+                {
+                  "name": "jooniilee_",
+                  "headlineOrDetail": null,
+                  "profileURL": null,
+                  "reasonForSuggestion": "Suggested for you",
+                  "locationContext": "Feed Right Sidebar"
+                },
+                {
+                  "name": "besticecream",
+                  "headlineOrDetail": null,
+                  "profileURL": null,
+                  "reasonForSuggestion": "Suggested for you",
+                  "locationContext": "Feed Right Sidebar"
+                },
+                {
+                  "name": "billlie_kim_suyeon",
+                  "headlineOrDetail": "Billlie Kim Suyeon",
+                  "profileURL": null,
+                  "reasonForSuggestion": "Suggested for you",
+                  "locationContext": "Feed Right Sidebar"
+                }
+              ],
+              "suggestedCompaniesOrPages": [
+                 {
+                  "name": "besticecream",
+                  "descriptionOrIndustry": "Assumed Food/Dessert Page",
+                  "pageURL": null,
+                  "followerCount": null,
+                  "reasonForSuggestion": "Suggested for you",
+                  "locationContext": "Feed Right Sidebar"
+                 }
+              ],
+              "suggestedGroups": [],
+              "peopleAlsoViewed": [],
+              "otherSuggestions": []
+            },
+            "platformRecommendationsAnalysis": "Instagram suggestions present a mix of personal-appearing accounts (kokopark, dorothypark_, jooniilee_), a niche interest account (besticecream - food), and a K-Pop idol (billlie_kim_suyeon). This contrasts sharply with LinkedIn's professional recommendations, suggesting Instagram perceives Homen's interests as including general social connections, food, and potentially Asian pop culture/entertainment. The recommendations seem driven by general engagement or demographic factors rather than his professional profile.",
+            "detailedConnectionsList": null,
+            "detailedConnectionsAnalysis": "Detailed connections list was not available."
+          },
+          "privacyPresentation": "Likely public account, as discovery feed was accessible. Cannot confirm without profile view.",
+          "observedConsumption": {
+            "mainFeed": {
+              "observedTopics": [
+                "Music Events (DJ)",
+                "Motivational Quotes"
+              ],
+              "observedPosters": [
+                {
+                  "posterName": "hiventertainment",
+                  "exampleContentSummary": "Flyer for DJ Kang event at Vermont Hollywood."
+                },
+                {
+                  "posterName": "konrad",
+                  "exampleContentSummary": "Graphic with text: \"If you're willing to suck at anything for 100 days in a row, you can beat most people at most things.\" (Liked by homenshum)."
+                }
+              ],
+              "otherFeedObservations": "Very brief view, showed content from followed accounts."
+            },
+            "discoveryFeed": {
+              "observedThemes": [
+                "Memes",
+                "Viral Videos",
+                "Pop Culture (Marvel, Anime, Gaming)",
+                "Food",
+                "Science/Nature",
+                "Asian Cultural Content (Chinese text, K-drama/anime references)",
+                "Relationship/Social Commentary",
+                "Fitness/Body Image",
+                "News/Current Events",
+                "Random/Humorous Clips"
+              ],
+              "contentTypes": [
+                "Short-form video",
+                "Memes (image/video)",
+                "News clips",
+                "Informational clips",
+                "Personal vlogs/clips",
+                "Anime/Animation clips",
+                "Food videos"
+              ],
+              "specificExamples": [
+                "Meme showing Dr. Strange creating a portal",
+                "Clip about a 9-million-year-old parasitic wasp preserved in amber",
+                "Video reviewing Costco noodles ('BEST NOODLES AT COSTCO')",
+                "Graphic with text 'The F*ck First Rule'",
+                "Clip captioned 'when he tells me stop strokin his d*** after he finishes'",
+                "Video with text 'MALE GAZE'",
+                "Video with text 'GHETTO STONESTOWN?'",
+                "Anime clip 'He kissed the princess on her lips instead of her hand'",
+                "Fitness clip of man showing abs with Chinese text",
+                "Clip about Columbia student suspended for cheating",
+                "Meme comparing 'Unselfish' vs 'Strong Minded' noses",
+                "Gaming clip (MW2) 'BRO HIJACKS A PLANE MID-AIR'",
+                "Crying cat meme with Chinese text",
+                "Video of man handling large white fish/sheet",
+                "Video asking 'Can Thor fly without his hammer?'",
+                "Hip Hop dance routine tutorial",
+                "Man cutting leather/shoe material",
+                "Clip of man getting flowers captioned 'you got catfished from Temu'"
+              ],
+              "otherDiscoveryObservations": "High frequency of content with Asian language overlays (primarily Chinese). Strong presence of meme formats, short humorous clips, and content related to food, gaming, and anime/pop culture."
+            },
+            "consumptionAnalysisNotes": "Significant difference between Main Feed (limited view: events, motivation) and Discovery Feed (broad, meme-heavy, entertainment-focused). The Discovery Feed suggests typical passive consumption of viral/engaging content common on the platform, with a possible affinity for Asian cultural content and memes. This consumption pattern shows little connection to the professional persona presented on LinkedIn."
+          },
+          "platformSpecificConclusions": "Homen Shum's observed Instagram activity points towards personal use focused on general entertainment and social consumption. The 'like' on a motivational post offers a slight overlap with the 'growth' theme on LinkedIn, but the discovery feed consumption and platform suggestions indicate broader interests in memes, viral content, food, pop culture (including Asian content), distinct from his professional sphere. Instagram serves primarily as a leisure platform."
+        }
+      ]
+    },
+    "crossPlatformSynthesis": {
+      "consistencyVsVariation": {
+        "profileElementConsistency": "Profile picture appears consistent across LinkedIn and Instagram (based on small icon). Username ('homenshum') consistent.",
+        "contentTonePersonaConsistency": "High variation. LinkedIn projects a focused, technical, professional persona centered on AI/ML and finance. Instagram usage (inferred from consumption/suggestions) points to a personal persona interested in broad entertainment, memes, food, and pop culture.",
+        "notableDifferences": "The core focus and type of content consumed/engaged with are entirely different. LinkedIn is for professional branding, networking, and technical information exchange. Instagram appears to be for leisure, entertainment, and general social media consumption."
+      },
+      "contentOverlapStrategy": "No content overlap observed. Suggests a deliberate strategy of platform differentiation: LinkedIn for professional life, Instagram for personal interests/entertainment.",
+      "synthesizedExpertiseInterests": {
+        "coreProfessionalSkills": [
+          "AI/ML",
+          "LLMs",
+          "Generative AI",
+          "Data Science",
+          "Backend Engineering",
+          "Python",
+          "Pandas",
+          "SQL",
+          "Cloud Platforms (Azure, GCP, AWS)",
+          "Finance (Startup Banking, Risk Management, Trading)",
+          "FinTech",
+          "AdTech",
+          "HealthTech",
+          "Project Management",
+          "Automation",
+          "Cybersecurity (Semantic Matching)",
+          "RAG",
+          "Vector Databases",
+          "Semantic Search"
+        ],
+        "corePersonalInterests": [
+          "Memes",
+          "Viral Content/Videos",
+          "Food (Costco noodles, ice cream, Katsu, general food videos)",
+          "Pop Culture (Marvel - Dr. Strange/Thor, Anime, Gaming - MW2/CoD/DMC)",
+          "Asian Culture (Inferred from Chinese text overlays, K-Pop suggestion)",
+          "Music Events (DJ)",
+          "Motivational/Self-Improvement Quotes",
+          "Humor",
+          "Science/Nature (briefly)"
+        ]
+      },
+      "overallOnlinePersonaNarrative": "Homen Shum presents a distinct dual online persona. Professionally, via LinkedIn, he is a highly skilled technologist focused on cutting-edge AI/ML within finance and tech, showcasing concrete achievements and appearing actively engaged and sought-after in his field. Personally, inferred primarily from Instagram consumption and suggestions, he engages with mainstream digital entertainment including memes, viral trends, food content, and pop culture, possibly with specific interest in Asian cultural content, reflecting a typical leisure-oriented use of the platform separate from his professional identity.",
+      "professionalEvaluation": {
+        "strengthsSkillsMatch": "Strong evidence on LinkedIn of practical application of listed AI/ML, data science, and engineering skills through detailed project descriptions and hackathon results (e.g., 96% accuracy).",
+        "impactAchievements": "Quantifiable achievements highlighted (hackathon placements, accuracy metrics). Experience as a founder and team lead demonstrates initiative and leadership potential.",
+        "industryEngagement": "Active consumption and engagement with relevant technical content (AI, Qdrant) on LinkedIn feed. High volume of inbound professional messages visible in LinkedIn sidebar suggests strong industry visibility and demand.",
+        "potentialRedFlagsClarifications": "Timeline of JPMC roles versus founder role needs clarification (overlap/planned departure?). Very short duration (1 month) in the 'Lead AI Engineer' role at JPMC warrants explanation. Series of short-term challenge roles prior to JPMC could be explored further regarding career progression intent.",
+        "overallCandidateSummary": "Appears as a technically strong, highly motivated individual with demonstrated expertise in the high-demand AI/ML field, particularly LLMs, applied effectively in finance and tech settings. Possesses project leadership and entrepreneurial experience. While some career timeline details could be clarified, the overall professional profile presented on LinkedIn is compelling."
+      },
+      "marketTrendInsights": {
+        "keyTechnologiesToolsTopics": [
+          "LLMs",
+          "Generative AI",
+          "RAG",
+          "Vector Databases (Qdrant)",
+          "Semantic Search",
+          "Cloud Platforms (Azure, GCP, AWS)",
+          "Python",
+          "Pandas",
+          "FinTech AI Applications",
+          "HealthTech AI Applications",
+          "Cybersecurity AI Applications",
+          "Personalized AI Agents",
+          "Knowledge Graphs"
+        ],
+        "emergingThemesNiches": [
+          "Practical deployment of advanced AI/LLMs",
+          "AI in specific verticals (Finance, Healthcare, Security)",
+          "Performance and automation using AI",
+          "Importance of vector databases/semantic search",
+          "Hackathons as skill demonstration venues"
+        ],
+        "relevantContentPatterns": "Sharing/discussing technical articles, project showcases, tool updates, engaging in technical discussions within the LinkedIn feed."
+      },
+      "inferredAlgorithmicPerception": [
+        {
+          "platformName": "LinkedIn",
+          "categorizationHypothesis": "LinkedIn's algorithm strongly categorizes Homen Shum as a **Software Engineer/Data Scientist with deep expertise in AI/ML/LLMs**, operating within the **FinTech, HealthTech, and general Tech Startup** space. His profile signals **high technical proficiency** (Python, Cloud, specific AI techniques) and likely flags him as **actively engaged in the job market** or a high-value candidate, evidenced by the heavy recruitment/outreach traffic in his inbox preview. Recommendations focusing on finance professionals and university networks, along with a feed rich in advanced AI topics, support this perception."
+        },
+        {
+          "platformName": "Instagram",
+          "categorizationHypothesis": "Instagram's algorithm likely categorizes Homen Shum based on broad engagement signals and potential demographic/network data. His consumption of the Discovery Feed (memes, viral clips, food, pop culture, Asian content) and the nature of suggested accounts (personal, food, K-Pop) suggest the algorithm perceives him as a general user interested in **Entertainment, Memes, Food, Pop Culture (including Asian media), and Social Trends**. This categorization is primarily driven by consumption patterns on the platform's discovery surfaces and shows minimal influence from his professional LinkedIn profile."
+        }
+      ],
+      "crossPlatformNetworkAnalysis": {
+        "overlappingConnectionsRecommendations": [],
+        "networkComparisonNotes": "Network focus differs significantly. LinkedIn network (inferred from inbox/suggestions) is professional, centered around tech, finance, and recruitment. Instagram network (inferred from suggestions) appears more social, general interest, and potentially culturally specific.",
+        "consumptionComparisonNotes": "Consumption patterns are highly divergent. LinkedIn shows focused consumption of technical, professional content related to AI/ML and finance. Instagram shows broad consumption of entertainment-driven content (memes, viral videos, pop culture, food) typical of leisure browsing on the platform."
+      }
+    },
+    "finalComprehensiveSummary": {
+      "description": "High-level summary of the entire analysis, specifically highlighting insights derived from mandatory UI element and consumption data across platforms.",
+      "type": "string",
+      "value": "This analysis reveals a distinct dual online presence for Homen Shum. His LinkedIn profile meticulously crafts a persona of a highly skilled AI/ML engineer and data scientist with significant experience in finance and tech startups, backed by detailed project descriptions and quantifiable achievements. Critically, the LinkedIn inbox preview data confirms this perception, showing substantial inbound interest from recruiters and professional contacts, while feed consumption and recommendations center firmly on advanced AI/tech topics. In stark contrast, his Instagram usage, inferred from feed/discovery consumption and platform suggestions, points to a personal leisure profile. The mandatory observation of the Instagram discovery feed revealed consumption dominated by memes, viral entertainment, food, and pop culture, with potential affinity for Asian cultural content, completely separate from his professional focus. Instagram's recommendations (personal accounts, food, K-Pop) further reinforce this non-professional categorization. The mandatory inclusion of UI elements (inbox, recommendations) and detailed consumption analysis across both platforms was essential in clearly delineating these separate professional and personal digital spheres."
+    }
+  },
+  "required": [
+    "targetIndividual",
+    "analyzedPlatforms",
+    "platformSpecificAnalysis",
+    "crossPlatformSynthesis",
+    "finalComprehensiveSummary"
+  ],
+  "definitions": {
+    "commonStructures": {
+        "profileFundamentals": {
+          "description": "Core identifying information and visual elements of the profile.",
+          "type": "object",
+          "properties": {
+            "username": {"description": "The user's handle or username on the platform.", "type": ["string", "null"]},
+            "fullName": {"description": "The full name displayed on the profile.", "type": ["string", "null"]},
+            "pronouns": {"description": "Pronouns displayed on the profile.", "type": ["string", "null"]},
+            "location": {"description": "Location listed on the profile.", "type": ["string", "null"]},
+            "profileURL": {"description": "The direct URL to the user's profile.", "type": ["string", "null"]},
+            "profileLanguage": {"description": "The language setting of the profile, if discernible.", "type": ["string", "null"]},
+            "verificationStatus": {"description": "Indicates if the profile is verified (e.g., blue checkmark).", "type": ["boolean", "string", "null"]}, 
+            "contactInfoVisible": {"description": "Indicates if a link or section for contact info is explicitly visible.", "type": ["boolean", "null"]},
+            "profilePictureDescription": {"description": "Description of the profile picture's content and style.", "type": ["string", "null"]},
+            "bannerImageDescription": {"description": "Description of the banner or cover image's content and style.", "type": ["string", "null"]},
+            "linkedWebsites": {
+              "description": "List of external website URLs linked from the profile.",
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          },
+          "required": ["username", "profileURL"]
+        },
+        "bioAnalysis": {
+          "description": "Analysis of the primary descriptive text sections (Bio, Headline, About).",
+          "type": "object",
+          "properties": {
+            "fullText": {"description": "The complete text from the bio/headline/about section(s).", "type": ["string", "null"]},
+            "identifiedKeywords": {"description": "List of significant keywords extracted.", "type": "array", "items": {"type": "string"}},
+            "hashtagsInBio": {"description": "Hashtags included directly in the bio text.", "type": "array", "items": {"type": "string"}},
+            "mentionedUsersInBio": {"description": "Other users tagged/mentioned directly in the bio text.", "type": "array", "items": {"type": "string"}},
+            "statedPurposeFocus": {"description": "Summary of the main purpose or focus conveyed.", "type": ["string", "null"]},
+            "tone": {"description": "Overall tone identified (e.g., Professional, Humorous, Informal, Formal, Enthusiastic).", "type": ["string", "null"]},
+            "callToAction": {"description": "Any explicit calls to action found.", "type": ["string", "null"]}
+          }
+        },
+        "engagementPatterns": {
+            "description": "Analysis of user interaction patterns.",
+            "type": "object",
+            "properties": {
+              "outgoingInteractionStyle": {"description": "How the user engages with others' content (e.g., Likes frequently, comments rarely, shares industry news, replies with questions).", "type": ["string", "null"]},
+              "typesOfContentEngagedWith": {"description": "Types of content the user tends to interact with based on observation (e.g., Posts from connections, specific topics, viral videos).", "type": "array", "items": {"type": "string"}},
+              "incomingEngagementHighlights": {"description": "Observations on which types of the user's posts receive the most engagement (e.g., Personal updates get more comments, project demos get more likes).", "type": ["string", "null"]},
+              "typicalIncomingCommentTypes": {"description": "Nature of comments typically received (e.g., Brief affirmations, detailed questions, spam, supportive).", "type": "array", "items": {"type": "string"}}
+            }
+        },
+        "networkCommunityRecommendations": {
+            "description": "Analysis of the user's network, community involvement, and MANDATORY capture of platform-driven UI elements.",
+            "type": "object",
+            "properties": {
+              "followerCount": {"description": "Number of followers or connections.", "type": ["number", "string", "null"]},
+              "followingCount": {"description": "Number of accounts the user is following.", "type": ["number", "string", "null"]},
+              "audienceDescription": {"description": "Inferred description of the user's primary audience or network composition (e.g., Industry peers, potential clients, personal friends, mixed).", "type": ["string", "null"]},
+              "groupCommunityMemberships": {
+                "description": "List of groups, communities, lists, or subscribed subreddits the user is part of.",
+                "type": "array",
+                "items": { "$ref": "#/definitions/commonStructures/groupMembershipItem" }
+              },
+              "inboxSidebarPreview": {
+                 "description": "Data captured from the messaging inbox/DM sidebar preview. MANDATORY input if visible.",
+                 "type": "array",
+                 "items": { "$ref": "#/definitions/commonStructures/sidebarPreviewItem" }
+              },
+              "inboxSidebarAnalysis": { "description": "Analysis derived from the inbox sidebar preview data (e.g., Implied frequent contacts, nature of conversations visible).", "type": ["string", "null"] },
+              "myNetworkTabVisibility": {
+                 "description": "Data captured from the 'My Network'/'Connections'/'Followers' or equivalent section. MANDATORY input if visible.",
+                 "type": "array",
+                 "items": { "$ref": "#/definitions/commonStructures/networkTabItem" }
+              },
+              "myNetworkTabAnalysis": { "description": "Analysis derived from the 'My Network' tab visibility data (e.g., Types of connections prioritized, platform's focus for network growth suggestions).", "type": ["string", "null"] },
+              "platformSuggestions": {
+                 "description": "Comprehensive capture of all platform-driven suggestions/recommendations observed. MANDATORY input if visible.",
+                 "type": "object",
+                 "properties": {
+                     "suggestedPeople": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedPersonItem" }},
+                     "suggestedCompaniesOrPages": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedCompanyPageItem" }},
+                     "suggestedGroups": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedGroupItem" }},
+                     "peopleAlsoViewed": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/suggestedPersonItem" }},
+                     "otherSuggestions": { "type": "array", "items": { "$ref": "#/definitions/commonStructures/genericSuggestionItem" }} 
+                 }
+              },
+              "platformRecommendationsAnalysis": { "description": "CRITICAL analysis interpreting the complete set of captured platform recommendations (e.g., Does it align with profile? Suggest network gaps? Indicate perceived interests accurately?).", "type": ["string", "null"] },
+              "detailedConnectionsList": {
+                "description": "Detailed list of individual connections/followers/following, if provided.",
+                "type": ["array", "null"],
+                "items": { "$ref": "#/definitions/commonStructures/connectionItem" }
+              },
+              "detailedConnectionsAnalysis": { "description": "Summary analysis based on the detailedConnectionsList (composition, key connections, patterns), if provided.", "type": ["string", "null"] }
+            },
+             "required": ["inboxSidebarPreview", "myNetworkTabVisibility", "platformSuggestions"] 
+        },
+        "privacyPresentation": {
+           "description": "Notes on the observed privacy settings (e.g., Public, Private, Protected, Custom Audiences) or specific presentation choices (e.g., Minimalist, Highly curated, Open sharing).",
+           "type": ["string", "null"]
+        },
+        "observedConsumption": {
+            "description": "Detailed analysis of content the user appears to consume, differentiating between main and discovery feeds. MANDATORY input where applicable feeds are observed.",
+            "type": "object",
+            "properties": {
+              "mainFeed": {
+                "description": "Observations from the user's primary feed (e.g., Home Timeline, Following Feed).",
+                "type": "object",
+                "properties": {
+                    "observedTopics": {"description": "Specific topics frequently seen in the main feed.", "type": "array", "items": {"type": "string"}},
+                    "observedPosters": {
+                        "description": "Specific users/pages whose content appeared frequently, with examples.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "posterName": {"type": "string"},
+                                "exampleContentSummary": {"type": "string"}
+                            },
+                            "required": ["posterName"]
+                        }
+                    },
+                    "otherFeedObservations": {"description": "General characteristics or patterns noted in the main feed.", "type": "string"}
+                }
+              },
+              "discoveryFeed": {
+                "description": "Observations from discovery-oriented feeds (e.g., Explore, For You Page, Reels Tab, Discover).",
+                "type": "object",
+                "properties": {
+                    "observedThemes": {"description": "Broad recurring themes identified in the discovery feed.", "type": "array", "items": {"type": "string"}},
+                    "contentTypes": {"description": "Prevalent types of content formats (e.g., Meme, Tutorial, Vlog, News Clip, Dance Trend, Product Review).", "type": "array", "items": {"type": "string"}},
+                    "specificExamples": {"description": "Numerous, highly descriptive examples of individual pieces of content encountered (e.g., 'Video of cat knocking over plant', 'Meme comparing software engineers', 'Short clip explaining RAG concept', 'Influencer trying viral food hack').","type": "array", "items": {"type": "string"}},
+                    "otherDiscoveryObservations": {"description": "General characteristics or patterns noted in the discovery feed (e.g., High frequency of certain sounds/effects, prevalence of specific challenges).", "type": "string"}
+                }
+              },
+              "consumptionAnalysisNotes": {
+                  "description": "Analytic notes comparing/contrasting main feed vs discovery feed, or overall consumption patterns.",
+                  "type": "string"
+              }
+            }
+        },
+      "experienceItem": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "organization": {"type": "string"},
+            "duration": {"type": ["string", "null"]},
+            "dates": {"type": ["string", "null"]},
+            "location": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "associatedSkills": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["title", "organization"]
+      },
+      "educationItem": {
+          "type": "object",
+          "properties": {
+            "institution": {"type": "string"},
+            "degreeField": {"type": ["string", "null"]},
+            "dates": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "activities": {"type": ["string", "null"]}
+          },
+          "required": ["institution"]
+      },
+      "projectItem": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "dates": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "link": {"type": ["string", "null"]},
+            "associatedSkills": {"type": "array", "items": {"type": "string"}},
+            "contributors": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["name"]
+      },
+      "featureUsageItem": {
+          "type": "object",
+          "properties": {
+            "featureName": {"type": "string", "description": "e.g., LinkedIn Articles, Instagram Stories, Twitter Spaces, TikTok Duets, Reddit AMAs"},
+            "usageDescription": {"type": "string", "description": "How frequently or in what way the feature is used (e.g., 'Posts daily stories', 'Hosted one Space', 'Actively uses Lists')."}
+          },
+          "required": ["featureName", "usageDescription"]
+      },
+      "groupMembershipItem": {
+          "type": "object",
+          "properties": {
+            "groupName": {"type": "string", "description": "Name of the group, community, list, or subreddit."},
+            "topic": {"type": ["string", "null"], "description": "Primary topic or description."},
+            "activityLevel": {"type": ["string", "null"], "description": "Observed level of user activity within it (e.g., Lurker, Occasional Poster, Active Commenter, Moderator)."},
+            "groupURL": {"type": ["string", "null"]},
+            "membershipStatus": {"type": ["string", "null"], "description": "e.g., Member, Moderator, Owner, Subscriber."}
+          },
+          "required": ["groupName"]
+      },
+      "sidebarPreviewItem": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string", "description": "Full Name or Group Chat Name as it appears."},
+            "detailSnippet": {"type": ["string", "null"], "description": "Visible message preview text."},
+            "timestamp": {"type": ["string", "null"], "description": "Timestamp of the last message, if visible."},
+            "conversationURL": {"type": ["string", "null"], "description": "Direct link to the conversation, if obtainable."},
+            "otherDetails": {"type": ["string", "null"], "description": "Any other visible details like status indicators (e.g., unread count, typing indicator)."}
+          },
+          "required": ["name"]
+      },
+      "networkTabItem": {
+          "type": "object",
+          "properties": {
+            "entityName": {"type": "string", "description": "Full Name/Title as it appears."},
+            "entityType": {"type": "string", "enum": ["person", "company", "group", "event", "hashtag", "topic", "other"]},
+            "context": {"type": ["string", "null"], "description": "e.g., 'Recent activity', 'Shared connection', 'In your industry', 'Trending'"},
+            "entityURL": {"type": ["string", "null"]},
+            "headlineOrDetail": {"type": ["string", "null"], "description": "Headline, brief description, or other identifying detail displayed."}
+          },
+          "required": ["entityName", "entityType"]
+      },
+       "suggestedPersonItem": {
+           "type": "object",
+           "properties": {
+               "name": {"type": "string", "description": "Full Name as it appears."},
+               "headlineOrDetail": {"type": ["string", "null"], "description": "Job title, bio snippet, or other identifying text."},
+               "profileURL": {"type": ["string", "null"]},
+               "reasonForSuggestion": {"type": ["string", "null"], "description": "Explicit reason given by the platform (e.g., 'From your school', 'Shared connections')."},
+               "locationContext": {"type": ["string", "null"], "description": "Where was this suggested? (e.g., Profile Sidebar, Feed, 'People You May Know' section)"}
+           },
+           "required": ["name"]
+       },
+       "suggestedCompanyPageItem": {
+           "type": "object",
+           "properties": {
+               "name": {"type": "string", "description": "Full Name/Title as it appears."},
+               "descriptionOrIndustry": {"type": ["string", "null"]},
+               "pageURL": {"type": ["string", "null"]},
+               "followerCount": {"type": ["number", "string", "null"]},
+               "reasonForSuggestion": {"type": ["string", "null"]},
+               "locationContext": {"type": ["string", "null"], "description": "Where was this suggested?"}
+           },
+           "required": ["name"]
+       },
+       "suggestedGroupItem": {
+           "type": "object",
+           "properties": {
+               "name": {"type": "string", "description": "Full Name/Title as it appears."},
+               "topicOrMemberCount": {"type": ["string", "null"]},
+               "groupURL": {"type": ["string", "null"]},
+               "reasonForSuggestion": {"type": ["string", "null"]},
+               "locationContext": {"type": ["string", "null"], "description": "Where was this suggested?"}
+           },
+           "required": ["name"]
+       },
+       "genericSuggestionItem": {
+           "type": "object",
+           "properties": {
+               "suggestionType": {"type": "string", "description": "e.g., 'event', 'hashtag', 'newsletter', 'topic', 'sound', 'effect', 'template'"},
+               "nameOrTitle": {"type": "string", "description": "Full Name/Title as it appears."},
+               "description": {"type": ["string", "null"]},
+               "link": {"type": ["string", "null"]},
+               "usageCount": {"type": ["number", "string", "null"], "description": "e.g., number of videos using a sound/effect"},
+               "reasonForSuggestion": {"type": ["string", "null"]},
+               "locationContext": {"type": ["string", "null"], "description": "Where was this suggested?"}
+           },
+           "required": ["suggestionType", "nameOrTitle"]
+       },
+       "connectionItem": {
+          "type": "object",
+          "properties": {
+            "connectionName": {"type": "string", "description": "Full Name as listed."},
+            "connectionProfileURL": {"type": "string"},
+            "connectionHeadline": {"type": ["string", "null"], "description": "Job title or bio."},
+            "sharedConnectionsCount": {"type": ["number", "null"]},
+            "connectionDate": {"type": ["string", "null"], "description": "Date connection was made, if available."},
+            "tagsOrNotes": {"type": ["string", "array", "null"], "items": {"type": "string"}, "description": "Any user-added tags or notes about the connection."}
+          },
+          "required": ["connectionName", "connectionProfileURL"]
+      }
+    },
+    "platformSchemas": {}
+  }
+}

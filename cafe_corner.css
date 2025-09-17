@@ -1,0 +1,428 @@
+/* Cafe Corner CSS */
+:root {
+    /* Cafe-inspired color palette */
+    --coffee-dark: #362417;
+    --coffee-medium: #4E342E;
+    --coffee-light: #6D4C41;
+    --crema: #F5ECD7;
+    --cream: #FFF8E1;
+    --brass: #D4AD76;
+    
+    /* Notion-inspired neutrals */
+    --neutral-bg: #FFFFFF;
+    --neutral-surface: #FAFAFA;
+    --neutral-pill: #EAEAEA;
+    --neutral-border: #E0E0E0;
+    
+    /* Text colors */
+    --text-primary: #37352F;
+    --text-secondary: #5A5A58;
+    --text-tertiary: #908F8C;
+    --text-missing: #B6B6B5;
+    
+    /* Accent colors */
+    --accent-blue: #0B66C2;
+    --accent-green: #0F7B6C;
+    --accent-purple: #6940A5;
+    --accent-orange: #D4732A;
+    
+    /* Platform specific accents */
+    --brass-linkedin: #0A66C2;
+    --brass-instagram: #E1306C;
+    --brass-twitter-x: #1DA1F2;
+    --brass-facebook: #1877F2;
+    --brass-tiktok: #000000;
+    --brass-reddit: #FF4500;
+    --brass-github: #333;
+    --brass-other: #777777;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--neutral-surface);
+    line-height: 1.6;
+}
+
+/* --- Coffee Card --- */
+.card {
+    border: 1px solid var(--neutral-border);
+    border-radius: 12px;
+    background: var(--neutral-bg);
+    padding: 1.8rem;
+    margin-bottom: 1.8rem;
+    position: relative;
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 20px 25px -5px, rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
+    transition: transform 0.2s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 5px 10px, rgba(0, 0, 0, 0.05) 0px 15px 30px -8px, rgba(0, 0, 0, 0.04) 0px 10px 15px -3px;
+}
+
+.coffee-card-container {
+    background-image: linear-gradient(to bottom right, rgba(245, 236, 215, 0.4) 0%, rgba(255, 255, 255, 1) 80%);
+    border-left: 5px solid var(--brass);
+    position: relative;
+    overflow: hidden;
+}
+
+.coffee-card-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, var(--brass), var(--brass-light));
+    opacity: 0.8;
+}
+
+.coffee-card-header {
+    position: relative;
+    padding-top: 2.5rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.8rem;
+}
+
+img.avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 2px solid var(--cream);
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 12px 15px -8px;
+}
+
+.header-text h1 {
+    color: var(--coffee-dark);
+    margin: 0 0 0.3rem 0;
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.header-text p.headline {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin: 0.3rem 0 0.8rem 0;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+}
+
+/* --- Pills --- */
+.pill {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    margin: 0.25rem 0.5rem 0.25rem 0;
+    border-radius: 15px;
+    background: var(--neutral-pill);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.pill:hover {
+    background: var(--cream);
+    color: var(--coffee-medium);
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px;
+}
+
+.pill-container {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* --- Platform Cards --- */
+.platform-card-like {
+    background: var(--neutral-bg);
+    border: 1px solid var(--neutral-border);
+    border-left: 5px solid var(--brass);
+    border-radius: 0 8px 8px 0;
+    padding: 1.8rem;
+    margin-bottom: 1.8rem;
+    box-shadow: rgba(0, 0, 0, 0.03) 0px 1px 3px, rgba(0, 0, 0, 0.02) 0px 15px 20px -5px;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.platform-card-like:hover {
+    transform: translateY(-2px);
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px, rgba(0, 0, 0, 0.05) 0px 15px 20px -5px;
+}
+
+/* Platform specific accents with improved colors */
+.platform-card-like.linkedin { border-left-color: var(--brass-linkedin); }
+.platform-card-like.instagram { border-left-color: var(--brass-instagram); }
+.platform-card-like.twitter-x { border-left-color: var(--brass-twitter-x); }
+.platform-card-like.facebook { border-left-color: var(--brass-facebook); }
+.platform-card-like.tiktok { border-left-color: var(--brass-tiktok); }
+.platform-card-like.reddit { border-left-color: var(--brass-reddit); }
+.platform-card-like.github { border-left-color: var(--brass-github); }
+.platform-card-like.other { border-left-color: var(--brass-other); }
+
+.section {
+    margin-bottom: 1.8rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--neutral-border);
+}
+
+.section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* --- Typography --- */
+h3 {
+    color: var(--coffee-dark);
+    margin-top: 1.8rem;
+    margin-bottom: 1.2rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    border-bottom: 1px solid var(--neutral-border);
+    padding-bottom: 0.6rem;
+    position: relative;
+}
+
+h3::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 4rem;
+    height: 3px;
+    background: var(--brass);
+    border-radius: 3px;
+}
+
+h4 {
+    color: var(--coffee-medium);
+    margin-top: 1.2rem;
+    margin-bottom: 0.9rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.platform-card-like h4 {
+    margin-top: 0.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.platform-card-like h4::before {
+    content: "☕";
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+h5 {
+    color: var(--coffee-medium);
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+    margin-top: 1.2rem;
+    letter-spacing: -0.01em;
+}
+
+h6 {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+    margin-top: 0.9rem;
+    letter-spacing: -0.01em;
+}
+
+p, ul, ol {
+    color: var(--text-primary);
+    line-height: 1.65;
+    margin-bottom: 1.2rem;
+}
+
+ul, ol {
+    padding-left: 1.8rem;
+}
+
+li {
+    margin-bottom: 0.6rem;
+}
+
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-bottom: 1px dotted transparent;
+}
+
+a:hover {
+    border-bottom: 1px dotted var(--accent-blue);
+}
+
+/* --- Missing Data --- */
+em.missing {
+    color: var(--text-missing);
+    font-style: italic;
+    font-weight: 400;
+}
+
+/* Styling for pre-wrap paragraph */
+p.prewrap {
+    white-space: pre-wrap;
+    margin-bottom: 0.6rem;
+    background: var(--neutral-surface);
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    border: 1px solid var(--neutral-border);
+}
+
+/* Simple list styling */
+ul.simple-list {
+    list-style-type: none;
+    padding-left: 0.3rem;
+    margin-top: 0.6rem;
+    margin-bottom: 1.2rem;
+}
+
+ul.simple-list li {
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+ul.simple-list li::before {
+    content: "•";
+    color: var(--brass);
+    font-size: 1.2rem;
+    position: absolute;
+    left: 0;
+    top: -0.1rem;
+}
+
+/* Container for recursively rendered items */
+.nested-item-container {
+    margin-left: 1.2rem;
+    padding-left: 1.2rem;
+    border-left: 2px solid var(--neutral-border);
+    margin-bottom: 1.2rem;
+    margin-top: 0.6rem;
+}
+
+.nested-item-container:hover {
+    border-left: 2px solid var(--brass);
+}
+
+.nested-item-container:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Edit Form Specific Styling --- */
+.edit-form-container {
+    background-color: var(--neutral-surface);
+    border: 1px solid var(--neutral-border);
+    border-radius: 8px;
+    padding: 1.8rem;
+    margin-top: 2rem;
+    box-shadow: rgba(0, 0, 0, 0.04) 0px 1px 3px;
+}
+
+/* --- Tab Navigation --- */
+div[data-baseweb="tab-list"] {
+    background-color: transparent;
+    border-bottom: 2px solid var(--neutral-border);
+    padding-bottom: 0;
+    margin-bottom: 1.8rem;
+}
+
+button[data-baseweb="tab"] {
+    background-color: transparent !important;
+    color: var(--text-secondary) !important;
+    border-bottom: 3px solid transparent !important;
+    margin-bottom: -2px;
+    padding: 0.8rem 1.2rem !important;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+button[data-baseweb="tab"]:hover {
+    color: var(--coffee-medium) !important;
+    background-color: rgba(212, 173, 118, 0.1) !important;
+}
+
+button[aria-selected="true"] {
+    color: var(--coffee-dark) !important;
+    font-weight: 600 !important;
+    border-bottom-color: var(--brass) !important;
+}
+
+/* Additional Cafe-themed elements */
+.coffee-icon {
+    display: inline-block;
+    margin-right: 0.5rem;
+    opacity: 0.9;
+}
+
+/* Subtle pattern for background */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4ad76' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    z-index: -1;
+}
+
+/* Animation for cards */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card, .platform-card-like {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Streamlit Overrides */
+.stApp {
+    background-color: transparent;
+}
+
+.stTabs [data-baseweb="tab-panel"] {
+    padding-top: 1rem;
+}
+
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+    letter-spacing: -0.02em;
+}
+
+/* Decorative elements */
+.coffee-card-container::after {
+    content: "☕";
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-size: 1.8rem;
+    opacity: 0.15;
+    color: var(--coffee-dark);
+}
