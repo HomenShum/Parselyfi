@@ -271,18 +271,46 @@ def _chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP)
 # Retrieval index (semantic hybrid via RRF, or lexical fallback).
 # ===========================================================================
 
+import re as _re
+import threading as _threading
+
+_EMBEDDER_LOCK = _threading.Lock()
+DENSE_MIN_COSINE = 0.45          # bge-small cosine floor (measured: off-topic <=0.41,
+#                                  on-topic relevant >=0.75) — drops off-topic dense hits
+EMBED_TIMEOUT_S = 180.0          # wall-clock budget for the ingest embedding pass
+
+
+def _embed_texts(embedder, texts, timeout: float = EMBED_TIMEOUT_S):
+    """Embed texts under a wall-clock budget. Returns the vector list, or None on
+    timeout/error so the caller degrades to lexical instead of hanging the thread."""
+    import asyncio as _asyncio
+
+    async def _run():
+        return await _asyncio.wait_for(
+            _asyncio.to_thread(lambda: [list(map(float, v)) for v in embedder.embed(texts)]),
+            timeout=timeout,
+        )
+    try:
+        return run_async(_run())
+    except Exception as e:  # timeout or embed failure -> caller falls back honestly
+        logger.error("embedding aborted (timeout/error): %s", e)
+        return None
+
+
 def _get_embedder():
     """Return a process-cached fastembed TextEmbedding (BGE-small) or None."""
     global _EMBEDDER_SINGLETON
     if not FASTEMBED_AVAILABLE or TextEmbedding is None:
         return None
     if _EMBEDDER_SINGLETON is None:
-        try:
-            _EMBEDDER_SINGLETON = TextEmbedding(model_name=_EMBED_MODEL_NAME)
-            logger.info("fastembed model loaded: %s", _EMBED_MODEL_NAME)
-        except Exception as e:
-            logger.error("fastembed model load failed: %s", e)
-            return None
+        with _EMBEDDER_LOCK:   # single-flight first load (no double model construct)
+            if _EMBEDDER_SINGLETON is None:
+                try:
+                    _EMBEDDER_SINGLETON = TextEmbedding(model_name=_EMBED_MODEL_NAME)
+                    logger.info("fastembed model loaded: %s", _EMBED_MODEL_NAME)
+                except Exception as e:
+                    logger.error("fastembed model load failed: %s", e)
+                    return None
     return _EMBEDDER_SINGLETON
 
 
@@ -299,6 +327,7 @@ class _RagIndex:
     def __init__(self, chunks: List[Dict[str, Any]]):
         self.chunks = chunks
         self.mode = "none"
+        self.last_effective_mode = "none"   # what actually ran on the LAST query
         self._tfidf = None
         self._tfidf_matrix = None
         self._qdrant = None
@@ -313,23 +342,34 @@ class _RagIndex:
 
         # Lexical (TF-IDF) — needed for both modes; lexical-only fallback too.
         if LEXICAL_AVAILABLE:
-            try:
-                self._tfidf = TfidfVectorizer(
-                    stop_words="english", max_features=50_000, ngram_range=(1, 2)
-                )
-                self._tfidf_matrix = self._tfidf.fit_transform(texts)
-                self.mode = "lexical"
-            except Exception as e:
-                logger.error("TF-IDF build failed: %s", e)
-                self._tfidf = None
-                self._tfidf_matrix = None
+            # Retry without the stopword filter for all-stopword / tiny corpora
+            # (TfidfVectorizer raises "empty vocabulary" otherwise -> mode "none").
+            for _stop in ("english", None):
+                try:
+                    self._tfidf = TfidfVectorizer(
+                        stop_words=_stop, max_features=50_000, ngram_range=(1, 2)
+                    )
+                    self._tfidf_matrix = self._tfidf.fit_transform(texts)
+                    self.mode = "lexical"
+                    break
+                except ValueError:
+                    self._tfidf = None
+                    self._tfidf_matrix = None
+                    continue   # empty vocabulary -> retry without stopwords
+                except Exception as e:
+                    logger.error("TF-IDF build failed: %s", e)
+                    self._tfidf = None
+                    self._tfidf_matrix = None
+                    break
 
         # Dense (fastembed + qdrant) — upgrades mode to semantic/hybrid.
         if SEMANTIC_AVAILABLE and self._tfidf_matrix is not None:
             try:
                 embedder = _get_embedder()
                 if embedder is not None:
-                    vectors = [list(map(float, v)) for v in embedder.embed(texts)]
+                    vectors = _embed_texts(embedder, texts, EMBED_TIMEOUT_S)
+                    if not vectors:
+                        raise RuntimeError("embedding returned no vectors (timeout/error)")
                     client = QdrantClient(location=":memory:")
                     # create_collection is the current API (recreate_collection is
                     # deprecated); a fresh in-memory client always starts empty.
@@ -378,7 +418,14 @@ class _RagIndex:
                 query_vector=qvec,
                 limit=top_n,
             )
-            return [(int(h.payload.get("chunk_idx", h.id)), float(h.score)) for h in hits]
+            # HONEST: drop off-topic hits below a cosine floor so a zero-signal
+            # query can still yield [] (→ "not found") in semantic mode, mirroring
+            # the lexical `> 0` filter. Without this, dense always returns the
+            # nearest neighbours regardless of relevance.
+            return [
+                (int(h.payload.get("chunk_idx", h.id)), float(h.score))
+                for h in hits if float(h.score) >= DENSE_MIN_COSINE
+            ]
         except Exception as e:
             logger.error("Dense ranking failed: %s", e)
             return []
@@ -406,18 +453,25 @@ class _RagIndex:
         caller can honestly say "not found".
         """
         if not self.chunks or not (query or "").strip():
+            self.last_effective_mode = "none"
             return []
         pool = max(top_k * 4, top_k)
         if self.mode == "semantic":
             dense = self._dense_ranking(query, pool)
             lexical = self._lexical_ranking(query, pool)
             if not dense and not lexical:
+                self.last_effective_mode = "none"
                 return []
+            # HONEST: record whether dense actually contributed for THIS query, so
+            # the UI can disclose a silent semantic→lexical degrade.
+            self.last_effective_mode = "semantic" if dense else "lexical"
             fused_ids = self._rrf_fuse([dense, lexical])
         else:  # lexical (or degraded)
             lexical = self._lexical_ranking(query, pool)
             if not lexical:
+                self.last_effective_mode = "none"
                 return []
+            self.last_effective_mode = "lexical"
             fused_ids = [idx for idx, _ in lexical]
 
         out: List[Dict[str, Any]] = []
@@ -426,10 +480,26 @@ class _RagIndex:
                 out.append(self.chunks[cid])
         return out
 
+    def close(self) -> None:
+        """Release the in-memory Qdrant client (called before an index rebuild)."""
+        if self._qdrant is not None:
+            try:
+                self._qdrant.close()
+            except Exception:
+                pass
+            self._qdrant = None
+
 
 def _build_index() -> Optional[_RagIndex]:
     """(Re)build the retrieval index from the session chunks; cache on session."""
     chunks = st.session_state.get(SS_CHUNKS) or []
+    # Release any prior in-memory Qdrant client before replacing the index.
+    _old = st.session_state.get(SS_INDEX)
+    if _old is not None:
+        try:
+            _old.close()
+        except Exception:
+            pass
     if not chunks:
         st.session_state[SS_INDEX] = None
         st.session_state[SS_MODE] = "none"
@@ -648,7 +718,7 @@ def _render_chat(index: Optional[_RagIndex]) -> None:
             if sources:
                 with st.expander(f"Retrieved sources ({len(sources)})"):
                     for s in sources:
-                        st.markdown(f"**{s['source']}#chunk{s['chunk_idx']}**")
+                        st.markdown(f"`{s['source']}#chunk{s['chunk_idx']}`")
                         st.caption(s["text"][:PER_CHUNK_PREVIEW_CHARS])
 
     if index is None:
@@ -671,6 +741,13 @@ def _render_chat(index: Optional[_RagIndex]) -> None:
         with st.spinner("Searching your documents…"):
             answer, retrieved = _answer_question(prompt, index)
         st.markdown(answer)
+        # HONEST: disclose if semantic search found nothing and we used keywords only.
+        _eff = getattr(index, "last_effective_mode", index.mode)
+        if index.mode == "semantic" and _eff == "lexical":
+            st.caption(
+                "ℹ️ Semantic search returned nothing for this query — answered from "
+                "keyword (lexical) matches only."
+            )
         if retrieved:
             with st.expander(f"Retrieved sources ({len(retrieved)})"):
                 for s in retrieved:
@@ -766,33 +843,51 @@ def _render_table_qa() -> None:
                     f"Q&A sees the first {TABLE_ROW_CAP} rows only "
                     "(bounded context sent to the model)."
                 )
-            q = st.text_input(
-                "Ask about this table",
-                key=SS_PREFIX + "tq_" + hashlib.sha256(name.encode()).hexdigest()[:10],
-                placeholder="e.g. Which row has the highest value in column X?",
-            )
-            if q:
+            _tkey = hashlib.sha256(name.encode()).hexdigest()[:10]
+            # Gate the LLM call behind an explicit submit so it does NOT re-fire on
+            # every unrelated rerun while text sits in the box (real token spend).
+            with st.form(key=SS_PREFIX + "tqform_" + _tkey):
+                q = st.text_input(
+                    "Ask about this table",
+                    placeholder="e.g. Which row has the highest value in column X?",
+                )
+                submitted = st.form_submit_button("Ask")
+            if submitted and q:
                 with st.spinner("Analyzing the table slice…"):
                     ans = _answer_table(name, df, q)
                 st.markdown(ans)
+                if df.shape[0] > TABLE_ROW_CAP:
+                    st.caption(
+                        f"⚠️ Answer computed over the first {TABLE_ROW_CAP} of "
+                        f"{df.shape[0]:,} rows only — not the full table."
+                    )
 
 
 # ===========================================================================
 # Cross-tab handoff: pre-fill List Intelligence names text_area.
 # ===========================================================================
 
-def _send_to_list_intelligence() -> None:
-    """Extract document/source names + sheet column hints and pre-fill the
-    List Intelligence names text_area (its exact widget key is
-    ``li_raw_text_input``). Honest: we only forward what we actually have."""
-    candidates: List[str] = []
+_LIST_MARKER_RE = _re.compile(r"^\s*(?:[-•*]\s*)?(?:\d+[.)]\s*)?")
 
-    # Use Gemini (if available) to pull company names from the indexed text;
-    # fall back to the document file stems so the handoff still does something.
+
+def _clean_handoff_line(line: str) -> str:
+    """Strip only a leading list marker (bullet / '1.' / '2)'), preserving interior
+    and trailing digits so real names like '23andMe' / '3M' / '7-Eleven' survive."""
+    return _LIST_MARKER_RE.sub("", line or "").strip()
+
+
+def _extract_handoff_names() -> List[str]:
+    """Extract candidate company/org names from the indexed docs FOR REVIEW.
+
+    Returns a deduped, bounded candidate list. Does NOT write any session key —
+    the user reviews/edits the list before it is sent to List Intelligence, so no
+    unconfirmed (possibly hallucinated/mis-OCR'd) name silently crosses the tab.
+    """
     docs = st.session_state.get(SS_DOCS) or []
     chunks = st.session_state.get(SS_CHUNKS) or []
-
     names: List[str] = []
+    seen: set = set()
+
     if chunks:
         sample = "\n\n".join(c["text"] for c in chunks[:12])[:12_000]
         prompt = (
@@ -806,27 +901,20 @@ def _send_to_list_intelligence() -> None:
             logger.error("handoff extraction failed: %s", e)
             raw = ""
         for line in (raw or "").splitlines():
-            nm = line.strip(" \t-•*0123456789.").strip()
-            if nm and nm.lower() not in {n.lower() for n in names}:
+            nm = _clean_handoff_line(line)
+            if nm and nm.lower() not in seen:
+                seen.add(nm.lower())
                 names.append(nm)
 
-    candidates = names
-    if not candidates:
+    if not names:
         # Honest fallback: forward document file stems (deduped).
-        seen = set()
         for d in docs:
-            stem = d.get("file", "").rsplit(".", 1)[0].strip()
+            stem = (d.get("file", "") or "").rsplit(".", 1)[0].strip()
             if stem and stem.lower() not in seen:
                 seen.add(stem.lower())
-                candidates.append(stem)
+                names.append(stem)
 
-    if not candidates:
-        st.toast("Nothing to send — no names found in your documents.")
-        return
-
-    # Write to the EXACT widget key the List Intelligence text_area reads.
-    st.session_state["li_raw_text_input"] = "\n".join(candidates[:200])
-    st.toast(f"Sent {len(candidates[:200])} name(s) to List Intelligence. Open that tab to run them.")
+    return names[:200]
 
 
 # ===========================================================================
@@ -951,13 +1039,38 @@ def render_rag_tab() -> None:
             with st.expander("Ingest report", expanded=any(d.get("status") != "ok" for d in docs)):
                 st.dataframe(pd.DataFrame(docs), use_container_width=True, hide_index=True)
 
-        # Handoff to List Intelligence.
+        # Handoff to List Intelligence — extract candidates, then let the user
+        # REVIEW/EDIT before anything is sent (no unconfirmed name crosses the tab).
         if st.button(
-            "Send extracted names to List Intelligence",
-            key=SS_PREFIX + "handoff_btn",
+            "Extract company names for List Intelligence",
+            key=SS_PREFIX + "handoff_extract_btn",
         ):
-            with st.spinner("Extracting company/organization names…"):
-                _send_to_list_intelligence()
+            with st.spinner("Extracting company / organization names…"):
+                st.session_state[SS_PREFIX + "handoff_candidates"] = _extract_handoff_names()
+
+        cands = st.session_state.get(SS_PREFIX + "handoff_candidates")
+        if cands is not None:
+            if not cands:
+                st.caption("No company / organization names were found in your documents.")
+            else:
+                review = st.text_area(
+                    "Review the extracted names — edit freely; only these are sent:",
+                    value="\n".join(cands),
+                    key=SS_PREFIX + "handoff_review",
+                    height=160,
+                )
+                review_names = [ln.strip() for ln in review.splitlines() if ln.strip()]
+                if st.button(
+                    f"📋 Send {len(review_names)} to List Intelligence",
+                    type="primary",
+                    disabled=not review_names,
+                    key=SS_PREFIX + "handoff_send_btn",
+                ):
+                    # Relay key + rerun (writing the LI widget key directly crashes,
+                    # since List Intelligence instantiated it earlier this run).
+                    st.session_state["li_raw_text_input_pending"] = "\n".join(review_names[:200])
+                    st.toast(f"Sent {len(review_names[:200])} names — open List Intelligence.")
+                    st.rerun()
 
     # -- Stage 2: grounded chat --------------------------------------------
     index = st.session_state.get(SS_INDEX)

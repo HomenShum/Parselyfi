@@ -1135,6 +1135,16 @@ def render_list_intelligence_tab() -> None:
     )
 
     # ---- INPUT ----
+    # Consume a cross-tab handoff (from Card→Rows / Document Brain) into the raw
+    # input BEFORE the text_area widget is instantiated — assigning a widget-keyed
+    # session value AFTER instantiation raises StreamlitAPIException.
+    _pending = st.session_state.pop(SS_RAW_INPUT + "_pending", None)
+    if _pending is not None:
+        st.session_state[SS_RAW_INPUT] = _pending
+        try:
+            st.toast("Imported companies from another tab — ready to run.", icon="📋")
+        except Exception:
+            pass
     ui.section("1 · Input", "One company per line, or upload a CSV/XLSX")
     in_col, up_col = st.columns([2, 1])
     with in_col:

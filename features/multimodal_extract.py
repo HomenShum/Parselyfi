@@ -234,7 +234,9 @@ def _dedupe_names(names: List[str]) -> List[str]:
     out: List[str] = []
     for n in names:
         key = (n or "").strip().lower()
-        if not key or key in seen:
+        # Drop blanks AND pandas placeholder strings ("nan"/"none"/"null") that
+        # leak in from emptied data_editor cells — never hand those off as companies.
+        if not key or key in ("nan", "none", "null") or key in seen:
             continue
         seen.add(key)
         out.append(n.strip())
@@ -517,8 +519,17 @@ def render_multimodal_extract_tab() -> None:
                 f"({size / 1024 / 1024:.1f}MB > {MAX_IMAGE_BYTES // (1024 * 1024)}MB cap)"
             )
             continue
+        # Disambiguate duplicate filenames so per-image provenance stays unique
+        # (st.file_uploader allows two files sharing a basename).
+        fname = getattr(f, "name", "image")
+        _existing = {im["filename"] for im in images}
+        if fname in _existing:
+            _base, _n = fname, 2
+            while fname in _existing:
+                fname = f"{_base} ({_n})"
+                _n += 1
         images.append({
-            "filename": getattr(f, "name", "image"),
+            "filename": fname,
             "data": data,
             "mime": _mime_for(getattr(f, "name", ""), getattr(f, "type", None)),
             "size": size,
@@ -591,8 +602,22 @@ def render_multimodal_extract_tab() -> None:
 
     merged_rows = _records_to_rows(records)
     n_images = len(records)
-    n_companies = len(merged_rows)
-    n_with_site = sum(1 for r in merged_rows if r.get("website"))
+    has_extracted = len(merged_rows) > 0
+
+    # KPI counts reflect the CURRENT (post-edit) grid when present, so the headline
+    # numbers match what will actually be exported / handed off.
+    _edited_df = st.session_state.get(SS_EDITED)
+    grid_rows = merged_rows
+    if _edited_df is not None:
+        try:
+            grid_rows = _edited_df.to_dict("records")
+        except Exception:
+            grid_rows = merged_rows
+    n_companies = sum(
+        1 for r in grid_rows
+        if str(r.get("name") or "").strip().lower() not in ("", "nan", "none", "null")
+    )
+    n_with_site = sum(1 for r in grid_rows if str(r.get("website") or "").strip())
 
     ui.section("3 · Extracted rows", "Correct OCR slips here before sending — only what was visible was filled")
     ui.kpi_row([
@@ -601,16 +626,24 @@ def render_multimodal_extract_tab() -> None:
         ("With website", n_with_site),
     ])
 
-    if n_companies == 0:
+    # Honest truncation notice when the merged-grid cap clipped later images' rows.
+    _raw_total = sum(len(rec.get("rows", [])) for rec in records)
+    if _raw_total > len(merged_rows):
+        st.warning(
+            f"Showing {len(merged_rows)} of {_raw_total} extracted rows "
+            f"(capped at {MAX_TOTAL_ROWS}). Rows from later images are not shown."
+        )
+
+    if not has_extracted:
         st.warning(
             "No companies were extracted from these images. Nothing was "
             "fabricated — the model did not find identifiable company names. "
             "Try a clearer image or a more specific hint."
         )
 
-    # Editable grid (only when there is something to edit).
+    # Editable grid (only when extraction produced rows).
     edited_names: List[str] = []
-    if n_companies > 0:
+    if has_extracted:
         base_df = st.session_state.get(SS_EDITED)
         if base_df is None:
             base_df = _rows_to_df(merged_rows)
@@ -638,9 +671,14 @@ def render_multimodal_extract_tab() -> None:
         )
         st.session_state[SS_EDITED] = edited
 
-        # Pull cleaned, deduped names out of the (possibly edited) grid.
+        # Pull cleaned, deduped names from the (possibly edited) grid. Filter NaN /
+        # blank cells so emptied or newly-added rows never become a "nan" company.
         try:
-            raw_names = [str(x) for x in edited["name"].tolist()] if "name" in edited else []
+            raw_names = [
+                str(x).strip()
+                for x in (edited["name"].tolist() if "name" in edited else [])
+                if pd.notna(x) and str(x).strip()
+            ]
         except Exception:
             raw_names = [r.get("name", "") for r in merged_rows]
         edited_names = _dedupe_names(raw_names)
@@ -658,14 +696,15 @@ def render_multimodal_extract_tab() -> None:
             use_container_width=True,
         )
         if send and edited_names:
-            # Write the deduped names as a newline string to the EXACT widget key
-            # the List Intelligence names text_area reads, pre-filling that tab.
-            st.session_state[LI_RAW_TEXT_KEY] = "\n".join(edited_names)
-            st.toast(f"Sent {n_send} companies to List Intelligence.")
-            st.caption(
-                "Open the **List Intelligence** tab to match / enrich / classify / "
-                "score them — the names are pre-filled."
+            # Hand off via a NON-widget relay key, then rerun. Writing the widget
+            # key directly crashes because List Intelligence already instantiated
+            # its text_area earlier in this same script run.
+            st.session_state[LI_RAW_TEXT_KEY + "_pending"] = "\n".join(edited_names)
+            st.toast(
+                f"Sent {n_send} compan{'y' if n_send == 1 else 'ies'} to List "
+                "Intelligence — open that tab (names are pre-filled)."
             )
+            st.rerun()
 
     with dl_col:
         # Download CSV of the FULL extracted table (current grid state).
