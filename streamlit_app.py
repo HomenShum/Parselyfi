@@ -1427,9 +1427,12 @@ def main():
         sidebar_content_fragment_SystemDialog_component()
         
     st.header("Feature Selection")
-    li_tab, graph_tab, company_tab, news_tab, tr_tab, dash_tab, files_tab = st.tabs([
+    (li_tab, graph_tab, cards_tab, docbrain_tab, company_tab,
+     news_tab, tr_tab, dash_tab, files_tab) = st.tabs([
         "📋 List Intelligence",
         "🕸️ Relationship Graph",
+        "🖼️ Card → Rows",
+        "📚 Document Brain",
         "🔍 Company Search & Analysis",
         "📰 News & YouTube",
         "🎙️ Transcription & Summaries",
@@ -1452,6 +1455,24 @@ def main():
             render_relationship_graph_tab()
         except Exception as e:
             st.error("⚠️ Relationship Graph could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with cards_tab:
+        try:
+            from features.multimodal_extract import render_multimodal_extract_tab
+            render_multimodal_extract_tab()
+        except Exception as e:
+            st.error("⚠️ Card → Rows could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with docbrain_tab:
+        try:
+            from features.rag import render_rag_tab
+            render_rag_tab()
+        except Exception as e:
+            st.error("⚠️ Document Brain could not be loaded.")
             with st.expander("Error details"):
                 st.exception(e)
 
