@@ -10,22 +10,36 @@ from io import BytesIO
 import base64
 from datetime import datetime
 
-# Initialize Supabase client
-supabase_url = st.secrets['supabase']['SUPABASE_URL']
-supabase_key = st.secrets['supabase']['SUPABASE_KEY']
-supabase_client = supabase.create_client(supabase_url, supabase_key)
-
-# Supabase Storage details (from secrets or config)
+# Supabase Storage bucket name
 SUPABASE_S3_BUCKET_NAME = st.secrets['supabase']['SUPABASE_S3_BUCKET_NAME']
 
-# Initialize boto3 client for S3 (Supabase Storage)
-s3_client = boto3.client(
-    's3',
-    endpoint_url=st.secrets['supabase']['SUPABASE_S3_ENDPOINT_URL'],
-    region_name=st.secrets['supabase']['SUPABASE_S3_BUCKET_REGION'],
-    aws_access_key_id=st.secrets['supabase']['SUPABASE_S3_BUCKET_ACCESS_KEY'],
-    aws_secret_access_key=st.secrets['supabase']['SUPABASE_S3_BUCKET_SECRET_KEY']
-)
+
+# --- Cached client resources -------------------------------------------------
+# Streamlit re-executes this whole script on every interaction. Creating the
+# Supabase + boto3 clients at module scope each rerun is wasteful (new sockets,
+# repeated auth). @st.cache_resource builds each client once per process and
+# reuses it across reruns and sessions. See Streamlit caching docs.
+@st.cache_resource(show_spinner=False)
+def _get_supabase_client():
+    return supabase.create_client(
+        st.secrets['supabase']['SUPABASE_URL'],
+        st.secrets['supabase']['SUPABASE_KEY'],
+    )
+
+
+@st.cache_resource(show_spinner=False)
+def _get_s3_client():
+    return boto3.client(
+        's3',
+        endpoint_url=st.secrets['supabase']['SUPABASE_S3_ENDPOINT_URL'],
+        region_name=st.secrets['supabase']['SUPABASE_S3_BUCKET_REGION'],
+        aws_access_key_id=st.secrets['supabase']['SUPABASE_S3_BUCKET_ACCESS_KEY'],
+        aws_secret_access_key=st.secrets['supabase']['SUPABASE_S3_BUCKET_SECRET_KEY'],
+    )
+
+
+supabase_client = _get_supabase_client()
+s3_client = _get_s3_client()
 
 KEY_PREFIX = "s3_file_manager" # To avoid session state conflicts
 ITEMS_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100] # Pagination options
@@ -1441,24 +1455,31 @@ def main():
                     st.write("File preview not available for this type.")
     
     with tab3:
-        st.subheader("🔍 Company Search & Analysis")
-        company = st.text_input("Enter company name:")
-        if company:
-            st.write(f"Displaying analysis for {company}")
-    
+        try:
+            from features.company_research import render_company_research_tab
+            render_company_research_tab()
+        except Exception as e:
+            st.error("⚠️ Company Search & Analysis could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
     with tab4:
-        st.subheader("📰 News & Youtube")
-        st.subheader("📢 News Alerts")
-        st.write("Latest financial news and alerts will appear here.")
-        st.subheader("🎥 Youtube Daily Reports")
-        st.write("Daily financial reports from Youtube will be displayed here.")
-    
+        try:
+            from features.news_youtube import render_news_youtube_tab
+            render_news_youtube_tab()
+        except Exception as e:
+            st.error("⚠️ News & YouTube could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
     with tab5:
-        st.subheader("🎙️ Transcription & Summaries")
-        uploaded_file = st.file_uploader("Upload an audio file for transcription", type=['mp3', 'wav'])
-        if uploaded_file is not None:
-            st.write("Transcription will appear here.")
-            st.write("Summary of the transcription will appear here.")
+        try:
+            from features.transcription import render_transcription_tab
+            render_transcription_tab()
+        except Exception as e:
+            st.error("⚠️ Transcription & Summaries could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
                     
                     
 if __name__ == '__main__':

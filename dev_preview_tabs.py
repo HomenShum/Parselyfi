@@ -1,0 +1,58 @@
+"""Dev/QA harness — renders the three finished ParselyFi feature tabs directly.
+
+The production app (prod_parselyfi_v031525.py) gates all content behind a
+Google-login wall (st.stop() when not logged in), which blocks headless QA.
+This harness calls the exact render_*_tab() entry points the production tabs
+use, with the same per-tab error boundary, so the feature code can be
+dogfooded in a real browser without auth. Not part of the shipped app.
+
+Run from the Parselyfi/ directory (so st.secrets and the features package resolve):
+    streamlit run dev_preview_tabs.py
+"""
+import streamlit as st
+
+st.set_page_config(
+    page_title="ParselyFi · Feature Tab QA",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+st.title("🧪 ParselyFi — Feature Tab Dogfood Harness")
+st.caption(
+    "Renders the 3 finished tabs via their render_*_tab() entry points, "
+    "bypassing the Google-login gate for QA only."
+)
+
+tab3, tab4, tab5 = st.tabs([
+    "🔍 Company Search & Analysis",
+    "📰 News & YouTube",
+    "🎙️ Transcription & Summaries",
+])
+
+with tab3:
+    try:
+        from features.company_research import render_company_research_tab
+        render_company_research_tab()
+    except Exception as e:  # noqa: BLE001 - surface any load error for QA
+        st.error("⚠️ Company Search & Analysis could not be loaded.")
+        with st.expander("Error details"):
+            st.exception(e)
+
+with tab4:
+    try:
+        from features.news_youtube import render_news_youtube_tab
+        render_news_youtube_tab()
+    except Exception as e:  # noqa: BLE001
+        st.error("⚠️ News & YouTube could not be loaded.")
+        with st.expander("Error details"):
+            st.exception(e)
+
+with tab5:
+    try:
+        from features.transcription import render_transcription_tab
+        render_transcription_tab()
+    except Exception as e:  # noqa: BLE001
+        st.error("⚠️ Transcription & Summaries could not be loaded.")
+        with st.expander("Error details"):
+            st.exception(e)

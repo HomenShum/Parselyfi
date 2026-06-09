@@ -42,3 +42,14 @@ secrets.toml
 # Local development
 .DS_Store
 Thumbs.db
+temp/
+NUL
+
+# Node / demo-video pipeline (TestReel + Playwright + Remotion)
+node_modules/
+demo/node_modules/
+demo/recordings/raw/
+demo/remotion/out/
+demo/.remotion/
+playwright-report/
+test-results/

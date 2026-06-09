@@ -1,119 +1,150 @@
-# 🌱 ParselyFi - Your All-in-One Financial Data & AI Assistant
+<div align="center">
+
+# 🌱 ParselyFi
+
+### Source-backed financial research, in one Streamlit app.
+
+**Company intelligence · News & YouTube briefings · Audio transcription & summaries** — powered by LinkUp `sourcedAnswer`, Google **Gemini 3.5 Flash**, and ElevenLabs.
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://parselyfi.streamlit.app)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+![Gemini 3.5 Flash](https://img.shields.io/badge/LLM-Gemini%203.5%20Flash-8E75B2)
+![Search](https://img.shields.io/badge/search-LinkUp%20sourcedAnswer-0A7CFF)
+![License](https://img.shields.io/badge/license-All%20rights%20reserved-lightgrey)
 
-**ParselyFi** is a Streamlit application designed to streamline financial research and workflows for venture capital, middle market, and public company analysis. It integrates a suite of tools including a file manager for S3-compatible storage, an AI assistant for workflow automation, and a public financial data dashboard, all in one place.
+<a href="assets/parselyfi-demo.mp4">
+  <img src="assets/parselyfi-demo.gif" alt="ParselyFi feature demo" width="820">
+</a>
 
-## ✨ Key Features
+<sub>▶︎ Click for the full demo video · feature-by-feature walkthrough</sub>
 
-*   **S3 File Manager:**
-    *   Browse, upload, download, create folders, and delete files directly from your S3-compatible storage (optimized for Supabase Storage).
-    *   Pagination for efficient handling of large file lists.
-    *   Intuitive folder navigation and file selection.
-*   **Parsely AI Assistant:**
-    *   Chat-based AI assistant for help with government forms, workflow automation, and general inquiries.
-    *   Clear chat history and system message display.
-*   **Public Dashboard:**
-    *   Explore curated financial data from various sources (Company Data, Youtube Transcriptions, News, Forums).
-    *   Interactive data tables with filtering and different views (Master DB, Products, Partnerships, Investors).
-    *   Data fetched from Supabase database with caching for performance.
-*   **File Works Tab:**
-    *   Preview selected files directly within the app (PDF, CSV, Excel, Text-based formats).
-    *   Supports various file types for viewing and analysis.
-*   **Company Search & Analysis:** (Placeholder - Feature in Development)
-    *   Intended for future integration of company-specific search and analysis tools.
-*   **News & YouTube Tab:** (Placeholder - Feature in Development)
-    *   Planned to display financial news alerts and daily YouTube transcription reports.
-*   **Transcription & Summaries Tab:** (Placeholder - Feature in Development)
-    *   Future feature for transcribing uploaded audio files and generating summaries.
-
-## 🛠️ Technologies Used
-
-*   **Streamlit:** For building the interactive web application UI.
-*   **Supabase:**
-    *   For backend database (PostgreSQL) to store financial data and user data.
-    *   Supabase Storage (S3-compatible) for file management.
-    *   Supabase Python Client for database and storage interactions.
-*   **boto3:** Python SDK for interacting with AWS S3 (used for Supabase Storage).
-*   **pandas:** For data manipulation and display in dataframes.
-*   **os, math, base64, io, datetime:** Standard Python libraries for various functionalities.
-*   **Potentially: OpenAI's GPT-3 (or similar LLMs):** For future AI assistant enhancements.
-
-## 🚀 Setup Instructions
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [YOUR_GITHUB_REPOSITORY_URL]
-    cd ParselyFi
-    ```
-2.  **Install Python dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *(It's recommended to use a virtual environment like `venv` or `conda`)*
-3.  **Set up Supabase:**
-    *   Create a Supabase project at [https://supabase.com/](https://supabase.com/).
-    *   Create a Supabase Storage bucket.
-    *   Create the necessary database tables (SQL code provided in the application code comments - `supabase_sql_code_for_tables.sql`).
-4.  **Configure Secrets:**
-    *   Create a `.streamlit/secrets.toml` file in your project directory.
-    *   Add your Supabase credentials and S3 storage details to `secrets.toml` as follows (replace with your actual values):
-
-        ```toml
-        [supabase]
-        SUPABASE_URL = "YOUR_SUPABASE_URL"
-        SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY" # Use anon key for frontend access, consider service key for backend
-        SUPABASE_S3_BUCKET_NAME = "YOUR_SUPABASE_STORAGE_BUCKET_NAME"
-        SUPABASE_S3_ENDPOINT_URL = "YOUR_SUPABASE_STORAGE_ENDPOINT_URL"
-        SUPABASE_S3_BUCKET_REGION = "YOUR_SUPABASE_STORAGE_REGION"
-        SUPABASE_S3_BUCKET_ACCESS_KEY = "YOUR_SUPABASE_STORAGE_ACCESS_KEY"
-        SUPABASE_S3_BUCKET_SECRET_KEY = "YOUR_SUPABASE_STORAGE_SECRET_KEY"
-        ```
-5.  **Run the Streamlit application:**
-    ```bash
-    streamlit run your_streamlit_app_filename.py # Replace with your main script filename (e.g., app.py)
-    ```
-6.  **Login:** The application uses Streamlit's experimental user login. Log in with your Google account when prompted.
-
-## 🧑‍💻 Usage Instructions
-
-1.  **Sidebar Navigation:** Use the sidebar to navigate between features:
-    *   **File Manager:** Browse your S3 bucket, manage files and folders.
-    *   **AI Assistant:** Interact with the Parsely AI chatbot.
-    *   **System Messages:** View system notifications and logs.
-2.  **Public Dashboard Tab:** Explore the public financial data dashboards. Use the outer and inner tabs to navigate through different datasets and views.
-3.  **File Works Tab:** Select files in the File Manager sidebar. Go to the "File Works" tab in the main area to preview and interact with selected files.
-4.  **Action Buttons:** Utilize the buttons in the File Manager to create folders, upload files, and delete items.
-5.  **Pagination:** For file lists and data tables, use the pagination controls to navigate through pages of data.
-
-## 📜 License 
-
-Homen Shum reserves all rights not expressly granted by the license.
-
-## 👨‍💻 About the Creator
-
-**Homen Shum** is a data-driven professional with expertise in AI/ML, Data Analytics, and Workflow Automation. With a background in startup banking and technical development, he brings a unique perspective to financial technology solutions.
-
-#### Key Skills:
-- 🐍 Python, Streamlit, FastAPI
-- ☁️ Cloud Platforms (Azure, AWS, GCP)
-- 🤖 AI/ML, RAG, Automation
-- 📊 Data Analysis & Visualization
-- 🌐 Web Development
-- 🏦 Financial Markets & Investment Strategies
-
-#### Experience Highlights:
-- Technical Co-Founder building innovative AI solutions
-- Startup Banking experience at JPMC
-- AWS DeepRacer Global Finalist
-- Creator of 'Parsely' AI Assistant
-
-## 📫 Contact
-
-- Personal Website: [homenshum.com](https://homenshum.com/)
-- LinkedIn: [linkedin.com/in/homen-shum](https://linkedin.com/in/homen-shum)
-- GitHub: [github.com/HomenShum](https://github.com/HomenShum)
+</div>
 
 ---
 
-*Last Updated: Feb 2025*
+## What is ParselyFi?
+
+ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and public-company research**. It turns a company name, a news topic, or an audio file into **cited, source-backed output** — never fabricated. Three research tabs sit alongside a Supabase/S3 file manager, an AI assistant, and a public financial-data dashboard.
+
+> **Design rule everywhere:** if a key, source, or result is missing, the app says so and degrades gracefully. It never invents companies, sources, transcripts, or summaries.
+
+---
+
+## ✨ Features
+
+| Tab | What it does |
+| --- | --- |
+| 🔍 **Company Search & Analysis** | Source-backed company research with a **3-pass workflow** — entity resolution → structured profile → missing-field backfill. Free-text *or* spreadsheet upload, an editable Pending/Complete/Skip review grid, batch enrichment with concurrency, per-agent token/cost tracking, and exportable search history. |
+| 📰 **News & YouTube** | **News Alerts:** a topic → LinkUp source-backed search → a cited Gemini briefing (summary, key points, sentiment) + an editable list of real sources. **YouTube Daily Reports:** a video URL / pasted transcript → structured key-insight summary. |
+| 🎙️ **Transcription & Summaries** | Upload audio → **ElevenLabs** speech-to-text → a synced AnyWidget player that highlights the transcript during playback → one-click **AI summary** (summary + key points + action items). Paste/upload an existing transcript if you have no audio key. |
+| 🗂️ **File Manager** | Browse, upload, download, organize files in S3-compatible **Supabase Storage**, with pagination and folder navigation. |
+| 🤖 **Parsely AI Assistant** | Chat assistant for workflow help and Q&A. |
+| 📊 **Public Dashboard** | Curated financial data (companies, YouTube transcriptions, news, forums) with interactive tables — Master DB, Products, Partnerships, Investors. |
+
+---
+
+## 🎬 Feature walkthrough
+
+The demo above steps through the three research tabs end-to-end:
+
+1. **Company Search** — type a company (e.g. *Anthropic*), resolve the correct entity from real source domains, then run the 3-pass enrichment into a structured profile.
+2. **News & YouTube** — enter a topic (e.g. *NVIDIA earnings*) and get a cited briefing with current, real sources; summarize a video transcript into key insights.
+3. **Transcription** — upload audio, watch the transcript highlight in sync with playback, then generate an AI summary.
+
+---
+
+## 🏗️ Architecture
+
+```
+streamlit_app.py            # entry point (sidebar + 6 tabs + auth)
+features/
+  common.py                 # shared core: secret guard, lazy Gemini/LinkUp clients,
+                            #   async runner, bounded token ledger, hardened web scraper
+  company_research.py       # render_company_research_tab()  — 3-pass LinkUp + Gemini
+  news_youtube.py           # render_news_youtube_tab()      — LinkUp-backed news + video
+  transcription.py          # render_transcription_tab()     — ElevenLabs STT + Gemini summary
+dev_preview_tabs.py         # no-auth dev/QA harness that renders the 3 tabs directly
+demo/                       # TestReel + Playwright recording scripts + Remotion video project
+assets/                     # rendered demo video + preview GIF
+legacy/                     # archived prototypes & versioned experiments (see legacy/README.md)
+```
+
+**Reliability built into `common.py`** (it amplifies across agent loops, so it's enforced):
+
+- **SSRF guard** — every fetch validates the URL and re-checks redirects per-hop; a connect-time DNS resolver blocks private/loopback/link-local/metadata IPs (DNS-rebind safe).
+- **Bounded memory** — token ledger, scraper cache, and search history all have hard caps with eviction.
+- **Timeouts + bounded reads** on every LLM / network / scrape call.
+- **Honest status** — failed calls return empty results and surface an actionable banner (e.g. "rotate your Gemini key"), never fabricated data.
+
+**Stack:** Streamlit · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash) · `linkup-sdk` · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
+
+---
+
+## 🚀 Quickstart
+
+```bash
+# 1. Clone
+git clone https://github.com/HomenShum/Parselyfi.git
+cd Parselyfi
+
+# 2. Install (use a virtualenv)
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 3. Configure secrets (see below), then run
+streamlit run streamlit_app.py
+```
+
+> The Streamlit Community Cloud entry point is **`streamlit_app.py`**.
+
+### 🔑 Secrets
+
+Create `.streamlit/secrets.toml` (gitignored). Storage/auth go under `[supabase]`; **API keys are top-level**:
+
+```toml
+[supabase]
+SUPABASE_URL = "..."
+SUPABASE_KEY = "..."
+SUPABASE_S3_BUCKET_NAME = "..."
+SUPABASE_S3_ENDPOINT_URL = "..."
+SUPABASE_S3_BUCKET_REGION = "..."
+SUPABASE_S3_BUCKET_ACCESS_KEY = "..."
+SUPABASE_S3_BUCKET_SECRET_KEY = "..."
+
+# Feature API keys (top level)
+GEMINI_API_KEY      = "..."   # or legacy GOOGLE_AI_STUDIO   — Company / News / summaries
+LINKUP_API_KEY      = "..."   # https://www.linkup.so        — source-backed search
+ELEVEN_LABS_API_KEY = "..."   # speech-to-text for Transcription
+```
+
+Each feature **degrades gracefully**: a missing key shows a notice instead of failing, and never fabricates results.
+
+---
+
+## 🧪 Dev / QA
+
+`dev_preview_tabs.py` renders the three feature tabs directly (no Google-login gate) for fast iteration and headless QA:
+
+```bash
+streamlit run dev_preview_tabs.py
+```
+
+The demo video is produced from this harness — see [`demo/README.md`](demo/README.md).
+
+---
+
+## 🗂️ Legacy
+
+Earlier prototypes, the versioned `prod_*` experiments, ingestion/Qdrant/social-profile spikes, and the original `reference_codes/` research scripts live in [`legacy/`](legacy/). They are kept for provenance and are **not** part of the running app.
+
+---
+
+## 👨‍💻 About the creator
+
+**Homen Shum** — data-driven builder across AI/ML, data analytics, and workflow automation, with a startup-banking background (JPMC) and a technical co-founder track record.
+
+- 🌐 [homenshum.com](https://homenshum.com/) · [LinkedIn](https://linkedin.com/in/homen-shum) · [GitHub](https://github.com/HomenShum)
+
+## 📜 License
+
+Homen Shum reserves all rights not expressly granted by the license. See [LICENSE](LICENSE).
