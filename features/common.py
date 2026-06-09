@@ -747,10 +747,13 @@ async def gemini_generate_json(
     *,
     model: str = GEMINI_MODEL,
     agent_name: str = "agent",
+    temperature: Optional[float] = None,
 ) -> dict:
     """Generate JSON with Gemini and parse to a dict.
 
     Uses ``response_mime_type='application/json'``. Records token usage.
+    Pass ``temperature=0.0`` for near-deterministic structured decisions
+    (matching / classification / scoring) so results are stable run-to-run.
     Returns ``{}`` on any failure (missing client, timeout, parse error) and
     logs the reason. Never raises, never fabricates.
     """
@@ -759,14 +762,16 @@ async def gemini_generate_json(
         logger.warning("gemini_generate_json: no Gemini client; returning {}.")
         return {}
 
+    cfg_kwargs: Dict[str, Any] = {"response_mime_type": "application/json"}
+    if temperature is not None:
+        cfg_kwargs["temperature"] = float(temperature)
+
     try:
         response = await asyncio.wait_for(
             client.aio.models.generate_content(
                 model=model,
                 contents=[prompt],
-                config=genai_types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                ),
+                config=genai_types.GenerateContentConfig(**cfg_kwargs),
             ),
             timeout=_LLM_TIMEOUT_S,
         )

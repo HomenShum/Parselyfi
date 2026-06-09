@@ -291,7 +291,8 @@ Rules:
 - Omit any relationship the text does not support. Output JSON only, no prose.
 """
     result = await gemini_generate_json(
-        extraction_prompt, model=GEMINI_MODEL, agent_name=f"Relationship Graph: {seed}"
+        extraction_prompt, model=GEMINI_MODEL, agent_name=f"Relationship Graph: {seed}",
+        temperature=0.0,
     )
 
     raw_edges = []

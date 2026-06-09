@@ -336,7 +336,7 @@ Be HONEST: prefer "No Match" with low confidence over guessing. Return ONLY this
   "confidence": 0.0, "reason": "..."}}
 """
     res = await common.gemini_generate_json(
-        prompt, model=common.GEMINI_MODEL, agent_name=f"Match: {name}"
+        prompt, model=common.GEMINI_MODEL, agent_name=f"Match: {name}", temperature=0.0
     )
 
     tier = _norm_tier(res.get("match_tier"), MATCH_TIERS) or "No Match"
@@ -457,7 +457,7 @@ Return ONLY this JSON:
 If the evidence is too thin to decide, return match=false and say so in reasoning.
 """
     res = await common.gemini_generate_json(
-        prompt, model=common.GEMINI_MODEL, agent_name=f"Classify: {name}"
+        prompt, model=common.GEMINI_MODEL, agent_name=f"Classify: {name}", temperature=0.0
     )
     if not res:
         return None
@@ -575,7 +575,7 @@ Return ONLY this JSON (one object per dimension, in the same order):
 ]}}
 """
     res = await common.gemini_generate_json(
-        prompt, model=common.GEMINI_MODEL, agent_name=f"Score: {name}"
+        prompt, model=common.GEMINI_MODEL, agent_name=f"Score: {name}", temperature=0.0
     )
     items = res.get("dimensions") if isinstance(res, dict) else None
     # Map returned items by dimension name for robust alignment.
