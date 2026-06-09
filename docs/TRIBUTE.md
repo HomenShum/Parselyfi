@@ -54,3 +54,40 @@ Also worth it (medium): domain schema library (funding/investors/partnerships/pe
 - **Selenium/Spider** scraping (the existing SSRF-guarded ethical scraper is strictly safer)
 - **Government/benefits form auto-fill** (off-thesis for finance research)
 - **Code-review / program-evaluation agent** (developer tooling, orthogonal)
+
+---
+
+## Revised top-adopt — v2 (informed by ~70 output artifacts + 2 more repos)
+
+Adding **Banking_assistant_streamlit** and **clickcar_salesagent_with_custom_autogen**, plus ~70 *output* spreadsheets/CSVs from past work, sharpened the picture.
+
+> **Honest correction:** despite its name, `clickcar_salesagent_with_custom_autogen` uses **no AutoGen and no multi-agent network** — it's a sequential prompt-chaining pipeline. No "AutoGen orchestration" claim is carried forward.
+
+### The spine the artifacts reveal
+~80% of the outputs are stages of one loop on a **company LIST**: **match** (to a canonical PitchBook ID) → **enrich** (multi-source structured fields) → **classify** (vs a written sector definition) → **score** (evidence-cited multi-dimension rubric) → **export** (a comparable, auditable spreadsheet). The shipped app stops at single-entity, single-pass profiles — so the four list-pipeline stages are proven-but-absent.
+
+### New repo tributes
+| Repo | Contributes | Signature |
+| --- | --- | --- |
+| **Banking_assistant_streamlit** | A ~25-field finance extraction template (valuation/raised/EV/TTM rev/EBITDA/investors/board/C-suite + auto prospecting email → one Excel row) and **table-as-queryable-object** (per-table `PandasQueryEngine`) so numbers are *computed*, not fuzzy-matched | `company_information_questions` dict + `RecursiveRetriever`→per-table Pandas engines; gpt-4-vision card→Excel OCR |
+| **clickcar** | **BM25 + Cohere rerank** hybrid retrieval with per-result confidence, and **rolling LLM-summarized bounded memory** | `sparse_dense_retrieval` + `memory_summary_agent` |
+
+### Revised ranked top-adopt
+| # | Feature | Source | V/E |
+| --- | --- | --- | --- |
+| 1 | **List-level PitchBook entity matching** (canonical PBId + High/Med/No-Match tier + profile flags) — front door of the pipeline | artifacts + prior #1 | high·M |
+| 2 | **Bulk sector/taxonomy classification vs a pasted definition** (TRUE/FALSE + keyword reasoning) — ships with a No-LLM eval baseline | artifacts (300-row) | high·S |
+| 3 | **Evidence-cited multi-dimension LIST SCORING** (custom rubric → per-cell Tier + deep-linked evidence + TotalScore/Coverage/Confidence) | artifacts (AMO) | high·M |
+| 4 | **Research-agent eval harness** (fast/slow, scored thresholds, must-show-uncertainty, must-block-report-until-ready) | artifacts (nodebench) | high·M |
+| 5 | Native Gemini multimodal YouTube ([MM:SS]) — *shipped in Phase 1* | prior #2 | high·S |
+| 6 | Multimodal card/chat/chart → list rows | artifacts + Banking_assistant | med·S |
+| 7 | Rolling bounded LLM-summarized memory | both new repos | med·S |
+| 8 | Editable diligence summary template + DOCX — *shipped in Phase 1* | prior #3 | med·S |
+| 9 | Per-user auth + storage namespacing | prior #5 | high·M |
+| 10 | Encrypted session-scoped transcript + run persistence | prior #4 | high·M |
+| 11 | Multi-format ingestion (PyMuPDF/llama-index, SHA-256 dedupe) + **Camelot table extraction** | prior #6 + Banking_assistant | high·L |
+| 12 | Hybrid sparse+dense RAG + rerank + **table-as-queryable-object** (per-table Pandas) | prior #7 + clickcar + Banking_assistant | high·L |
+| 13 | Corporate relationship/lineage graph (→ medium; artifacts favor flat scored lists) | prior #8 | med·M |
+| 14 | Schema-first statement extraction + deterministic Adjusted-EBITDA | prior #9/#10 | high·L |
+
+**Net-new vs. shipped** (grounded in `features/company_research.py`): list-level matching, bulk classifier, rubric scoring, and the eval harness are all genuinely absent today — and items 1–4 ride entirely on already-wired LinkUp + Gemini + `common.py` (S/M, no new stack), so they ship first.
