@@ -1319,6 +1319,13 @@ def main():
         initial_sidebar_state="expanded",
     )
 
+    # Shared design system (custom CSS) — applied app-wide, once per session.
+    try:
+        from features import ui
+        ui.inject_css()
+    except Exception:
+        pass
+
     with st.sidebar:
         st.title("🌱 ParselyFi")
         
@@ -1420,24 +1427,61 @@ def main():
         sidebar_content_fragment_SystemDialog_component()
         
     st.header("Feature Selection")
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 Public Dashboard", 
-        "📁 File Works", 
-        "🔍 Company Search & Analysis", 
-        "📰 News & Youtube", 
-        "🎙️ Transcription & Summaries"
+    li_tab, company_tab, news_tab, tr_tab, dash_tab, files_tab = st.tabs([
+        "📋 List Intelligence",
+        "🔍 Company Search & Analysis",
+        "📰 News & YouTube",
+        "🎙️ Transcription & Summaries",
+        "📊 Public Dashboard",
+        "📁 File Works",
     ])
-    
-    with tab1:
+
+    with li_tab:
+        try:
+            from features.list_intelligence import render_list_intelligence_tab
+            render_list_intelligence_tab()
+        except Exception as e:
+            st.error("⚠️ List Intelligence could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with company_tab:
+        try:
+            from features.company_research import render_company_research_tab
+            render_company_research_tab()
+        except Exception as e:
+            st.error("⚠️ Company Search & Analysis could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with news_tab:
+        try:
+            from features.news_youtube import render_news_youtube_tab
+            render_news_youtube_tab()
+        except Exception as e:
+            st.error("⚠️ News & YouTube could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with tr_tab:
+        try:
+            from features.transcription import render_transcription_tab
+            render_transcription_tab()
+        except Exception as e:
+            st.error("⚠️ Transcription & Summaries could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with dash_tab:
         with st.container(border=True):
             main_content_fragment_st_data_editor_public_dashboard()
-    
-    with tab2:
+
+    with files_tab:
         st.subheader("📁 File Works")
-        
+
         if 'selected_files' not in st.session_state:
             st.session_state['selected_files'] = []
-        
+
         for idx, file_path in enumerate(st.session_state['selected_files']):
             with st.expander(f"📄 File: {os.path.basename(file_path)}"):
                 if file_path.endswith(".pdf"):
@@ -1453,33 +1497,6 @@ def main():
                         st.markdown(f.read())
                 else:
                     st.write("File preview not available for this type.")
-    
-    with tab3:
-        try:
-            from features.company_research import render_company_research_tab
-            render_company_research_tab()
-        except Exception as e:
-            st.error("⚠️ Company Search & Analysis could not be loaded.")
-            with st.expander("Error details"):
-                st.exception(e)
-
-    with tab4:
-        try:
-            from features.news_youtube import render_news_youtube_tab
-            render_news_youtube_tab()
-        except Exception as e:
-            st.error("⚠️ News & YouTube could not be loaded.")
-            with st.expander("Error details"):
-                st.exception(e)
-
-    with tab5:
-        try:
-            from features.transcription import render_transcription_tab
-            render_transcription_tab()
-        except Exception as e:
-            st.error("⚠️ Transcription & Summaries could not be loaded.")
-            with st.expander("Error details"):
-                st.exception(e)
                     
                     
 if __name__ == '__main__':

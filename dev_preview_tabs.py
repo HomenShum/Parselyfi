@@ -24,6 +24,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Shared design system (custom CSS) — applied app-wide.
+try:
+    from features import ui
+    ui.inject_css()
+except Exception:
+    pass
+
 if DEMO:
     st.markdown(
         """
@@ -43,11 +50,21 @@ else:
         "bypassing the Google-login gate for QA only."
     )
 
-tab3, tab4, tab5 = st.tabs([
+li_tab, tab3, tab4, tab5 = st.tabs([
+    "📋 List Intelligence",
     "🔍 Company Search & Analysis",
     "📰 News & YouTube",
     "🎙️ Transcription & Summaries",
 ])
+
+with li_tab:
+    try:
+        from features.list_intelligence import render_list_intelligence_tab
+        render_list_intelligence_tab()
+    except Exception as e:  # noqa: BLE001
+        st.error("⚠️ List Intelligence could not be loaded.")
+        with st.expander("Error details"):
+            st.exception(e)
 
 with tab3:
     try:

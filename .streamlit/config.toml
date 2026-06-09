@@ -1,8 +1,32 @@
+# ParselyFi theme — modern light bench with a premium dark sidebar.
+# Heavy visual styling lives in features/ui.py (custom CSS, version-agnostic);
+# this config sets the palette + font the Streamlit SDK themes natively.
 [theme]
-primaryColor = "#CBA35B"
-backgroundColor = "#FAF9F7"
-secondaryBackgroundColor = "#F8F4E6"
-textColor = "#4E342E"
+base = "light"
+primaryColor = "#10b981"            # ParselyFi green
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f1f5f9"
+textColor = "#0f172a"
+borderColor = "#e2e8f0"
+baseFontSize = 15
+font = "Inter"
+greenColor = "#10b981"
+blueColor = "#0a7cff"
+violetColor = "#8e75b2"
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2"
+weight = "100 900"
+style = "normal"
+
+# Premium dark sidebar for contrast (ties to the demo/hero brand).
+[theme.sidebar]
+backgroundColor = "#0b1220"
+secondaryBackgroundColor = "#16243a"
+textColor = "#e2e8f0"
+primaryColor = "#34d399"
+borderColor = "#1e293b"
 
 [server]
 runOnSave = true
@@ -10,4 +34,3 @@ maxUploadSize = 2000
 
 [client]
 showSidebarNavigation = false
-
