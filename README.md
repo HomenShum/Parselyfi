@@ -32,7 +32,7 @@ ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and pub
 
 ## ✨ Features
 
-A source-backed research workspace — led by the **List Intelligence** pipeline and an **interactive relationship graph**, alongside company deep-dives, news/video briefings, transcription, a file manager, and a public data dashboard.
+A source-backed research workspace — led by the **List Intelligence** pipeline and an **interactive relationship graph**, plus **image→rows extraction** and a **document-brain** (grounded RAG over your own files), alongside company deep-dives, news/video briefings, transcription, a file manager, and a public data dashboard.
 
 ### 📋 List Intelligence — the company-list pipeline
 
@@ -40,7 +40,15 @@ Paste or upload a list of companies → **Match** each to a canonical entity (Hi
 
 ### 🕸️ Relationship Graph
 
-Map a company's corporate lineage — **parents, subsidiaries, acquisitions (with years), investors, partners, and competitors** — as an interactive, draggable network (pyvis). Seed it from a typed company or straight from your last List Intelligence run. Every edge is grounded; evidence links are filtered to **real retrieved sources only**.
+Map a company's corporate lineage — **parents, subsidiaries, acquisitions (with years), investors, partners, and competitors** — as an interactive, draggable network (pyvis). Seed it from a typed company or straight from your last List Intelligence run. Every edge is grounded; evidence links are filtered to **real retrieved sources only**, and uncited edges are drawn dashed so the graph shows what's source-backed.
+
+### 🖼️ Card → Rows
+
+Drop **images** — pitch-deck slides, cap tables, CRM/contact cards, screenshots of a portfolio list — and Gemini multimodal extraction turns them into **structured company rows** in an editable grid. One click **sends the companies straight into List Intelligence** to match/enrich/classify/score them. Never invents a company that isn't visible in the image.
+
+### 📚 Document Brain
+
+Upload your own files (**PDF / DOCX / TXT / MD / CSV / XLSX**) and ask questions. **Hybrid retrieval** (dense embeddings in an in-memory vector store + lexical TF-IDF, fused with Reciprocal Rank Fusion) grounds every answer in your documents with inline **`(filename#chunkN)` citations** — and says *"I could not find this in your documents"* rather than guessing. Spreadsheets become **queryable tables**. Degrades honestly to lexical-only search when the embedding stack isn't present.
 
 ### 🔍 Company Search & Analysis
 
@@ -75,13 +83,15 @@ Upload audio → **ElevenLabs** speech-to-text → a synced AnyWidget player tha
 ## 🏗️ Architecture
 
 ```
-streamlit_app.py            # entry point (sidebar + 7 tabs + auth)
+streamlit_app.py            # entry point (sidebar + 9 tabs + auth)
 features/
   common.py                 # shared core: secret guard, lazy Gemini/LinkUp clients,
                             #   async runner, bounded token ledger, hardened web scraper
   ui.py                     # shared design system (theme CSS, hero, KPIs, tier badges)
   list_intelligence.py      # render_list_intelligence_tab() — match→enrich→classify→score→export
   relationship_graph.py     # render_relationship_graph_tab() — pyvis corporate-lineage graph
+  multimodal_extract.py     # render_multimodal_extract_tab() — image → company rows → List Intel
+  rag.py                    # render_rag_tab()                — Document Brain (hybrid RAG + table Q&A)
   company_research.py       # render_company_research_tab()  — 3-pass LinkUp + Gemini
   news_youtube.py           # render_news_youtube_tab()      — LinkUp-backed news + video
   transcription.py          # render_transcription_tab()     — ElevenLabs STT + Gemini summary
@@ -99,7 +109,7 @@ legacy/                     # archived prototypes & versioned experiments (see l
 - **Timeouts + bounded reads** on every LLM / network / scrape call.
 - **Honest status** — failed calls return empty results and surface an actionable banner (e.g. "rotate your Gemini key"), never fabricated data.
 
-**Stack:** Streamlit 1.58 · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash) · `linkup-sdk` · `pyvis`/`networkx` (relationship graph) · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
+**Stack:** Streamlit 1.58 · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash, incl. multimodal image input) · `linkup-sdk` · `pyvis`/`networkx` (relationship graph) · `PyMuPDF`/`python-docx` (ingest) · `fastembed`/`Qdrant` + `scikit-learn` (hybrid RAG) · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
 
 ---
 
