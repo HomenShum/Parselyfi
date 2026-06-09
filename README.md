@@ -150,6 +150,22 @@ Earlier prototypes, the versioned `prod_*` experiments, ingestion/Qdrant/social-
 
 ---
 
+## 🧬 Lineage & tribute
+
+ParselyFi is where five earlier experiments converge. Each attacked the same loop — *turn messy, multi-source inputs into trustworthy, decision-ready finance research* — from a different angle, and each contributes one pillar:
+
+| Project | Pillar | Signature idea |
+| --- | --- | --- |
+| **parsely_Jan25** | Correctness | Entity disambiguation (negative-example mining + weighted-conflict scoring + LLM verdict) and corporate-lineage edges |
+| **FinFlow** *(NVIDIA GTC 2025)* | Freshness + delivery | Recency-filtered YouTube → native Gemini multimodal video analysis with `[MM:SS]` timestamps → ElevenLabs spoken briefing |
+| **project1-governmentforms** | Rigor | Adjusted-EBITDA where **Python does the math**, with an auditable tool-call DAG |
+| **associate_assistant_vhs** | Durability + privacy | Encrypted, session-scoped transcript persistence + editable diligence templates + DOCX export |
+| **parsely_tool** | Grounding | Agentic hybrid RAG (Qdrant dense + BM25 sparse + Cohere rerank) over multi-format, OCR'd documents |
+
+The full deep-dive and the phased convergence roadmap are in **[`docs/TRIBUTE.md`](docs/TRIBUTE.md)**.
+
+---
+
 ## 👨‍💻 About the creator
 
 **Homen Shum** — data-driven builder across AI/ML, data analytics, and workflow automation, with a startup-banking background (JPMC) and a technical co-founder track record.
