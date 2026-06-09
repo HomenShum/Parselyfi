@@ -1427,8 +1427,9 @@ def main():
         sidebar_content_fragment_SystemDialog_component()
         
     st.header("Feature Selection")
-    li_tab, company_tab, news_tab, tr_tab, dash_tab, files_tab = st.tabs([
+    li_tab, graph_tab, company_tab, news_tab, tr_tab, dash_tab, files_tab = st.tabs([
         "📋 List Intelligence",
+        "🕸️ Relationship Graph",
         "🔍 Company Search & Analysis",
         "📰 News & YouTube",
         "🎙️ Transcription & Summaries",
@@ -1442,6 +1443,15 @@ def main():
             render_list_intelligence_tab()
         except Exception as e:
             st.error("⚠️ List Intelligence could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with graph_tab:
+        try:
+            from features.relationship_graph import render_relationship_graph_tab
+            render_relationship_graph_tab()
+        except Exception as e:
+            st.error("⚠️ Relationship Graph could not be loaded.")
             with st.expander("Error details"):
                 st.exception(e)
 

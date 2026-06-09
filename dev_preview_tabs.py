@@ -50,8 +50,9 @@ else:
         "bypassing the Google-login gate for QA only."
     )
 
-li_tab, tab3, tab4, tab5 = st.tabs([
+li_tab, graph_tab, tab3, tab4, tab5 = st.tabs([
     "📋 List Intelligence",
+    "🕸️ Relationship Graph",
     "🔍 Company Search & Analysis",
     "📰 News & YouTube",
     "🎙️ Transcription & Summaries",
@@ -63,6 +64,15 @@ with li_tab:
         render_list_intelligence_tab()
     except Exception as e:  # noqa: BLE001
         st.error("⚠️ List Intelligence could not be loaded.")
+        with st.expander("Error details"):
+            st.exception(e)
+
+with graph_tab:
+    try:
+        from features.relationship_graph import render_relationship_graph_tab
+        render_relationship_graph_tab()
+    except Exception as e:  # noqa: BLE001
+        st.error("⚠️ Relationship Graph could not be loaded.")
         with st.expander("Error details"):
             st.exception(e)
 
