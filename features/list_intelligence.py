@@ -71,6 +71,7 @@ Honest status / safety (per project CLAUDE.md)
 from __future__ import annotations
 
 import asyncio
+import html
 import io
 import json
 import logging
@@ -586,45 +587,67 @@ Return ONLY this JSON (one object per dimension, in the same order):
                 if dn:
                     by_name[dn] = it
 
+    # HONEST_STATUS: if the model returned nothing usable (timeout / parse-fail /
+    # blocked / empty), do NOT fabricate a baseline score. Signal "scoring
+    # unavailable" via None so the UI shows no score rather than a fake 25/100.
+    if not by_name:
+        return None
+
     allowed = set(source_urls)
     scored_dims: List[Dict[str, Any]] = []
-    weighted_sum = 0.0
-    total_weight = sum(d["Weight"] for d in rubric) or 1.0
-    covered = 0
-    strength_acc = 0.0
+    weighted_sum = 0.0       # sum(points * weight) over dims the model ACTUALLY scored
+    scored_weight = 0.0      # sum(weight) over scored dims — the score denominator
+    strength_acc = 0.0       # sum(points/100) over scored dims — the confidence numerator
+    scored_count = 0         # how many rubric dims the model actually scored
+    covered = 0              # dims with a real cited URL + evidence
 
     for d in rubric:
-        it = by_name.get(d["Dimension"].lower(), {})
-        tier = _norm_tier(it.get("tier"), SCORE_TIERS) or "Low"
+        it = by_name.get(_clean_name(d["Dimension"]).lower(), {})
+        tier = _norm_tier(it.get("tier"), SCORE_TIERS)  # "" when missing / unrecognized
         evidence = str(it.get("evidence") or "").strip()[:MAX_EVIDENCE_CHARS]
         ev_url = str(it.get("evidence_url") or "").strip()
         # HONEST: only a real LinkUp source URL is accepted as a citation.
         if ev_url not in allowed:
             ev_url = ""
-        points = TIER_POINTS.get(tier.lower(), 25.0)
-        weighted_sum += points * d["Weight"]
-        strength_acc += points / 100.0
         has_evidence = bool(ev_url) and bool(evidence)
         if has_evidence:
             covered += 1
+        if tier:
+            # A genuine model verdict (a real "Low" included) — counts toward the score.
+            points: Optional[float] = TIER_POINTS.get(tier.lower(), 0.0)
+            weighted_sum += points * d["Weight"]
+            scored_weight += d["Weight"]
+            strength_acc += points / 100.0
+            scored_count += 1
+        else:
+            # The model did NOT score this dimension — never invent a Low=25 floor.
+            points = None
+            tier = "—"
         scored_dims.append({
             "dimension": d["Dimension"],
             "weight": d["Weight"],
             "tier": tier,
             "points": points,
+            "scored": points is not None,
             "evidence": evidence,
             "evidence_url": ev_url,
             "has_evidence": has_evidence,
         })
 
-    total_score = round(weighted_sum / total_weight, 1)  # 0-100
+    # If the model scored NONE of the dimensions, there is no honest score to show.
+    if scored_count == 0 or scored_weight <= 0:
+        return None
+
+    total_score = round(weighted_sum / scored_weight, 1)   # 0-100 over SCORED dims only
     coverage = round(covered / len(rubric), 3) if rubric else 0.0
-    confidence = round(strength_acc / len(rubric), 3) if rubric else 0.0
+    confidence = round(strength_acc / scored_count, 3)     # avg strength of SCORED dims
     return {
         "dimensions": scored_dims,
         "total_score": total_score,
         "coverage": coverage,
         "confidence": confidence,
+        "scored": scored_count,        # dims actually scored by the model
+        "rubric_size": len(rubric),    # total dims requested
     }
 
 
@@ -649,6 +672,10 @@ async def _process_one(
         "canonical_name": match.get("canonical_name") or "",
         "website": match.get("website") or "",
         "match_tier": match.get("match_tier") or "No Match",
+        # Always preserve the REAL match decision, even when the Match stage is
+        # deselected (match runs internally for downstream stages). KPIs/history
+        # count off this so "Matched x/total" is honest regardless of stage picks.
+        "_match_tier_raw": match.get("match_tier") or "No Match",
         "match_confidence": match.get("match_confidence", 0.0),
         "match_reason": match.get("match_reason") or "",
         "source_urls": match.get("source_urls", []),
@@ -745,19 +772,35 @@ async def _run_pipeline_async(
                     pass
             return res
 
-    tasks = [_guarded(nm) for nm in names]
+    tasks = [asyncio.ensure_future(_guarded(nm)) for nm in names]
     try:
-        results = await asyncio.wait_for(
+        await asyncio.wait_for(
             asyncio.gather(*tasks, return_exceptions=True),
             timeout=BATCH_WALL_CLOCK_S,
         )
     except asyncio.TimeoutError:
-        logger.error("List Intelligence: batch wall-clock %ss exceeded.", BATCH_WALL_CLOCK_S)
-        return []
+        done = sum(1 for t in tasks if t.done())
+        logger.error(
+            "List Intelligence: batch wall-clock %ss exceeded; keeping %d/%d "
+            "completed companies and cancelling the rest.",
+            BATCH_WALL_CLOCK_S, done, len(tasks),
+        )
+        # Never discard paid-for work: cancel stragglers, keep what finished.
+        for t in tasks:
+            if not t.done():
+                t.cancel()
+    # Collect results from every task that actually completed (partial on timeout).
     out: List[Dict[str, Any]] = []
-    for r in results:
+    for t in tasks:
+        if not t.done() or t.cancelled():
+            continue
+        try:
+            r = t.result()
+        except (asyncio.CancelledError, Exception) as e:  # noqa: BLE001
+            logger.warning("List Intelligence: task did not complete cleanly: %s", e)
+            continue
         if isinstance(r, Exception):
-            logger.warning("List Intelligence: task exception: %s", r)
+            logger.warning("List Intelligence: task returned exception: %s", r)
             continue
         out.append(r)
     return out
@@ -857,7 +900,7 @@ def _render_drilldown(result: Dict[str, Any]) -> None:
     conf = float(result.get("match_confidence") or 0.0)
     st.markdown(
         f"{tier_html} &nbsp; **Confidence:** {conf:.0%} &nbsp; "
-        f"_{result.get('match_reason') or ''}_",
+        f"_{html.escape(str(result.get('match_reason') or ''))}_",
         unsafe_allow_html=True,
     )
     if result.get("website"):
@@ -904,6 +947,11 @@ def _render_drilldown(result: Dict[str, Any]) -> None:
         kws = classify.get("keywords") or []
         if kws:
             st.markdown(" ".join(f"`{k}`" for k in kws))
+        # Make the verdict auditable: show the exact definition it was judged against.
+        taxonomy = str(st.session_state.get(SS_TAXONOMY) or "").strip()
+        if taxonomy:
+            with st.expander("Definition this verdict was judged against"):
+                st.markdown(taxonomy)
 
     # ---- SCORE ----
     score = result.get("score")
@@ -911,16 +959,20 @@ def _render_drilldown(result: Dict[str, Any]) -> None:
     if not score:
         st.caption("Scoring not run (or no source-backed answer to ground it).")
         return
+    scored_n = score.get("scored")
+    rub_n = score.get("rubric_size")
+    scored_txt = (f" &nbsp;|&nbsp; **Scored:** {scored_n}/{rub_n} dims"
+                  if (scored_n is not None and rub_n) else "")
     st.markdown(
         f"**Total:** {score.get('total_score')}/100 &nbsp;|&nbsp; "
         f"**Coverage:** {float(score.get('coverage') or 0):.0%} &nbsp;|&nbsp; "
-        f"**Confidence:** {float(score.get('confidence') or 0):.0%}"
+        f"**Confidence:** {float(score.get('confidence') or 0):.0%}{scored_txt}"
     )
     for d in score.get("dimensions", []):
         badge = ui.tier_badge(d.get("tier"))
         wtxt = f"weight {d.get('weight')}"
         st.markdown(
-            f"{badge} &nbsp; **{d.get('dimension')}** "
+            f"{badge} &nbsp; **{html.escape(str(d.get('dimension') or ''))}** "
             f"<span style='color:{ui.MUTE};font-size:.82rem'>({wtxt})</span>",
             unsafe_allow_html=True,
         )
@@ -954,7 +1006,7 @@ def _render_results(results: List[Dict[str, Any]], stages: List[str]) -> None:
 
     # ---- KPI row ----
     total = len(results)
-    matched = sum(1 for r in results if (r.get("match_tier") in ("High", "Medium")))
+    matched = sum(1 for r in results if (r.get("_match_tier_raw") in ("High", "Medium")))
     scored = [r for r in results if r.get("total_score") is not None]
     avg_score = round(sum(r["total_score"] for r in scored) / len(scored), 1) if scored else 0
     cov_vals = [r["coverage"] for r in results if r.get("coverage") is not None]
@@ -962,10 +1014,11 @@ def _render_results(results: List[Dict[str, Any]], stages: List[str]) -> None:
 
     ui.kpi_row([
         ("Companies", str(total)),
-        ("Matched", f"{matched}/{total}", None, "High or Medium match tier"),
-        ("Avg score", f"{avg_score:g}" if scored else "—", None, "Mean weighted score (0-100)"),
+        ("Matched", f"{matched}/{total}", None, "High or Medium match tier (match always runs)"),
+        ("Avg score", f"{avg_score:g}" if scored else "—", None,
+         f"Mean weighted score (0-100), over {len(scored)}/{total} scored companies"),
         ("Coverage", f"{avg_cov:.0%}" if cov_vals else "—", None,
-         "Mean fraction of dimensions with cited evidence"),
+         f"Mean fraction of dimensions with cited evidence, over {len(cov_vals)}/{total} companies"),
     ])
 
     # ---- main grid ----
@@ -995,7 +1048,13 @@ def _render_results(results: List[Dict[str, Any]], stages: List[str]) -> None:
         placeholder="Select a company to inspect enrichment, classification & scoring…",
         key=_PFX + "drill_select",
     )
-    if picked:
+    # Open the @st.dialog only on a SELECTION CHANGE, not on every rerun — otherwise
+    # dismissing the modal (which reruns while the selectbox value persists) would
+    # immediately reopen it, making the dialog impossible to close.
+    if not picked:
+        st.session_state[_PFX + "last_drill"] = None
+    elif picked != st.session_state.get(_PFX + "last_drill"):
+        st.session_state[_PFX + "last_drill"] = picked
         match_row = next(
             (r for r in results if (r.get("_display_name") or r.get("input_name")) == picked),
             None,
@@ -1184,48 +1243,54 @@ def render_list_intelligence_tab() -> None:
     ui.section("5 · Run", "")
     run = st.button(
         "🚀 Run pipeline", type="primary", use_container_width=True,
-        disabled=(len(names) == 0),
+        disabled=(len(names) == 0) or bool(st.session_state.get(SS_RUNNING)),
         key=_PFX + "run_btn",
     )
     if len(names) == 0:
         st.caption("Add at least one company to enable the run.")
 
     if run:
+        # Double-submit guard: disable the button + ignore re-entry while in flight.
+        st.session_state[SS_RUNNING] = True
         progress_log: List[Tuple[int, int, str]] = []
+        results: List[Dict[str, Any]] = []
 
         def _cb(done: int, total: int, nm: str) -> None:
             progress_log.append((done, total, nm))
 
-        with st.status("Running pipeline…", expanded=True) as status:
-            status.write(
-                f"Processing **{len(names)}** companies through: "
-                f"{' → '.join(stages)} (max {concurrency} concurrent)."
-            )
-            start = time.time()
-            results = common.run_async(
-                _run_pipeline_async(
-                    names=names,
-                    stages=stages,
-                    taxonomy_def=taxonomy_def,
-                    rubric=rubric_list,
-                    concurrency=concurrency,
-                    progress_cb=_cb,
+        try:
+            with st.status("Running pipeline…", expanded=True) as status:
+                status.write(
+                    f"Processing **{len(names)}** companies through: "
+                    f"{' → '.join(stages)} (max {concurrency} concurrent)."
                 )
-            )
-            elapsed = time.time() - start
-            # Replay the worker-thread progress on the main thread.
-            for done, total, nm in progress_log:
-                status.write(f"✓ [{done}/{total}] {nm}")
-            if results:
-                status.update(
-                    label=f"Done — {len(results)} companies in {elapsed:.1f}s",
-                    state="complete", expanded=False,
+                start = time.time()
+                results = common.run_async(
+                    _run_pipeline_async(
+                        names=names,
+                        stages=stages,
+                        taxonomy_def=taxonomy_def,
+                        rubric=rubric_list,
+                        concurrency=concurrency,
+                        progress_cb=_cb,
+                    )
                 )
-            else:
-                status.update(
-                    label="Pipeline returned no results (timeout or all failed)",
-                    state="error", expanded=True,
-                )
+                elapsed = time.time() - start
+                # Replay the worker-thread progress on the main thread.
+                for done, total, nm in progress_log:
+                    status.write(f"✓ [{done}/{total}] {nm}")
+                if results:
+                    status.update(
+                        label=f"Done — {len(results)} companies in {elapsed:.1f}s",
+                        state="complete", expanded=False,
+                    )
+                else:
+                    status.update(
+                        label="Pipeline returned no results (timeout or all failed)",
+                        state="error", expanded=True,
+                    )
+        finally:
+            st.session_state[SS_RUNNING] = False
 
         st.session_state[SS_RESULTS] = results
         st.session_state[SS_STAGES] = stages
@@ -1233,7 +1298,7 @@ def render_list_intelligence_tab() -> None:
             "ts": datetime.now().isoformat(timespec="seconds"),
             "n_companies": len(names),
             "stages": list(stages),
-            "matched": sum(1 for r in results if r.get("match_tier") in ("High", "Medium")),
+            "matched": sum(1 for r in results if r.get("_match_tier_raw") in ("High", "Medium")),
         })
         if results:
             try:

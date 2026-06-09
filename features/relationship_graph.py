@@ -94,6 +94,7 @@ SS_EDGES = _PFX + "edges"                # list[dict] — last extracted edges
 SS_SOURCES = _PFX + "sources"            # list[str] — real LinkUp source URLs
 SS_RUNNING = _PFX + "running"            # guard against double-submit
 SS_HISTORY = _PFX + "graph_history"      # bounded via common.push_history
+SS_DROPPED = _PFX + "dropped"            # int — edges dropped by the node/edge caps
 
 # Hard caps so nothing the user / LLM supplies can blow up memory or the canvas.
 MAX_NODES: int = 40
@@ -166,20 +167,17 @@ def _seed_candidates_from_list_run() -> List[str]:
     for row in results:
         if not isinstance(row, dict):
             continue
-        # Match the List Intelligence row shape: prefer the resolved display /
-        # canonical name, fall back to the user's input name.
-        name = _clean(
-            row.get("_display_name")
-            or row.get("canonical_name")
-            or row.get("input_name")
-        )
-        if not name:
+        # HONEST: only offer companies that actually RESOLVED to a real entity in
+        # the List run. A No-Match row has an empty canonical_name — skip it so the
+        # picker never presents an unresolved typed name as a confirmed company.
+        canonical = _clean(row.get("canonical_name"))
+        if not canonical:
             continue
-        key = name.lower()
+        key = canonical.lower()
         if key in seen:
             continue
         seen.add(key)
-        out.append(name)
+        out.append(canonical)
     return out
 
 
@@ -300,67 +298,123 @@ Rules:
     if isinstance(result, dict):
         raw_edges = result.get("edges") if isinstance(result.get("edges"), list) else []
 
-    edges = _normalize_edges(seed, raw_edges, source_urls)
+    edges, dropped = _normalize_edges(seed, raw_edges, source_urls)
+
+    # HONEST_STATUS: distinguish an LLM failure (timeout / blocked / parse-fail ->
+    # gemini_generate_json returns {}) from a genuine "no relationships found".
+    if not isinstance(result, dict) or not result:
+        return {
+            "success": False,
+            "seed": seed,
+            "edges": [],
+            "sources": source_urls,
+            "dropped": 0,
+            "error": ("Relationship extraction failed — the model returned no data "
+                      "(timeout, blocked, or unparseable). Please try again."),
+        }
 
     return {
         "success": True,
         "seed": seed,
         "edges": edges,
         "sources": source_urls,
-        "error": None if edges else "No relationships could be extracted from the sources.",
+        "dropped": dropped,
+        "error": None if edges else "No relationships were found in the available sources.",
     }
+
+
+# Relation importance — when a seed has more neighbors than the node cap allows,
+# structural edges (parent/subsidiary/acquired) survive before trivia (competitors).
+_RELATION_PRIORITY = {
+    "parent_of": 0,
+    "subsidiary_of": 0,
+    "acquired": 1,
+    "invested_in": 2,
+    "partner_of": 3,
+    "competitor_of": 4,
+}
+
+
+def _valid_year(raw_year: Any) -> str:
+    """Return a 4-digit year in a sane range, else '' — validate, never slice-first."""
+    y = str(raw_year or "").strip()
+    if len(y) == 4 and y.isdigit() and 1850 <= int(y) <= 2100:
+        return y
+    return ""
 
 
 def _normalize_edges(
     seed: str,
     raw_edges: List[Any],
     allowed_urls: List[str],
-) -> List[Dict[str, str]]:
-    """Validate, evidence-filter, dedupe, drop self-loops, and bound edges.
+) -> Tuple[List[Dict[str, str]], int]:
+    """Validate, evidence-filter, dedupe, drop self-loops, canonicalize, and bound.
+
+    Returns ``(edges, dropped)`` where ``dropped`` counts otherwise-valid edges
+    discarded because the MAX_NODES / MAX_EDGES caps were hit, so the caller can
+    disclose the truncation instead of presenting a capped graph as the whole set.
 
     HONEST: any ``evidence_url`` not in ``allowed_urls`` (the real LinkUp source
-    set) is blanked to "" — we never present an unverified link as evidence.
-    Caps EDGES<=MAX_EDGES and the implied node set at MAX_NODES.
+    set) is blanked to "". A single company is ONE node — labels are canonicalized
+    to a first-seen casing so 'Anthropic'/'anthropic' never split into two dots.
     """
     allowed = set(allowed_urls)
     out: List[Dict[str, str]] = []
     seen_edges: set = set()
     node_set: set = set()
-    # Seed always occupies one node slot up front.
-    node_set.add(seed.lower())
+    dropped = 0
 
-    for raw in raw_edges:
-        if not isinstance(raw, dict):
-            continue
-        source = _clean(raw.get("source"))
-        target = _clean(raw.get("target"))
+    # lower() -> first-seen casing, so the same entity is one consistently-cased node.
+    canon: Dict[str, str] = {}
+
+    def _canon(name: str) -> str:
+        key = name.lower()
+        if key not in canon:
+            canon[key] = name
+        return canon[key]
+
+    seed_c = _canon(_clean(seed))
+    node_set.add(seed_c.lower())
+
+    # Stable, importance-ordered pass so the cap truncates trivia before structure.
+    ordered = sorted(
+        [r for r in raw_edges if isinstance(r, dict)],
+        key=lambda r: _RELATION_PRIORITY.get(
+            str(r.get("relation") or "").strip().lower(), 99
+        ),
+    )
+
+    for raw in ordered:
+        src_raw = _clean(raw.get("source"))
+        tgt_raw = _clean(raw.get("target"))
         relation = str(raw.get("relation") or "").strip().lower()
-        if not source or not target:
+        if not src_raw or not tgt_raw:
             continue
         if relation not in RELATIONS:
             continue
-        # Drop self-loops (case-insensitive).
-        if source.lower() == target.lower():
+        if src_raw.lower() == tgt_raw.lower():   # self-loop
+            continue
+        source = _canon(src_raw)
+        target = _canon(tgt_raw)
+
+        # Dedupe on (source, relation, target), case-insensitive (not a "drop").
+        dedupe_key = (source.lower(), relation, target.lower())
+        if dedupe_key in seen_edges:
             continue
 
         # Evidence-URL set-membership filter (HONEST): blank anything not real.
         evidence_url = str(raw.get("evidence_url") or "").strip()
         if evidence_url and evidence_url not in allowed:
             evidence_url = ""
+        year = _valid_year(raw.get("year"))
 
-        year = str(raw.get("year") or "").strip()[:4]
-        if year and not year.isdigit():
-            year = ""
-
-        # Dedupe on (source, relation, target), case-insensitive.
-        dedupe_key = (source.lower(), relation, target.lower())
-        if dedupe_key in seen_edges:
+        # Capacity caps — count what we drop so the UI can disclose truncation.
+        if len(out) >= MAX_EDGES:
+            dropped += 1
             continue
-
-        # Enforce node cap BEFORE adding: would this edge introduce a new node
-        # that pushes us over MAX_NODES? If so, skip it (bounded canvas).
         new_nodes = {n for n in (source.lower(), target.lower()) if n not in node_set}
         if len(node_set) + len(new_nodes) > MAX_NODES:
+            dropped += 1
             continue
 
         seen_edges.add(dedupe_key)
@@ -372,10 +426,8 @@ def _normalize_edges(
             "year": year,
             "evidence_url": evidence_url,
         })
-        if len(out) >= MAX_EDGES:
-            break
 
-    return out
+    return out, dropped
 
 
 # ===========================================================================
@@ -459,12 +511,19 @@ def build_pyvis_html(seed: str, edges: List[Dict[str, str]]) -> Optional[str]:
             size=24 if ntype == "seed" else 16,
         )
     for e in edges:
-        net.add_edge(
-            e["source"], e["target"],
-            title=_edge_label(e["relation"], e["year"]),
-            label=_edge_label(e["relation"], e["year"]),
-            arrows="to",
-        )
+        lbl = _edge_label(e["relation"], e["year"])
+        has_ev = bool(e.get("evidence_url"))
+        edge_kwargs = {
+            "title": lbl if has_ev else f"{lbl} — no cited source",
+            "label": lbl,
+            "arrows": "to",
+        }
+        if not has_ev:
+            # Uncited relationships are drawn dashed + grey so the GRAPH itself
+            # (the primary surface), not just the table, shows what is source-backed.
+            edge_kwargs["dashes"] = True
+            edge_kwargs["color"] = "#cbd5e1"
+        net.add_edge(e["source"], e["target"], **edge_kwargs)
 
     # Light physics so the layout settles quickly without thrashing.
     try:
@@ -538,8 +597,13 @@ def _render_graphviz_fallback(seed: str, edges: List[Dict[str, str]]) -> None:
 # Relationships section (table + KPIs) — shared by all render paths
 # ===========================================================================
 def _render_relationships_section(seed: str, edges: List[Dict[str, str]],
-                                  sources: List[str]) -> None:
+                                  sources: List[str], dropped: int = 0) -> None:
     ui.section("Relationships", f"Depth-1 corporate lineage for {seed}")
+    if dropped:
+        st.caption(
+            f"⚠️ Graph capped at {MAX_NODES} entities / {MAX_EDGES} relationships — "
+            f"{dropped} additional extracted relationship(s) are not shown."
+        )
 
     n_entities = len({seed.lower()} | {e["source"].lower() for e in edges}
                      | {e["target"].lower() for e in edges})
@@ -676,6 +740,7 @@ def render_relationship_graph_tab() -> None:
             st.session_state[SS_SEED] = seed
             st.session_state[SS_EDGES] = edges
             st.session_state[SS_SOURCES] = sources
+            st.session_state[SS_DROPPED] = int(result.get("dropped") or 0)
             push_history(SS_HISTORY, {"seed": seed, "n_edges": len(edges)})
             if result.get("success"):
                 st.toast(f"Relationship graph ready for {seed} "
@@ -687,19 +752,22 @@ def render_relationship_graph_tab() -> None:
     edges: List[Dict[str, str]] = st.session_state.get(SS_EDGES) or []
     render_seed: str = st.session_state.get(SS_SEED) or seed
     sources: List[str] = st.session_state.get(SS_SOURCES) or []
+    dropped: int = int(st.session_state.get(SS_DROPPED) or 0)
 
     if render_seed and edges:
         if GRAPH_LIBS_AVAILABLE:
             graph_html = build_pyvis_html(render_seed, edges)
             if graph_html:
                 st.html(_legend_html())
-                components.html(graph_html, height=640, scrolling=True)
+                # Iframe taller than the 620px canvas (+ body margins) so nothing
+                # clips; scrolling off avoids the wheel-zoom-vs-page-scroll fight.
+                components.html(graph_html, height=700, scrolling=False)
             else:
                 _render_graphviz_fallback(render_seed, edges)
         else:
             _render_graphviz_fallback(render_seed, edges)
 
-        _render_relationships_section(render_seed, edges, sources)
+        _render_relationships_section(render_seed, edges, sources, dropped)
     elif render_seed:
         st.info(
             f"No relationships are stored for {render_seed} yet. "
