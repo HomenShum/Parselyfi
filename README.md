@@ -4,7 +4,7 @@
 
 ### Source-backed financial research, in one Streamlit app.
 
-**Company intelligence · News & YouTube briefings · Audio transcription & summaries** — powered by LinkUp `sourcedAnswer`, Google **Gemini 3.5 Flash**, and ElevenLabs.
+**List intelligence (match → enrich → classify → score) · interactive relationship graphs · company deep-dives · News & YouTube briefings · audio transcription** — powered by LinkUp `sourcedAnswer`, Google **Gemini 3.5 Flash**, and ElevenLabs.
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://parselyfi.streamlit.app)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
@@ -24,7 +24,7 @@
 
 ## What is ParselyFi?
 
-ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and public-company research**. It turns a company name, a news topic, or an audio file into **cited, source-backed output** — never fabricated. Three research tabs sit alongside a Supabase/S3 file manager, an AI assistant, and a public financial-data dashboard.
+ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and public-company research**. Its centerpiece turns a raw **list of companies** into a matched, enriched, classified, and **evidence-scored** comparison table — then maps the corporate relationships between them. It also turns a single company name, a news topic, or an audio file into **cited, source-backed output** — never fabricated. Every number traces back to a real retrieved source.
 
 > **Design rule everywhere:** if a key, source, or result is missing, the app says so and degrades gracefully. It never invents companies, sources, transcripts, or summaries.
 
@@ -32,7 +32,15 @@ ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and pub
 
 ## ✨ Features
 
-Three source-backed research workflows — each previewed below — plus a file manager, AI assistant, and public data dashboard.
+A source-backed research workspace — led by the **List Intelligence** pipeline and an **interactive relationship graph**, alongside company deep-dives, news/video briefings, transcription, a file manager, and a public data dashboard.
+
+### 📋 List Intelligence — the company-list pipeline
+
+Paste or upload a list of companies → **Match** each to a canonical entity (High / Medium / No-Match, source-backed) → **Enrich** with structured fields → **Classify** against a sector definition you write → **Score** on a fully editable, weighted rubric where **every dimension cites a real source URL** → **Export** to CSV / Excel. Bounded concurrency, per-row evidence drill-down, KPI metrics, and an honest coverage / confidence readout. *This is the spine the product is built around: comparable, auditable company tables.*
+
+### 🕸️ Relationship Graph
+
+Map a company's corporate lineage — **parents, subsidiaries, acquisitions (with years), investors, partners, and competitors** — as an interactive, draggable network (pyvis). Seed it from a typed company or straight from your last List Intelligence run. Every edge is grounded; evidence links are filtered to **real retrieved sources only**.
 
 ### 🔍 Company Search & Analysis
 
@@ -67,16 +75,20 @@ Upload audio → **ElevenLabs** speech-to-text → a synced AnyWidget player tha
 ## 🏗️ Architecture
 
 ```
-streamlit_app.py            # entry point (sidebar + 6 tabs + auth)
+streamlit_app.py            # entry point (sidebar + 7 tabs + auth)
 features/
   common.py                 # shared core: secret guard, lazy Gemini/LinkUp clients,
                             #   async runner, bounded token ledger, hardened web scraper
+  ui.py                     # shared design system (theme CSS, hero, KPIs, tier badges)
+  list_intelligence.py      # render_list_intelligence_tab() — match→enrich→classify→score→export
+  relationship_graph.py     # render_relationship_graph_tab() — pyvis corporate-lineage graph
   company_research.py       # render_company_research_tab()  — 3-pass LinkUp + Gemini
   news_youtube.py           # render_news_youtube_tab()      — LinkUp-backed news + video
   transcription.py          # render_transcription_tab()     — ElevenLabs STT + Gemini summary
-dev_preview_tabs.py         # no-auth dev/QA harness that renders the 3 tabs directly
+tests/eval/                 # runnable research-agent eval harness (fast/slow, scored, --dry)
+dev_preview_tabs.py         # no-auth dev/QA harness that renders the feature tabs directly
 demo/                       # TestReel + Playwright recording scripts + Remotion video project
-assets/                     # rendered demo video + preview GIF
+assets/                     # rendered demo video + preview GIFs
 legacy/                     # archived prototypes & versioned experiments (see legacy/README.md)
 ```
 
@@ -87,7 +99,7 @@ legacy/                     # archived prototypes & versioned experiments (see l
 - **Timeouts + bounded reads** on every LLM / network / scrape call.
 - **Honest status** — failed calls return empty results and surface an actionable banner (e.g. "rotate your Gemini key"), never fabricated data.
 
-**Stack:** Streamlit · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash) · `linkup-sdk` · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
+**Stack:** Streamlit 1.58 · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash) · `linkup-sdk` · `pyvis`/`networkx` (relationship graph) · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
 
 ---
 
@@ -134,13 +146,20 @@ Each feature **degrades gracefully**: a missing key shows a notice instead of fa
 
 ## 🧪 Dev / QA
 
-`dev_preview_tabs.py` renders the three feature tabs directly (no Google-login gate) for fast iteration and headless QA:
+`dev_preview_tabs.py` renders the feature tabs directly (no Google-login gate) for fast iteration and headless QA:
 
 ```bash
 streamlit run dev_preview_tabs.py
 ```
 
-The demo video is produced from this harness — see [`demo/README.md`](demo/README.md).
+A runnable research-agent eval harness lives in `tests/eval/` (deterministic checks + optional Gemini judge; fabricates no scores):
+
+```bash
+python tests/eval/run_eval.py --dry      # deterministic checks only, no API
+python tests/eval/run_eval.py --fast     # fast cases, live (needs keys)
+```
+
+The demo video is produced from the harness — see [`demo/README.md`](demo/README.md).
 
 ---
 
