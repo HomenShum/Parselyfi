@@ -9,20 +9,39 @@ dogfooded in a real browser without auth. Not part of the shipped app.
 Run from the Parselyfi/ directory (so st.secrets and the features package resolve):
     streamlit run dev_preview_tabs.py
 """
+import os
+
 import streamlit as st
 
+# DEMO_CLEAN=1 hides the QA chrome (harness title + Streamlit toolbar) so the
+# demo-video capture frames look like the production app, not a QA harness.
+DEMO = os.environ.get("DEMO_CLEAN") == "1"
+
 st.set_page_config(
-    page_title="ParselyFi · Feature Tab QA",
-    page_icon="🧪",
+    page_title="ParselyFi" if DEMO else "ParselyFi · Feature Tab QA",
+    page_icon="🌱" if DEMO else "🧪",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-st.title("🧪 ParselyFi — Feature Tab Dogfood Harness")
-st.caption(
-    "Renders the 3 finished tabs via their render_*_tab() entry points, "
-    "bypassing the Google-login gate for QA only."
-)
+if DEMO:
+    st.markdown(
+        """
+        <style>
+          header[data-testid="stHeader"] {display: none !important;}
+          [data-testid="stToolbar"] {display: none !important;}
+          #MainMenu, footer {visibility: hidden;}
+          .block-container {padding-top: 2.2rem !important;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.title("🧪 ParselyFi — Feature Tab Dogfood Harness")
+    st.caption(
+        "Renders the 3 finished tabs via their render_*_tab() entry points, "
+        "bypassing the Google-login gate for QA only."
+    )
 
 tab3, tab4, tab5 = st.tabs([
     "🔍 Company Search & Analysis",
