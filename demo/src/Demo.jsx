@@ -66,10 +66,12 @@ const LowerThird = ({ step, accent, title, subtitle, frame }) => {
         position: "absolute", bottom: 0, left: 0, right: 0 }} />
       <div style={{ position: "relative", transform: `translateY(${slide}px)`, opacity: op,
         display: "flex", alignItems: "center", gap: 28, padding: "0 90px" }}>
-        <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 26, color: accent,
-          border: `2px solid ${accent}`, borderRadius: 10, padding: "8px 14px", letterSpacing: 1 }}>
-          {step} <span style={{ color: "#5b7290" }}>/ 03</span>
-        </div>
+        {step ? (
+          <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 26, color: accent,
+            border: `2px solid ${accent}`, borderRadius: 10, padding: "8px 14px", letterSpacing: 1 }}>
+            {step} <span style={{ color: "#5b7290" }}>/ 03</span>
+          </div>
+        ) : null}
         <div style={{ width: 5, height: 92, background: accent, borderRadius: 9 }} />
         <div>
           <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 58, color: "#eaf2ff", lineHeight: 1.05 }}>{title}</div>
@@ -153,6 +155,14 @@ const ProgressBar = () => {
   const w = interpolate(frame, [0, TOTAL_FRAMES], [0, WIDTH], { extrapolateRight: "clamp" });
   return <div style={{ position: "absolute", bottom: 0, left: 0, height: 6, width: w, background: "#34d399" }} />;
 };
+
+// Standalone single-feature loop for the per-feature README previews.
+export const FeatureClip = ({ seg }) => (
+  <AbsoluteFill style={{ background: BG_FROM }}>
+    <Background />
+    <FeatureSlide seg={seg} />
+  </AbsoluteFill>
+);
 
 export const Demo = () => {
   let from = 0;

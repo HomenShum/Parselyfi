@@ -1,0 +1,28 @@
+// Standalone per-feature clips for the README "skill preview" GIFs.
+// Each loops a single feature (browser-chrome frame + Ken Burns + caption).
+export const CLIPS = [
+  {
+    id: "Company",
+    durationInFrames: 200,
+    accent: "#34d399",
+    images: ["s01_company_input.png", "s02_company_results.png"],
+    title: "Company Search",
+    subtitle: "Resolve the entity, then a 3-pass profile.",
+  },
+  {
+    id: "News",
+    durationInFrames: 165,
+    accent: "#0A7CFF",
+    images: ["s04_news_brief.png"],
+    title: "News & YouTube",
+    subtitle: "Cited briefing from real, current sources.",
+  },
+  {
+    id: "Transcribe",
+    durationInFrames: 200,
+    accent: "#8E75B2",
+    images: ["s05_transcribe_ui.png", "s07_transcribe_summary.png"],
+    title: "Transcription",
+    subtitle: "Audio → synced transcript → AI summary.",
+  },
+];

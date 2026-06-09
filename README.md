@@ -32,24 +32,35 @@ ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and pub
 
 ## ✨ Features
 
+Three source-backed research workflows — each previewed below — plus a file manager, AI assistant, and public data dashboard.
+
+### 🔍 Company Search & Analysis
+
+<p align="center"><img src="assets/feature-company.gif" alt="Company Search & Analysis preview" width="680"></p>
+
+Source-backed company research with a **3-pass workflow** — entity resolution → structured profile → missing-field backfill. Free-text *or* spreadsheet upload, an editable Pending/Complete/Skip review grid, batch enrichment with concurrency, per-agent token/cost tracking, and exportable search history.
+
+### 📰 News & YouTube
+
+<p align="center"><img src="assets/feature-news.gif" alt="News & YouTube preview" width="680"></p>
+
+**News Alerts:** a topic → LinkUp source-backed search → a cited Gemini briefing (summary, key points, sentiment) + an editable list of real sources. **YouTube Daily Reports:** a video URL / pasted transcript → a structured key-insight summary.
+
+### 🎙️ Transcription & Summaries
+
+<p align="center"><img src="assets/feature-transcription.gif" alt="Transcription & Summaries preview" width="680"></p>
+
+Upload audio → **ElevenLabs** speech-to-text → a synced AnyWidget player that highlights the transcript during playback → one-click **AI summary** (summary + key points + action items). Paste/upload an existing transcript if you have no audio key.
+
+### Plus
+
 | Tab | What it does |
 | --- | --- |
-| 🔍 **Company Search & Analysis** | Source-backed company research with a **3-pass workflow** — entity resolution → structured profile → missing-field backfill. Free-text *or* spreadsheet upload, an editable Pending/Complete/Skip review grid, batch enrichment with concurrency, per-agent token/cost tracking, and exportable search history. |
-| 📰 **News & YouTube** | **News Alerts:** a topic → LinkUp source-backed search → a cited Gemini briefing (summary, key points, sentiment) + an editable list of real sources. **YouTube Daily Reports:** a video URL / pasted transcript → structured key-insight summary. |
-| 🎙️ **Transcription & Summaries** | Upload audio → **ElevenLabs** speech-to-text → a synced AnyWidget player that highlights the transcript during playback → one-click **AI summary** (summary + key points + action items). Paste/upload an existing transcript if you have no audio key. |
-| 🗂️ **File Manager** | Browse, upload, download, organize files in S3-compatible **Supabase Storage**, with pagination and folder navigation. |
+| 🗂️ **File Manager** | Browse, upload, download, and organize files in S3-compatible **Supabase Storage**, with pagination and folder navigation. |
 | 🤖 **Parsely AI Assistant** | Chat assistant for workflow help and Q&A. |
 | 📊 **Public Dashboard** | Curated financial data (companies, YouTube transcriptions, news, forums) with interactive tables — Master DB, Products, Partnerships, Investors. |
 
----
-
-## 🎬 Feature walkthrough
-
-The demo above steps through the three research tabs end-to-end:
-
-1. **Company Search** — type a company (e.g. *Anthropic*), resolve the correct entity from real source domains, then run the 3-pass enrichment into a structured profile.
-2. **News & YouTube** — enter a topic (e.g. *NVIDIA earnings*) and get a cited briefing with current, real sources; summarize a video transcript into key insights.
-3. **Transcription** — upload audio, watch the transcript highlight in sync with playback, then generate an AI summary.
+> The full ~40s reel above (hero) stitches these three workflows end-to-end with narration.
 
 ---
 
