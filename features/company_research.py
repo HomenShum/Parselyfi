@@ -178,6 +178,50 @@ LINKUP_COMPANY_SCHEMA: Dict[str, Any] = {
         },
         "tech_stack": {"type": "array", "description": "Technologies and tools used by the company.", "items": {"type": "string"}},
         "competitors": {"type": "array", "description": "Main competitors in the market.", "items": {"type": "string"}},
+        # --- High-value finance fields (additive; ported from component2 schema) ---
+        "funding_stage": {"type": "string", "description": "Current overall funding stage of the company (e.g. Bootstrapped, Pre-seed, Seed, Series A/B/C/D/E/F, Public, Acquired, Subsidiary, Donations/Grant). Use the most recent/highest stage supported by the sources; empty string if unknown."},
+        "investors": {
+            "type": "array",
+            "description": "Notable investors / investment firms backing the company.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Name of the investor or investment firm."},
+                    "type": {"type": "string", "description": "Type of investor (e.g. Venture Capital, Angel, Private Equity, Corporate)."},
+                    "stage": {"type": "string", "description": "Round/stage this investor participated in (e.g. Seed, Series A)."},
+                    "lead": {"type": "boolean", "description": "Whether this investor led a round."},
+                },
+                "required": ["name"],
+            },
+        },
+        "partnerships": {
+            "type": "array",
+            "description": "Publicly announced partnerships, alliances, or notable customers.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "partner": {"type": "string", "description": "Name of the partner entity."},
+                    "description": {"type": "string", "description": "Summary of the partnership and what it involves."},
+                    "year": {"type": "string", "description": "Year the partnership was announced/happened."},
+                    "url": {"type": "string", "description": "Source URL for the partnership, if available."},
+                },
+                "required": ["partner"],
+            },
+        },
+        "key_people": {
+            "type": "array",
+            "description": "Key people beyond the core leadership team: advisors, board members, notable hires.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Full name of the person."},
+                    "role": {"type": "string", "description": "Specific role or title (e.g. Advisor, Board Member, Head of Eng)."},
+                    "linkedin_url": {"type": "string", "description": "LinkedIn profile URL, if available."},
+                    "background": {"type": "string", "description": "Short background/biography."},
+                },
+                "required": ["name", "role"],
+            },
+        },
         "recent_news": {
             "type": "array",
             "description": "Recent news or announcements about the company from the past 3 months.",
@@ -542,9 +586,28 @@ def format_linkup_results_as_search_text(structured_data: Dict[str, Any], compan
                 lines.append(f"- LinkedIn: {linkedin}")
             lines.append("")
 
-    if funding := structured_data.get("funding"):
+    if key_people := structured_data.get("key_people"):
+        lines.append("## 2b. Key People (Advisors / Board / Notable Hires)")
+        for person in key_people:
+            if not isinstance(person, dict):
+                lines.append(f"- {person}")
+                continue
+            kp_line = f"**{person.get('name', '')}**"
+            if role := person.get("role"):
+                kp_line += f", {role}"
+            lines.append(kp_line)
+            if bg := person.get("background"):
+                lines.append(f"- Background: {bg}")
+            if li := person.get("linkedin_url"):
+                lines.append(f"- LinkedIn: {li}")
+            lines.append("")
+
+    if (funding := structured_data.get("funding")) or structured_data.get("funding_stage") or structured_data.get("investors"):
         lines.append("## 3. Funding History")
-        for round_data in funding:
+        if stage := structured_data.get("funding_stage"):
+            lines.append(f"**Funding Stage:** {stage}")
+            lines.append("")
+        for round_data in (funding or []):
             round_name = round_data.get("round", "")
             date = round_data.get("date", "")
             amount = round_data.get("amount", "")
@@ -562,6 +625,35 @@ def format_linkup_results_as_search_text(structured_data: Dict[str, Any], compan
                 elif len(investors) > 1:
                     extra = f" and {len(investors) - 3} more" if len(investors) > 3 else ""
                     lines.append(f"- Investors: {', '.join(investors[:3])}{extra}")
+        if company_investors := structured_data.get("investors"):
+            lines.append("**Notable Investors:**")
+            for inv in company_investors:
+                if not isinstance(inv, dict):
+                    lines.append(f"- {inv}")
+                    continue
+                inv_line = f"- {inv.get('name', '')}"
+                meta = [v for v in (inv.get("type"), inv.get("stage")) if v]
+                if inv.get("lead"):
+                    meta.append("lead")
+                if meta:
+                    inv_line += f" ({', '.join(str(m) for m in meta)})"
+                lines.append(inv_line)
+        lines.append("")
+
+    if partnerships := structured_data.get("partnerships"):
+        lines.append("## 3b. Partnerships")
+        for pship in partnerships:
+            if not isinstance(pship, dict):
+                lines.append(f"- {pship}")
+                continue
+            p_line = f"**{pship.get('partner', '')}**"
+            if year := pship.get("year"):
+                p_line += f" ({year})"
+            lines.append(p_line)
+            if pdesc := pship.get("description"):
+                lines.append(f"- {pdesc}")
+            if purl := pship.get("url"):
+                lines.append(f"- Source: {purl}")
         lines.append("")
 
     products_section_added = False
@@ -687,6 +779,117 @@ async def entity_context_extraction_agent(text: str) -> Dict[str, Any]:
     if not isinstance(result["entity_names"], list):
         result["entity_names"] = []
     return result
+
+
+async def disambiguate_entities(
+    user_input: str,
+    intended_context: str,
+    entity_info: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """ADDITIVE entity disambiguation: score each candidate as SAME vs DIFFERENT.
+
+    Given the user's original input (the company they *mean*), any extra context
+    they supplied, and the gathered candidates (name + source-backed snippet),
+    ask Gemini to return, per candidate index, a ``confidence`` (0.0-1.0) that
+    the candidate is the SAME company the user means, plus a short ``reason``.
+
+    Negative-example aware (ported from component3's differentiation framework):
+    the prompt explicitly tells the model to LOWER confidence on founder
+    mismatch, founding-year mismatch, and similarly-named-but-different entities
+    (e.g. "X" vs "X AI" / "X Bio" suffix collisions).
+
+    HONEST STATUS: returns ``{}`` (callers degrade to current behavior, no
+    confidence column shown) when Gemini is unavailable or returns nothing. This
+    never auto-selects or auto-removes — it only surfaces a hint for the user.
+
+    Returns ``{"<index>": {"confidence": float, "reason": str}, ...}`` keyed by
+    the candidate's position in ``entity_info``.
+    """
+    if not entity_info:
+        return {}
+
+    candidate_blocks: List[str] = []
+    for i, ent in enumerate(entity_info):
+        name = safe_get_attribute(ent, "name", f"Candidate {i}")
+        snippet = (safe_get_attribute(ent, "snippet", "") or "")[:1500]
+        domains: List[str] = []
+        for src in (safe_get_attribute(ent, "sources", []) or [])[:3]:
+            url = safe_get_attribute(src, "url", None)
+            if url:
+                try:
+                    domains.append(urlparse(url).netloc)
+                except Exception:  # noqa: BLE001
+                    pass
+        candidate_blocks.append(
+            f"--- CANDIDATE {i} ---\n"
+            f"Name: {name}\n"
+            f"Source domains: {', '.join(domains) if domains else 'none'}\n"
+            f"Snippet: {snippet or 'No description available.'}"
+        )
+    candidates_text = "\n\n".join(candidate_blocks)
+
+    prompt = f"""
+    You are disambiguating which candidate company matches the entity the user
+    actually means. Companies with similar names are frequently confused (for
+    example "Anthropic" vs an unrelated "Anthropic AI", or "X" vs "X Bio").
+
+    THE USER IS LOOKING FOR (original request):
+    {user_input}
+
+    EXTRA CONTEXT THE USER PROVIDED (may be empty):
+    {intended_context or 'N/A'}
+
+    CANDIDATES (each is a separate, possibly-different real-world entity):
+    {candidates_text}
+
+    For EACH candidate index, decide how confident you are that it is the SAME
+    company the user means (NOT a similarly-named different one). Use this
+    differentiation framework and LOWER confidence when you see conflicts:
+    - FOUNDER MISMATCH: candidate's founders differ from what the user implies.
+    - FOUNDING-YEAR MISMATCH: candidate founded in a different year.
+    - NAME-SUFFIX COLLISION: candidate is "<Name> AI" / "<Name> Bio" / "<Name>
+      Labs" etc. while the user means the bare name (or vice-versa).
+    - INDUSTRY / LOCATION / PRODUCT mismatch vs the user's context.
+    Raise confidence when founders, founding year, industry, location, product,
+    or website align with the user's request and context.
+
+    Return ONLY a JSON object of this exact shape (confidence is a float 0.0-1.0,
+    reason is one short sentence). Include an entry for every candidate index:
+    {{
+        "scores": [
+            {{"index": 0, "confidence": 0.92, "reason": "Founder and 2014 founding year match the user's context."}},
+            {{"index": 1, "confidence": 0.15, "reason": "Different founder; 'X AI' is a separate entity from the bare 'X' the user means."}}
+        ]
+    }}
+    """
+    result = await gemini_generate_json(
+        prompt, model=GEMINI_MODEL, agent_name="Entity Disambiguation Agent"
+    )
+    if not isinstance(result, dict):
+        return {}
+    scores = result.get("scores")
+    if not isinstance(scores, list):
+        return {}
+
+    out: Dict[str, Dict[str, Any]] = {}
+    for item in scores:
+        if not isinstance(item, dict):
+            continue
+        try:
+            idx = int(item.get("index"))
+        except (TypeError, ValueError):
+            continue
+        if idx < 0 or idx >= len(entity_info):
+            continue
+        try:
+            conf = float(item.get("confidence"))
+        except (TypeError, ValueError):
+            continue
+        # Clamp to [0, 1] so a bad model value can never display as >100%.
+        conf = max(0.0, min(1.0, conf))
+        reason = str(item.get("reason", "") or "").strip()
+        out[str(idx)] = {"confidence": conf, "reason": reason}
+    return out
 
 
 async def analyze_missing_fields(structured_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -838,6 +1041,30 @@ async def first_pass_entity_selection(user_input: str, observability_log: List[D
                 linkup_log["error"] = result.get("error", "Unknown LinkUp error")
                 entity_info.append({"name": entity_name, "snippet": f"Failed: {result.get('error')}", "sources": []})
             log_entry["linkup_calls"].append(linkup_log)
+
+        # ADDITIVE: entity disambiguation. Attach a SAME-vs-DIFFERENT confidence
+        # (0-1) + short reason to each candidate so the resolution UI can guide
+        # the user. HONEST STATUS / SAFE: if Gemini is unavailable (or errors)
+        # this returns {} and we leave the candidates untouched — no auto-select,
+        # no auto-remove, exact prior behavior preserved.
+        try:
+            disambig = await disambiguate_entities(
+                user_input=user_input,
+                intended_context=initial_context,
+                entity_info=entity_info,
+            )
+        except Exception as dis_err:  # noqa: BLE001 - best-effort enhancement only
+            logger.warning("Entity disambiguation skipped: %s", dis_err)
+            disambig = {}
+        if disambig:
+            for i, ent in enumerate(entity_info):
+                score = disambig.get(str(i))
+                if score:
+                    ent["confidence"] = score.get("confidence")
+                    ent["confidence_reason"] = score.get("reason", "")
+            log_entry["disambiguation"] = "ok"
+        else:
+            log_entry["disambiguation"] = "unavailable"
 
         log_entry["status"] = "Success"
         log_entry["duration"] = time.time() - start_time
@@ -1472,15 +1699,36 @@ async def process_uploaded_file(uploaded_file) -> Dict[str, Any]:
 # ===========================================================================
 # BATCH PROCESSING (ported; concurrency-limited; only Pending rows)
 # ===========================================================================
-async def batch_process_companies(search_df, max_concurrent=5, enable_web_scraping=True) -> Dict[str, Any]:
-    """Process every row of ``search_df`` concurrently (bounded)."""
+async def batch_process_companies(
+    search_df, max_concurrent=5, enable_web_scraping=True, progress_state=None
+) -> Dict[str, Any]:
+    """Process every row of ``search_df`` concurrently (bounded).
+
+    ``progress_state``: optional shared dict (lives on the main thread, mutated
+    here from the background loop) used to surface per-row progress. We only do
+    plain dict writes of integers/strings — atomic under CPython's GIL — so the
+    main thread polling it never needs a lock. Concurrency stays bounded by the
+    ``max_concurrent`` semaphore regardless of progress reporting.
+    """
     all_results: List[Dict[str, Any]] = []
     semaphore = asyncio.Semaphore(max(1, int(max_concurrent)))
+
+    def _mark(idx, status: str, name: str) -> None:
+        if progress_state is None:
+            return
+        try:
+            rows = progress_state.setdefault("rows", {})
+            rows[idx] = {"status": status, "name": name}
+            if status in ("complete", "error"):
+                progress_state["done"] = progress_state.get("done", 0) + 1
+        except Exception:  # never let progress reporting break the batch
+            pass
 
     async def process_company(idx, row) -> Dict[str, Any]:
         async with semaphore:
             company_name = str(row["company_name"])
             additional_context = str(row.get("additional_context", "") or "")
+            _mark(idx, "running", company_name)
             try:
                 response = await gemini_company_search_with_verification(
                     company_names=[company_name],
@@ -1489,6 +1737,7 @@ async def batch_process_companies(search_df, max_concurrent=5, enable_web_scrapi
                     max_concurrent=1,
                     enable_web_scraping=enable_web_scraping,
                 )
+                _mark(idx, "complete" if response.get("success", False) else "error", company_name)
                 return {
                     "idx": idx,
                     "company_name": company_name,
@@ -1498,6 +1747,7 @@ async def batch_process_companies(search_df, max_concurrent=5, enable_web_scrapi
                 }
             except Exception as e:  # noqa: BLE001
                 logger.error("Error processing company %s: %s", company_name, e)
+                _mark(idx, "error", company_name)
                 return {
                     "idx": idx,
                     "company_name": company_name,
@@ -1529,20 +1779,55 @@ async def batch_process_companies(search_df, max_concurrent=5, enable_web_scrapi
 
 
 def process_companies_with_progress(search_df, async_runner, max_concurrent=5, enable_web_scraping=True):
-    """Run the batch on the background loop and poll with a Streamlit status."""
-    status = st.status(f"Preparing to search for {len(search_df)} companies...", expanded=True)
+    """Run the batch on the background loop and poll with a Streamlit status.
+
+    Shows VISIBLE per-row progress: an ``st.progress`` bar (done/total), a
+    completed-count + simple ETA line, and a per-company status list. The
+    background coroutine mutates a shared ``progress_state`` dict that this main
+    thread polls once per second; concurrency stays bounded by ``max_concurrent``
+    inside ``batch_process_companies`` (this only reads, never adds parallelism).
+    """
+    total_companies = len(search_df)
+    status = st.status(f"Preparing to search for {total_companies} companies...", expanded=True)
+    progress_bar = st.progress(0.0, text=f"0/{total_companies} companies done")
     progress_placeholder = st.empty()
 
     company_statuses = {idx: {"status": "pending", "name": str(row["company_name"])}
                         for idx, row in search_df.iterrows()}
-    progress_placeholder.text("\n".join(f"... {cs['name']}" for cs in company_statuses.values()))
+    progress_placeholder.text("\n".join(f"[wait] {cs['name']}" for cs in company_statuses.values()))
+
+    # Shared progress dict mutated by the background coroutine (atomic dict
+    # writes under the GIL); polled here on the main thread.
+    progress_state: Dict[str, Any] = {"done": 0, "rows": {}}
 
     batch_future = async_runner.run_task_async(
-        batch_process_companies(search_df, max_concurrent, enable_web_scraping)
+        batch_process_companies(search_df, max_concurrent, enable_web_scraping, progress_state)
     )
 
     start_time = time.time()
-    total_companies = len(search_df)
+
+    def _render_progress(done: int, rows: Dict[Any, Dict[str, str]]) -> None:
+        # Merge live row statuses over the initial pending snapshot.
+        merged = dict(company_statuses)
+        for idx, cs in rows.items():
+            merged[idx] = cs
+        done = min(done, total_companies)
+        frac = (done / total_companies) if total_companies else 1.0
+        elapsed = time.time() - start_time
+        eta_txt = ""
+        if 0 < done < total_companies:
+            per = elapsed / done
+            remaining = per * (total_companies - done)
+            eta_txt = f" | ETA ~{format_time(remaining)}"
+        progress_bar.progress(
+            min(1.0, max(0.0, frac)),
+            text=f"{done}/{total_companies} companies done"
+                 f" | Elapsed {format_time(elapsed)}{eta_txt}",
+        )
+        icon = {"complete": "[done]", "error": "[fail]", "running": "[....]"}
+        progress_placeholder.text("\n".join(
+            f"{icon.get(cs['status'], '[wait]')} {cs['name']}" for cs in merged.values()
+        ))
 
     while True:
         if batch_future.done():
@@ -1556,15 +1841,17 @@ def process_companies_with_progress(search_df, async_runner, max_concurrent=5, e
                         "status": "complete" if company_result["success"] else "error",
                         "name": company_result["company_name"],
                     }
+                _render_progress(total_companies, progress_state.get("rows", {}))
+                progress_bar.progress(
+                    1.0,
+                    text=f"{total_companies}/{total_companies} companies done"
+                         f" | {format_time(total_time)}",
+                )
                 status.update(
                     label=f"All searches complete! Processed {total_companies} companies in {format_time(total_time)}",
                     state="complete",
                     expanded=False,
                 )
-                progress_placeholder.text("\n".join(
-                    f"{'[done]' if cs['status'] == 'complete' else '[fail]' if cs['status'] == 'error' else '[wait]'} {cs['name']}"
-                    for cs in company_statuses.values()
-                ))
                 return all_results
             except Exception as e:  # noqa: BLE001
                 st.error(f"Error in batch processing: {e}")
@@ -1578,7 +1865,13 @@ def process_companies_with_progress(search_df, async_runner, max_concurrent=5, e
             status.update(label="Batch processing timed out.", state="error")
             st.error(f"Batch processing exceeded {format_time(BATCH_POLL_TIMEOUT_S)} and was cancelled.")
             return []
-        status.update(label=f"Processing {total_companies} companies in parallel... (Elapsed: {format_time(elapsed)})")
+
+        done = int(progress_state.get("done", 0))
+        _render_progress(done, progress_state.get("rows", {}))
+        status.update(
+            label=f"Processing {total_companies} companies in parallel... "
+                  f"({done}/{total_companies} done, Elapsed: {format_time(elapsed)})"
+        )
         time.sleep(1)
 
 
@@ -1717,6 +2010,20 @@ def first_pass_ui_with_data_editor(async_runner) -> None:
             sources = safe_get_attribute(entity, "sources", []) or []
             st.write(f"**Entity {i + 1}: {name}** - {len(sources)} source(s)")
 
+    # ADDITIVE: did the disambiguation step attach confidence to any candidate?
+    # Only show the confidence/reason columns when present so the UI degrades to
+    # the prior layout when Gemini disambiguation was unavailable.
+    has_confidence = any(
+        safe_get_attribute(entity, "confidence", None) is not None
+        for entity in entity_options
+    )
+    if has_confidence:
+        st.caption(
+            "Match Confidence is an AI hint (0-100%) for whether each candidate "
+            "is the company you mean vs. a similarly-named different one. It does "
+            "NOT auto-select or remove anything — you still choose."
+        )
+
     data = []
     for i, entity in enumerate(entity_options):
         snippet_preview = safe_get_attribute(entity, "snippet", "No description available.") or ""
@@ -1727,30 +2034,46 @@ def first_pass_ui_with_data_editor(async_runner) -> None:
             url = safe_get_attribute(source, "url", None)
             if url:
                 source_domains.append(urlparse(url).netloc)
-        data.append({
+        row = {
             "Select Target": False,
             "Mark Irrelevant": False,
             "Company Name": safe_get_attribute(entity, "name", f"Entity {i + 1}"),
             "Description": snippet_preview,
             "Sources": ", ".join(source_domains) if source_domains else "No sources",
             "Index": i,
-        })
+        }
+        if has_confidence:
+            conf = safe_get_attribute(entity, "confidence", None)
+            row["Match Confidence"] = float(conf) if conf is not None else None
+            row["Why"] = safe_get_attribute(entity, "confidence_reason", "") or ""
+        data.append(row)
 
     df = pd.DataFrame(data)
+    column_config = {
+        "Select Target": st.column_config.CheckboxColumn("Select as Target", default=False, width="small"),
+        "Mark Irrelevant": st.column_config.CheckboxColumn("Mark as Irrelevant", default=False, width="small"),
+        "Company Name": st.column_config.TextColumn("Company Name", width="small"),
+        "Description": st.column_config.TextColumn("Description", width="large"),
+        "Sources": st.column_config.TextColumn("Source Domains", width="medium"),
+        "Index": st.column_config.NumberColumn("Index", width="small"),
+    }
+    disabled_cols = ["Index", "Company Name", "Description", "Sources"]
+    if has_confidence:
+        column_config["Match Confidence"] = st.column_config.ProgressColumn(
+            "Match Confidence", min_value=0.0, max_value=1.0, format="%.0f%%",
+            help="AI confidence this is the SAME company you mean (hint only).",
+        )
+        column_config["Why"] = st.column_config.TextColumn(
+            "Why", width="large", help="Why the AI assigned that confidence.",
+        )
+        disabled_cols += ["Match Confidence", "Why"]
     edited_df = st.data_editor(
         df,
-        column_config={
-            "Select Target": st.column_config.CheckboxColumn("Select as Target", default=False, width="small"),
-            "Mark Irrelevant": st.column_config.CheckboxColumn("Mark as Irrelevant", default=False, width="small"),
-            "Company Name": st.column_config.TextColumn("Company Name", width="small"),
-            "Description": st.column_config.TextColumn("Description", width="large"),
-            "Sources": st.column_config.TextColumn("Source Domains", width="medium"),
-            "Index": st.column_config.NumberColumn("Index", width="small"),
-        },
+        column_config=column_config,
         hide_index=True,
         use_container_width=True,
         key="cr_entity_selection_editor",
-        disabled=["Index", "Company Name", "Description", "Sources"],
+        disabled=disabled_cols,
     )
 
     st.divider()
@@ -1763,6 +2086,14 @@ def first_pass_ui_with_data_editor(async_runner) -> None:
     selected_preview_idx = int(selected_preview.split(":")[0]) - 1
     preview_entity = entity_options[selected_preview_idx]
     st.write(f"### {safe_get_attribute(preview_entity, 'name', 'Unknown Entity')}")
+    preview_conf = safe_get_attribute(preview_entity, "confidence", None)
+    if preview_conf is not None:
+        preview_reason = safe_get_attribute(preview_entity, "confidence_reason", "") or ""
+        st.progress(
+            float(preview_conf),
+            text=f"Match confidence: {float(preview_conf) * 100:.0f}%"
+            + (f" — {preview_reason}" if preview_reason else ""),
+        )
     st.markdown(safe_get_attribute(preview_entity, "snippet", "No description available."))
 
     sources = safe_get_attribute(preview_entity, "sources", []) or []

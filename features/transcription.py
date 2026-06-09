@@ -63,6 +63,15 @@ except Exception:
     traitlets = None  # type: ignore
     ANYWIDGET_AVAILABLE = False
 
+try:
+    # python-docx is in requirements.txt; import-safe so the module still loads
+    # (and the Markdown download still works) if the dep is somehow absent.
+    from docx import Document  # type: ignore
+    DOCX_AVAILABLE = True
+except Exception:
+    Document = None  # type: ignore
+    DOCX_AVAILABLE = False
+
 # --- shared feature API (the ONLY secret/LLM entrypoint) -------------------
 from features import common
 from features.common import (
@@ -101,6 +110,32 @@ _MAX_SUMMARY_INPUT_CHARS: int = 60_000
 
 # Bounded history of generated summaries (FIFO via common.push_history's cap).
 _SUMMARY_HISTORY_KEY = _KEY + "summary_history"
+
+# Session-state key for the (user-editable) summary template / instructions.
+_SUMMARY_TEMPLATE_KEY = _KEY + "summary_template"
+
+# Bounded read on the template text fed into the prompt: a free-text box should
+# not be allowed to balloon the prompt budget (chars, coarse but safe).
+_MAX_TEMPLATE_CHARS: int = 8_000
+
+# Default banking / diligence summary template. The user can edit this in the
+# UI; the (possibly edited) text is injected into the Gemini summary prompt so
+# the summary follows it. Ported in spirit from associate_assistant_vhs's
+# free-text "summary template" system prompt, specialized for diligence calls.
+_DEFAULT_SUMMARY_TEMPLATE = (
+    "Summarize this diligence / banking call into the following sections, "
+    "using Markdown headings. Only include facts stated in the transcript; "
+    "write 'Not discussed' for any section the call did not cover.\n\n"
+    "- Roles on the call (who is present and their title/company)\n"
+    "- Company overview (what the company does)\n"
+    "- Revenue (figures, growth, recurring vs one-time)\n"
+    "- Capital raised (amounts, rounds, dates)\n"
+    "- Investors (named funds / individuals)\n"
+    "- Current bank (banking relationships mentioned)\n"
+    "- NAICS code (best-fit industry classification, with reasoning)\n"
+    "- Key risks (concerns, red flags, open questions)\n"
+    "- Action items (concrete next steps; attribute owners when clear)"
+)
 
 
 # ===========================================================================
@@ -839,30 +874,41 @@ def _transcript_to_plaintext(transcript: Dict[str, Any]) -> str:
     return joined
 
 
-def _build_summary_prompt(transcript_text: str) -> str:
-    """Prompt asking for a concise summary + key points + action items."""
+def _build_summary_prompt(transcript_text: str, template: Optional[str] = None) -> str:
+    """Prompt asking the model to summarize the transcript per a template.
+
+    ``template`` is the (possibly user-edited) summary template / instructions.
+    When blank it falls back to the default banking/diligence template so the
+    behavior is well-defined either way. The template is bounded before use so
+    a huge free-text box can't blow the prompt budget.
+    """
+    template_text = (template or "").strip() or _DEFAULT_SUMMARY_TEMPLATE
+    if len(template_text) > _MAX_TEMPLATE_CHARS:
+        template_text = template_text[:_MAX_TEMPLATE_CHARS]
     return (
-        "You are an expert meeting/audio analyst. Read the transcript below and "
-        "produce a clear, well-structured Markdown brief with EXACTLY these three "
-        "sections and headings:\n\n"
-        "## Summary\n"
-        "A concise 3-5 sentence overview of what the audio is about.\n\n"
-        "## Key Points\n"
-        "A bulleted list of the most important points, decisions, and facts.\n\n"
-        "## Action Items\n"
-        "A bulleted list of concrete next steps / tasks / follow-ups. Attribute "
-        "to a speaker when the transcript makes the owner clear. If there are no "
-        "action items, write '- None identified.'\n\n"
+        "You are an expert diligence / meeting analyst. Read the transcript "
+        "below and produce a clear, well-structured Markdown brief that follows "
+        "the TEMPLATE / INSTRUCTIONS exactly — use the requested sections and "
+        "headings, in order.\n\n"
         "Be faithful to the transcript only — do not invent details. If the "
         "transcript is too short or empty to summarize, say so plainly.\n\n"
+        "=== TEMPLATE / INSTRUCTIONS START ===\n"
+        f"{template_text}\n"
+        "=== TEMPLATE / INSTRUCTIONS END ===\n\n"
         "=== TRANSCRIPT START ===\n"
         f"{transcript_text}\n"
         "=== TRANSCRIPT END ==="
     )
 
 
-def summarize_transcript(transcript: Dict[str, Any]) -> str:
+def summarize_transcript(
+    transcript: Dict[str, Any],
+    template: Optional[str] = None,
+) -> str:
     """Produce a Markdown summary of a transcript via Gemini.
+
+    ``template`` is the (possibly user-edited) summary template / instructions
+    injected into the prompt so the summary follows it.
 
     Returns "" on failure / no usable text (honest — caller treats "" as
     failure and surfaces an error, never a fake summary).
@@ -870,7 +916,7 @@ def summarize_transcript(transcript: Dict[str, Any]) -> str:
     transcript_text = _transcript_to_plaintext(transcript)
     if not transcript_text:
         return ""
-    prompt = _build_summary_prompt(transcript_text)
+    prompt = _build_summary_prompt(transcript_text, template)
     try:
         return run_async(
             gemini_generate_text(prompt, agent_name="transcription_summarizer")
@@ -878,6 +924,45 @@ def summarize_transcript(transcript: Dict[str, Any]) -> str:
     except Exception as e:  # run_async / event-loop edge cases -> honest empty
         logger.error("summarize_transcript failed: %s", e)
         return ""
+
+
+def _summary_to_docx_bytes(summary: str, title: str = "Transcript Summary") -> Optional[bytes]:
+    """Build a .docx (as bytes) from a Markdown summary via python-docx.
+
+    Splits the summary into headings (Markdown ``#``/``##``/``###`` lines) and
+    bullets (``-``/``*`` lines), rendering everything else as plain paragraphs.
+    Returns ``None`` when python-docx is unavailable so the caller can degrade
+    to the Markdown download (HONEST STATUS — no fabricated file).
+    """
+    if not DOCX_AVAILABLE or Document is None:
+        return None
+    try:
+        doc = Document()
+        doc.add_heading(title, level=0)
+        for raw_line in (summary or "").splitlines():
+            line = raw_line.rstrip()
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("#"):
+                # Count leading '#'s to derive a heading level (1..4).
+                hashes = len(stripped) - len(stripped.lstrip("#"))
+                heading_text = stripped[hashes:].strip()
+                level = min(max(hashes, 1), 4)
+                if heading_text:
+                    doc.add_heading(heading_text, level=level)
+            elif stripped.startswith(("- ", "* ")):
+                doc.add_paragraph(stripped[2:].strip(), style="List Bullet")
+            elif stripped in ("-", "*"):
+                continue  # lone bullet marker, nothing to add
+            else:
+                doc.add_paragraph(stripped)
+        buf = BytesIO()
+        doc.save(buf)
+        return buf.getvalue()
+    except Exception as e:  # never crash the tab on an export edge case
+        logger.error("_summary_to_docx_bytes failed: %s", e)
+        return None
 
 
 # ===========================================================================
@@ -893,6 +978,7 @@ def _init_state() -> None:
         _KEY + "transcript_raw": None,        # raw ElevenLabs response
         _KEY + "processing_complete": False,
         _KEY + "summary": None,               # last generated summary (Markdown)
+        _SUMMARY_TEMPLATE_KEY: _DEFAULT_SUMMARY_TEMPLATE,  # editable, persists
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -1217,13 +1303,25 @@ def _render_summary_section() -> None:
             )
         return
 
+    # Editable summary template / instructions. Bound to a tr_-prefixed key so
+    # the user's edits persist across reruns. Seeded with the banking/diligence
+    # default in _init_state; the (possibly edited) text is injected into the
+    # Gemini prompt so the generated summary follows it.
+    template_text = st.text_area(
+        "Summary template / instructions",
+        key=_SUMMARY_TEMPLATE_KEY,
+        height=260,
+        help="Edit how the summary should be structured. The model is asked to "
+             "follow these sections/instructions. Edits persist across reruns.",
+    )
+
     if st.button(
         "Summarize Transcript",
         key=_KEY + "btn_summarize",
         type="primary",
     ):
         with st.spinner("Summarizing transcript with Gemini..."):
-            summary = summarize_transcript(transcript)
+            summary = summarize_transcript(transcript, template=template_text)
         if summary:
             st.session_state[_KEY + "summary"] = summary
             # BOUNDED history (FIFO-capped in common.push_history).
@@ -1247,13 +1345,36 @@ def _render_summary_section() -> None:
     if summary:
         # Escape $ so dollar amounts don't render as LaTeX math in Streamlit.
         st.markdown(summary.replace("$", "\\$"))
-        st.download_button(
-            label="Download Summary (Markdown)",
-            data=summary,
-            file_name="transcript_summary.md",
-            mime="text/markdown",
-            key=_KEY + "dl_summary",
-        )
+        dl_col1, dl_col2 = st.columns(2)
+        with dl_col1:
+            st.download_button(
+                label="Download Summary (Markdown)",
+                data=summary,
+                file_name="transcript_summary.md",
+                mime="text/markdown",
+                key=_KEY + "dl_summary",
+            )
+        with dl_col2:
+            # DOCX export via python-docx. HONEST STATUS: only offer the button
+            # when the dep is present AND the doc actually built; otherwise tell
+            # the user why rather than handing back a broken/empty file.
+            docx_bytes = _summary_to_docx_bytes(summary)
+            if docx_bytes is not None:
+                st.download_button(
+                    label="Download Summary (DOCX)",
+                    data=docx_bytes,
+                    file_name="transcript_summary.docx",
+                    mime=(
+                        "application/vnd.openxmlformats-officedocument"
+                        ".wordprocessingml.document"
+                    ),
+                    key=_KEY + "dl_summary_docx",
+                )
+            else:
+                st.caption(
+                    "DOCX export unavailable (`python-docx` not installed); "
+                    "use the Markdown download instead."
+                )
 
     # Show recent summaries (bounded history) for quick reference.
     history = get_history(_SUMMARY_HISTORY_KEY)

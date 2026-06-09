@@ -34,9 +34,17 @@ helpers + ``common.scrape_urls`` for network access. So the pipeline is:
     reputable news sites commonly block bots / paywall / 404 stale URLs.
 
   YouTube Daily Reports:
-    YouTube URL (page text scraped) OR pasted transcript
-          -> Gemini structured video report (metadata, summary, key insights
-             with timestamps, key topics, "make it useful")
+    YouTube URL -> native Gemini MULTIMODAL video analysis (the URL is passed
+          directly to Gemini as ``types.Part.from_uri(file_uri=url,
+          mime_type="video/*")`` so the model watches the actual video and
+          tags key moments with ``[MM:SS]`` timestamps) -> structured video
+          report (metadata, summary, key insights w/ timestamps, key_moments,
+          key topics, "make it useful").
+      Fallbacks (HONEST STATUS, in order): if the multimodal call errors
+          (unsupported video / region / SDK too old) we fall back to scraping
+          the video page text, then to a pasted transcript, and summarize that
+          instead — noting the degraded path in ``material_source``/``errors``.
+    Paste-transcript mode -> same structured report from the pasted text.
           -> editable summary fields + JSON download.
 
 Honest status / safety
@@ -55,6 +63,7 @@ Honest status / safety
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -92,6 +101,12 @@ _K_YT_MODE = "ny_yt_mode"                    # "url" | "transcript"
 _K_YT_RESULT = "ny_yt_result"                # dict current video report
 _K_YT_HISTORY = "ny_yt_history"              # bounded via push_history
 _K_YT_EDIT_MODE = "ny_yt_edit_mode"
+
+# Native Gemini multimodal video analysis (URL passed directly to the model).
+_AGENT_YT_MULTIMODAL = "youtube_multimodal"
+_MAX_KEY_MOMENTS = 50        # BOUND: cap key_moments so a runaway model reply can't bloat state
+# [MM:SS] / [HH:MM:SS] timestamp matcher used to salvage key moments from prose.
+_TS_RE = re.compile(r"\[?\b(\d{1,2}:\d{2}(?::\d{2})?)\b\]?")
 
 _REQUIRED_KEYS = ["GEMINI_API_KEY"]
 
@@ -686,6 +701,163 @@ def _youtube_thumbnail(url: str) -> str:
     return ""
 
 
+# Shared JSON shape (text + multimodal paths emit the SAME report dict so the
+# renderer's contract is unchanged; multimodal additionally fills key_moments).
+_VIDEO_REPORT_SHAPE = (
+    "{\n"
+    '  "title": "...",\n'
+    '  "channel": "...",\n'
+    '  "date": "...",\n'
+    '  "summary": "5-8 sentence summary",\n'
+    '  "key_insights": [ {"insight": "...", "timestamp": "MM:SS", '
+    '"significance": "..."} ],\n'
+    '  "key_moments": [ {"timestamp": "MM:SS", "note": "what happens at this '
+    'point"} ],\n'
+    '  "key_topics": [ {"name": "...", "description": "..."} ],\n'
+    '  "tags": ["...", "..."],\n'
+    '  "make_it_useful": {\n'
+    '     "target_audience": "...",\n'
+    '     "actionable_takeaways": ["...", "..."]\n'
+    "  }\n"
+    "}"
+)
+
+
+def _parse_key_moments(raw: Any) -> List[Dict[str, str]]:
+    """Normalize ``key_moments`` to a bounded list of ``{timestamp, note}``.
+
+    Accepts the structured list shape from the model; if the model returned a
+    string blob instead, salvage ``[MM:SS] note`` lines so we still surface
+    timestamps. Honest: returns ``[]`` when nothing usable is present.
+    """
+    moments: List[Dict[str, str]] = []
+    if isinstance(raw, list):
+        for m in raw:
+            if not isinstance(m, dict):
+                continue
+            ts = _coerce_str(m.get("timestamp") or m.get("time") or m.get("ts")).strip()
+            note = _coerce_str(
+                m.get("note") or m.get("description") or m.get("insight")
+            ).strip()
+            ts = ts.strip("[]")
+            if ts or note:
+                moments.append({"timestamp": ts, "note": note})
+            if len(moments) >= _MAX_KEY_MOMENTS:
+                break
+    elif isinstance(raw, str) and raw.strip():
+        for line in raw.splitlines():
+            mt = _TS_RE.search(line)
+            if not mt:
+                continue
+            ts = mt.group(1)
+            note = _TS_RE.sub("", line, count=1).strip(" -–—:\t")
+            moments.append({"timestamp": ts, "note": note})
+            if len(moments) >= _MAX_KEY_MOMENTS:
+                break
+    return moments
+
+
+async def _summarize_video_multimodal(url: str) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Native Gemini MULTIMODAL analysis of a YouTube URL.
+
+    Passes the URL straight to Gemini as ``types.Part.from_uri(file_uri=url,
+    mime_type="video/*")`` (the FinFlow ``test_search4.analyze_youtube_url``
+    pattern) so the model watches the actual video and tags ``[MM:SS]`` moments.
+
+    Returns ``(report_dict, None)`` on success, or ``(None, reason)`` on any
+    failure so the caller can fall back to the scrape/transcript path and report
+    the reason HONESTLY (never a fabricated report). Reuses the cached client
+    (``common.get_gemini_client``) and the shared genai types — no duplicated
+    client/auth logic.
+    """
+    client = common.get_gemini_client()
+    types = common.genai_types
+    if client is None or types is None:
+        return None, "Gemini multimodal unavailable (no client or SDK)."
+
+    prompt = (
+        "You are a financial-research video analyst. WATCH the provided YouTube "
+        "video and produce a structured daily-report style summary. Tag every "
+        "key insight and key moment with a [MM:SS] timestamp anchored to where it "
+        "occurs in the video. Do not fabricate metadata you cannot infer; leave "
+        "unknown fields blank.\n\n"
+        "Respond ONLY as JSON with this shape:\n"
+        f"{_VIDEO_REPORT_SHAPE}\n\n"
+        f"Video URL: {url}"
+    )
+
+    try:
+        contents = [
+            types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_uri(file_uri=url, mime_type="video/*"),
+                    types.Part.from_text(text=prompt),
+                ],
+            )
+        ]
+        # TIMEOUT: bound the multimodal call (video analysis is slower than text)
+        # using the same budget knob the shared text helpers use.
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model=common.GEMINI_MODEL,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                ),
+            ),
+            timeout=common._LLM_TIMEOUT_S,
+        )
+    except asyncio.TimeoutError:
+        return None, f"multimodal video analysis timed out after {common._LLM_TIMEOUT_S}s"
+    except Exception as e:  # noqa: BLE001 - degrade to fallback, never crash the tab
+        # Surface auth failures through the shared health banner, like the text helpers.
+        try:
+            common._record_llm_error(_AGENT_YT_MULTIMODAL, e)
+        except Exception:
+            pass
+        logger.info("multimodal YouTube analysis failed (%s); will fall back.", e)
+        return None, f"multimodal video analysis failed: {e}"
+
+    # Token accounting via the shared bounded ledger (honest cost tracking).
+    try:
+        um = getattr(response, "usage_metadata", None)
+        if um is not None:
+            common.record_tokens(
+                _AGENT_YT_MULTIMODAL,
+                common.GEMINI_MODEL,
+                int(getattr(um, "prompt_token_count", 0) or 0),
+                int(getattr(um, "candidates_token_count", 0) or 0),
+            )
+    except Exception:
+        pass
+
+    text = common._extract_text_from_response(response)
+    if not text:
+        return None, "multimodal response was empty"
+
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            # No JSON object: salvage a key-moments-only report from the prose so
+            # the multimodal timestamps aren't lost. Honest about the degraded shape.
+            km = _parse_key_moments(text)
+            if km:
+                return {"summary": _truncate(text, _MAX_SCRAPED_CHARS),
+                        "key_moments": km}, None
+            return None, "multimodal response was not parseable JSON"
+        try:
+            parsed = json.loads(match.group(0))
+        except Exception:
+            return None, "multimodal response JSON parse failed"
+
+    if not isinstance(parsed, dict):
+        return None, "multimodal response JSON was not an object"
+    return parsed, None
+
+
 async def _summarize_video(source_text: str, url: str) -> Dict[str, Any]:
     """Structured video report from scraped page text or pasted transcript."""
     prompt = (
@@ -743,13 +915,28 @@ async def _run_youtube_pipeline(mode: str, raw_input: str) -> Dict[str, Any]:
         if not url.startswith(("http://", "https://")):
             out["errors"].append("Please provide a full http(s) YouTube URL.")
             return out
-        # Scrape the page text (SSRF-guarded, bounded) via common.scrape_urls.
+
+        # 1) PRIMARY: native Gemini MULTIMODAL analysis — pass the URL straight to
+        #    the model so it watches the video and tags [MM:SS] key moments.
+        mm_report, mm_err = await _summarize_video_multimodal(url)
+        if mm_report:
+            mm_report["key_moments"] = _parse_key_moments(mm_report.get("key_moments"))
+            out["report"] = mm_report
+            out["material_source"] = "Gemini multimodal video analysis"
+            return out
+
+        # 2) FALLBACK: multimodal unsupported/region/error -> scrape page text.
+        if mm_err:
+            out["errors"].append(
+                f"Multimodal video analysis unavailable ({mm_err}); "
+                "fell back to scraping the video page text."
+            )
         scraped = await common.scrape_urls([url], max_concurrent=1)
         payload = scraped.get(url) or {}
         content = payload.get("content")
         if content:
             source_text = content
-            out["material_source"] = "scraped video page"
+            out["material_source"] = "scraped video page (multimodal fallback)"
         else:
             err = payload.get("error") or "no content extracted"
             out["errors"].append(
@@ -758,8 +945,13 @@ async def _run_youtube_pipeline(mode: str, raw_input: str) -> Dict[str, Any]:
             )
             return out
 
+    # 3) Summarize the scraped text or pasted transcript (text-only path).
     report = await _summarize_video(source_text, url)
-    if not report:
+    if report:
+        # Normalize any key_moments the text path happened to emit so the
+        # renderer sees the same {timestamp, note} shape as the multimodal path.
+        report["key_moments"] = _parse_key_moments(report.get("key_moments"))
+    else:
         out["errors"].append(
             "Gemini produced no report (key missing or empty response)."
         )
@@ -915,6 +1107,22 @@ def _render_youtube_result(result: Dict[str, Any]) -> None:
                     st.caption(sig)
             else:
                 st.markdown(f"{i}. {_coerce_str(ins)}")
+
+    # Key moments (multimodal [MM:SS] timeline). Optional render-contract add:
+    # absent for transcript/text reports, present for the multimodal path.
+    moments = _safe_list(report.get("key_moments"))
+    if moments:
+        st.subheader("Key Moments")
+        if url:
+            st.caption("Timestamps map to positions in the analyzed video.")
+        for m in moments:
+            if isinstance(m, dict):
+                ts = _coerce_str(m.get("timestamp")).strip()
+                note = _coerce_str(m.get("note"))
+                label = f"**[{ts}]** " if ts else ""
+                st.markdown(f"- {label}{_md_safe(note)}")
+            else:
+                st.markdown(f"- {_md_safe(m)}")
 
     # Key topics.
     topics = _safe_list(report.get("key_topics"))
