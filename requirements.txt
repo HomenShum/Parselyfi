@@ -29,6 +29,7 @@ graphiti-core[google-genai]
 networkx
 neo4j
 matplotlib
+plotly
 pyvis
 pymupdf
 python-docx

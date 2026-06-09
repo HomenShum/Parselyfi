@@ -1427,12 +1427,13 @@ def main():
         sidebar_content_fragment_SystemDialog_component()
         
     st.header("Feature Selection")
-    (li_tab, graph_tab, cards_tab, docbrain_tab, company_tab,
+    (li_tab, graph_tab, cards_tab, docbrain_tab, fin_tab, company_tab,
      news_tab, tr_tab, dash_tab, files_tab) = st.tabs([
         "📋 List Intelligence",
         "🕸️ Relationship Graph",
         "🖼️ Card → Rows",
         "📚 Document Brain",
+        "💵 EBITDA Bridge",
         "🔍 Company Search & Analysis",
         "📰 News & YouTube",
         "🎙️ Transcription & Summaries",
@@ -1473,6 +1474,15 @@ def main():
             render_rag_tab()
         except Exception as e:
             st.error("⚠️ Document Brain could not be loaded.")
+            with st.expander("Error details"):
+                st.exception(e)
+
+    with fin_tab:
+        try:
+            from features.financials import render_financials_tab
+            render_financials_tab()
+        except Exception as e:
+            st.error("⚠️ EBITDA Bridge could not be loaded.")
             with st.expander("Error details"):
                 st.exception(e)
 

@@ -50,11 +50,12 @@ else:
         "bypassing the Google-login gate for QA only."
     )
 
-li_tab, graph_tab, cards_tab, docbrain_tab, tab3, tab4, tab5 = st.tabs([
+li_tab, graph_tab, cards_tab, docbrain_tab, fin_tab, tab3, tab4, tab5 = st.tabs([
     "📋 List Intelligence",
     "🕸️ Relationship Graph",
     "🖼️ Card → Rows",
     "📚 Document Brain",
+    "💵 EBITDA Bridge",
     "🔍 Company Search & Analysis",
     "📰 News & YouTube",
     "🎙️ Transcription & Summaries",
@@ -84,6 +85,15 @@ with cards_tab:
         render_multimodal_extract_tab()
     except Exception as e:  # noqa: BLE001
         st.error("⚠️ Card → Rows could not be loaded.")
+        with st.expander("Error details"):
+            st.exception(e)
+
+with fin_tab:
+    try:
+        from features.financials import render_financials_tab
+        render_financials_tab()
+    except Exception as e:  # noqa: BLE001
+        st.error("⚠️ EBITDA Bridge could not be loaded.")
         with st.expander("Error details"):
             st.exception(e)
 
