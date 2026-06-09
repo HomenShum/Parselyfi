@@ -1245,7 +1245,8 @@ def _render_summary_section() -> None:
 
     summary = st.session_state.get(_KEY + "summary")
     if summary:
-        st.markdown(summary)
+        # Escape $ so dollar amounts don't render as LaTeX math in Streamlit.
+        st.markdown(summary.replace("$", "\\$"))
         st.download_button(
             label="Download Summary (Markdown)",
             data=summary,
@@ -1260,7 +1261,7 @@ def _render_summary_section() -> None:
         with st.expander(f"Recent summaries ({len(history)})"):
             for i, item in enumerate(reversed(history[-10:]), start=1):
                 st.markdown(f"**{i}. {item.get('name', 'transcript')}**")
-                st.markdown(item.get("summary", ""))
+                st.markdown(item.get("summary", "").replace("$", "\\$"))
                 if i < min(10, len(history)):
                     st.divider()
 

@@ -108,6 +108,12 @@ def _truncate(text: str, limit: int) -> str:
     return text[:limit] + " [truncated]"
 
 
+def _md_safe(text) -> str:
+    """Escape ``$`` so Streamlit markdown doesn't render dollar amounts as LaTeX
+    (e.g. "$46.7B ... $0.25" would otherwise become italic math)."""
+    return _coerce_str(text).replace("$", "\\$")
+
+
 def _safe_list(value: Any) -> List[Any]:
     if isinstance(value, list):
         return value
@@ -511,12 +517,12 @@ def _render_news_results(result: Dict[str, Any]) -> None:
     if isinstance(overview, dict) and overview:
         st.markdown("#### 📋 Briefing")
         if overview.get("summary"):
-            st.write(overview["summary"])
+            st.markdown(_md_safe(overview["summary"]))
         kps = _safe_list(overview.get("key_points"))
         if kps:
             st.markdown("**Key points:**")
             for kp in kps[:8]:
-                st.markdown(f"- {_coerce_str(kp)}")
+                st.markdown(f"- {_md_safe(kp)}")
         meta_bits = []
         tags = _safe_list(overview.get("tags"))
         if tags:

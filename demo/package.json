@@ -1,0 +1,24 @@
+{
+  "name": "parselyfi-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Feature-by-feature product demo video for ParselyFi (Playwright capture + Remotion production).",
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "render": "remotion render src/index.js Demo out/parselyfi-demo.mp4 --concurrency=2",
+    "studio": "remotion studio src/index.js"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.474",
+    "@remotion/cli": "^4.0.474",
+    "@remotion/renderer": "^4.0.474",
+    "@remotion/transitions": "^4.0.474",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.474"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}
