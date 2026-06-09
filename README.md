@@ -32,7 +32,7 @@ ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and pub
 
 ## ✨ Features
 
-A source-backed research workspace — led by the **List Intelligence** pipeline and an **interactive relationship graph**, plus **image→rows extraction** and a **document-brain** (grounded RAG over your own files), alongside company deep-dives, news/video briefings, transcription, a file manager, and a public data dashboard.
+A source-backed research workspace — led by the **List Intelligence** pipeline and an **interactive relationship graph**, plus **image→rows extraction**, a **document-brain** (grounded RAG over your own files), and a deterministic **Adjusted-EBITDA bridge**, alongside company deep-dives, news/video briefings, transcription, a file manager, and a public data dashboard.
 
 ### 📋 List Intelligence — the company-list pipeline
 
@@ -49,6 +49,10 @@ Drop **images** — pitch-deck slides, cap tables, CRM/contact cards, screenshot
 ### 📚 Document Brain
 
 Upload your own files (**PDF / DOCX / TXT / MD / CSV / XLSX**) and ask questions. **Hybrid retrieval** (dense embeddings in an in-memory vector store + lexical TF-IDF, fused with Reciprocal Rank Fusion) grounds every answer in your documents with inline **`(filename#chunkN)` citations** — and says *"I could not find this in your documents"* rather than guessing. Spreadsheets become **queryable tables**. Degrades honestly to lexical-only search when the embedding stack isn't present.
+
+### 💵 EBITDA Bridge
+
+Paste an income statement (or enter figures by hand) and get an **auditable Adjusted-EBITDA reconciliation**: NI → EBIT → EBITDA → Adjusted EBITDA. The defining rule — **the LLM only proposes line items and add-backs; a pure Python function does every calculation** (in `Decimal`), so no total is ever hallucinated. Editable figures + adjustments recompute live; rendered as a KPI row, a step ladder, a **waterfall**, and an **auditable DAG** of the computation. Works with **no API key** — the math is pure Python.
 
 ### 🔍 Company Search & Analysis
 
@@ -83,7 +87,7 @@ Upload audio → **ElevenLabs** speech-to-text → a synced AnyWidget player tha
 ## 🏗️ Architecture
 
 ```
-streamlit_app.py            # entry point (sidebar + 9 tabs + auth)
+streamlit_app.py            # entry point (sidebar + 10 tabs + auth)
 features/
   common.py                 # shared core: secret guard, lazy Gemini/LinkUp clients,
                             #   async runner, bounded token ledger, hardened web scraper
@@ -92,6 +96,7 @@ features/
   relationship_graph.py     # render_relationship_graph_tab() — pyvis corporate-lineage graph
   multimodal_extract.py     # render_multimodal_extract_tab() — image → company rows → List Intel
   rag.py                    # render_rag_tab()                — Document Brain (hybrid RAG + table Q&A)
+  financials.py             # render_financials_tab()         — Adjusted-EBITDA bridge (Python-computed)
   company_research.py       # render_company_research_tab()  — 3-pass LinkUp + Gemini
   news_youtube.py           # render_news_youtube_tab()      — LinkUp-backed news + video
   transcription.py          # render_transcription_tab()     — ElevenLabs STT + Gemini summary
@@ -109,7 +114,7 @@ legacy/                     # archived prototypes & versioned experiments (see l
 - **Timeouts + bounded reads** on every LLM / network / scrape call.
 - **Honest status** — failed calls return empty results and surface an actionable banner (e.g. "rotate your Gemini key"), never fabricated data.
 
-**Stack:** Streamlit 1.58 · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash, incl. multimodal image input) · `linkup-sdk` · `pyvis`/`networkx` (relationship graph) · `PyMuPDF`/`python-docx` (ingest) · `fastembed`/`Qdrant` + `scikit-learn` (hybrid RAG) · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
+**Stack:** Streamlit 1.58 · Supabase (Postgres + S3 Storage) · `google-genai` (Gemini 3.5 Flash, incl. multimodal image input) · `linkup-sdk` · `pyvis`/`networkx` (relationship graph) · `PyMuPDF`/`python-docx` (ingest) · `fastembed`/`Qdrant` + `scikit-learn` (hybrid RAG) · `plotly`/`pyvis` (EBITDA waterfall + DAG) · `trafilatura`/BeautifulSoup (ethical scraping) · ElevenLabs + `streamlit-anywidget` · pandas.
 
 ---
 
