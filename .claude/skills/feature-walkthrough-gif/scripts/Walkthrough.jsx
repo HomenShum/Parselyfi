@@ -7,9 +7,18 @@ export const WT_H = 1080;
 
 const FONT = '"Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif';
 const IMG_W = 1360;
-const CAP_VW = 1280;                 // capture viewport CSS width
-const IMG_H = Math.round(IMG_W * 800 / CAP_VW);   // preserve 1280x800 aspect
-const SX = IMG_W / 1280, SY = IMG_H / 800;        // cursor coord -> displayed-image px
+const CAP_VW = 1280;                               // capture viewport CSS width
+const IMG_H = Math.round(IMG_W * 800 / CAP_VW);    // preserve 1280x800 aspect
+const SX = IMG_W / 1280, SY = IMG_H / 800;         // cursor coord -> displayed-image px
+
+// Per-step "camera": zoom toward the click on action steps; pull back, gently
+// zoomed + centered, on the result/loading states (the result is scrolled to
+// the viewport centre at capture time). Pan/glide between steps (Arcade-style).
+const ACTION_SCALE = 1.36, RESULT_SCALE = 1.14, OPEN_SCALE = 1.04;
+const camTarget = (step) =>
+  step.cursor
+    ? { s: ACTION_SCALE, fx: step.cursor.x * SX, fy: step.cursor.y * SY }
+    : { s: RESULT_SCALE, fx: IMG_W / 2, fy: IMG_H / 2 };
 
 export const wtDuration = (wt) => wt.steps.reduce((a, s) => a + (s.hold || 60), 0);
 
@@ -19,20 +28,17 @@ const Background = () => (
   </AbsoluteFill>
 );
 
-// macOS-style arrow pointer.
 const Pointer = ({ x, y, opacity }) => (
-  <svg width="34" height="34" viewBox="0 0 24 24" style={{ position: "absolute", left: x, top: y, opacity, transform: "translate(-2px,-2px)", filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.5))", zIndex: 30 }}>
-    <path d="M5 3 L5 20 L9.5 15.5 L12.5 22 L15 21 L12 14.5 L18.5 14.5 Z" fill="#fff" stroke="#0b1220" strokeWidth="1.4" strokeLinejoin="round" />
+  <svg width="46" height="46" viewBox="0 0 24 24" style={{ position: "absolute", left: x, top: y, opacity, transform: "translate(-3px,-2px)", filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.55))", zIndex: 30 }}>
+    <path d="M5 3 L5 20 L9.5 15.5 L12.5 22 L15 21 L12 14.5 L18.5 14.5 Z" fill="#fff" stroke="#0b1220" strokeWidth="1.5" strokeLinejoin="round" />
   </svg>
 );
 
 const Ripple = ({ x, y, lf, accent }) => {
-  const t = interpolate(lf, [20, 46], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const size = interpolate(t, [0, 1], [6, 84]);
-  const op = interpolate(t, [0, 0.15, 1], [0, 0.85, 0]);
-  return (
-    <div style={{ position: "absolute", left: x - size / 2, top: y - size / 2, width: size, height: size, borderRadius: "50%", border: `3px solid ${accent}`, opacity: op, zIndex: 29 }} />
-  );
+  const t = interpolate(lf, [20, 48], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const size = interpolate(t, [0, 1], [8, 104]);
+  const op = interpolate(t, [0, 0.18, 1], [0, 0.9, 0]);
+  return <div style={{ position: "absolute", left: x - size / 2, top: y - size / 2, width: size, height: size, borderRadius: "50%", border: `4px solid ${accent}`, opacity: op, zIndex: 29 }} />;
 };
 
 const Chrome = ({ accent }) => (
@@ -56,30 +62,39 @@ export const Walkthrough = ({ wt }) => {
   const starts = [];
   let acc = 0;
   for (const s of steps) { starts.push(acc); acc += s.hold || 60; }
+  const total = acc;
   let i = steps.findIndex((s, k) => frame >= starts[k] && frame < starts[k] + (steps[k].hold || 60));
   if (i < 0) i = steps.length - 1;
   const lf = frame - starts[i];
   const cur = steps[i];
   const prev = steps[i - 1];
 
-  const sp = (p) => (p ? { x: p.x * SX, y: p.y * SY } : null);
-  const curPos = sp(cur.cursor);
-  const prevPos = sp(prev && prev.cursor);
+  // ---- Camera: ease from previous target to this step's target (pre-move delay
+  // then a gentle glide), so the eye registers context before the camera moves.
+  const tgt = camTarget(cur);
+  const prevTgt = i > 0 ? camTarget(prev) : { s: OPEN_SCALE, fx: IMG_W / 2, fy: IMG_H / 2 };
+  const ct = interpolate(lf, [6, 26], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
+  const s = prevTgt.s + (tgt.s - prevTgt.s) * ct;
+  const fx = prevTgt.fx + (tgt.fx - prevTgt.fx) * ct;
+  const fy = prevTgt.fy + (tgt.fy - prevTgt.fy) * ct;
+  let tx = IMG_W / 2 - fx * s, ty = IMG_H / 2 - fy * s;
+  tx = Math.min(0, Math.max(IMG_W - IMG_W * s, tx));   // keep the scaled image covering the frame
+  ty = Math.min(0, Math.max(IMG_H - IMG_H * s, ty));
 
-  // Cursor glide from the previous target to this step's target.
+  // ---- Pointer glide (in image-space; the camera scales it along with the UI).
   let cursor = null, cursorOp = 0;
-  if (curPos) {
-    const from = prevPos || curPos;
+  if (cur.cursor) {
+    const c = { x: cur.cursor.x * SX, y: cur.cursor.y * SY };
+    const from = prev && prev.cursor ? { x: prev.cursor.x * SX, y: prev.cursor.y * SY } : c;
     const t = interpolate(lf, [0, 18], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
-    cursor = { x: from.x + (curPos.x - from.x) * t, y: from.y + (curPos.y - from.y) * t };
-    cursorOp = interpolate(lf, [0, 8], [prevPos ? 1 : 0, 1], { extrapolateRight: "clamp" });
+    cursor = { x: from.x + (c.x - from.x) * t, y: from.y + (c.y - from.y) * t };
+    cursorOp = interpolate(lf, [0, 8], [prev && prev.cursor ? 1 : 0, 1], { extrapolateRight: "clamp" });
   }
 
-  // Image crossfade (prev under, current fading in).
   const fadeIn = interpolate(lf, [0, 11], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  // Caption slide-in.
-  const capY = interpolate(lf, [3, 20], [26, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const capOp = interpolate(lf, [3, 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const capY = interpolate(lf, [4, 22], [26, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const capOp = interpolate(lf, [4, 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const progress = (starts[i] + Math.min(lf, cur.hold || 60)) / total;
 
   const winLeft = (WT_W - IMG_W) / 2;
   const winTop = 70;
@@ -88,7 +103,6 @@ export const Walkthrough = ({ wt }) => {
     <AbsoluteFill style={{ background: "#0b1220" }}>
       <Background />
 
-      {/* Feature title header */}
       <div style={{ position: "absolute", top: 22, left: winLeft, display: "flex", alignItems: "center", gap: 16 }}>
         <span style={{ fontSize: 30 }}>🌱</span>
         <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 28, color: "#eaf2ff" }}>{wt.title}</div>
@@ -97,30 +111,30 @@ export const Walkthrough = ({ wt }) => {
         </div>
       </div>
 
-      {/* Browser window with the captured UI state + animated pointer */}
+      {/* Browser window — overflow clips the zoomed camera */}
       <div style={{ position: "absolute", left: winLeft, top: winTop, width: IMG_W, borderRadius: 14, overflow: "hidden", boxShadow: "0 36px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)", background: "#0d1526" }}>
         <Chrome accent={wt.accent} />
         <div style={{ position: "relative", width: IMG_W, height: IMG_H, overflow: "hidden", background: "#fff" }}>
-          {prev && <Img src={staticFile(prev.img)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W }} />}
-          <Img src={staticFile(cur.img)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W, opacity: fadeIn }} />
-          {cursor && <Ripple x={cursor.x} y={cursor.y} lf={cur.click ? lf : -999} accent={wt.accent} />}
-          {cursor && <Pointer x={cursor.x} y={cursor.y} opacity={cursorOp} />}
+          {/* Camera: zoom + pan toward the active region */}
+          <div style={{ position: "absolute", top: 0, left: 0, width: IMG_W, height: IMG_H, transformOrigin: "0 0", transform: `translate(${tx}px, ${ty}px) scale(${s})` }}>
+            {prev && <Img src={staticFile(prev.img)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W }} />}
+            <Img src={staticFile(cur.img)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W, opacity: fadeIn }} />
+            {cursor && <Ripple x={cursor.x} y={cursor.y} lf={cur.click ? lf : -999} accent={wt.accent} />}
+            {cursor && <Pointer x={cursor.x} y={cursor.y} opacity={cursorOp} />}
+          </div>
         </div>
       </div>
 
       {/* Caption lower-third */}
-      <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 34 }}>
-        <div style={{ transform: `translateY(${capY}px)`, opacity: capOp, display: "flex", alignItems: "center", gap: 18, background: "rgba(7,12,22,0.72)", border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 14, padding: "14px 26px", backdropFilter: "blur(4px)" }}>
+      <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 46 }}>
+        <div style={{ transform: `translateY(${capY}px)`, opacity: capOp, display: "flex", alignItems: "center", gap: 18, background: "rgba(7,12,22,0.78)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14, padding: "14px 28px", backdropFilter: "blur(4px)" }}>
           <div style={{ width: 5, height: 40, background: wt.accent, borderRadius: 8 }} />
           <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 34, color: "#eaf2ff" }}>{cur.caption}</div>
         </div>
-        {/* progress dots */}
-        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-          {steps.map((_, k) => (
-            <div key={k} style={{ width: k === i ? 30 : 10, height: 10, borderRadius: 99, background: k === i ? wt.accent : "rgba(255,255,255,0.22)", transition: "all .2s" }} />
-          ))}
-        </div>
       </AbsoluteFill>
+
+      {/* Progress bar (bottom) */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, height: 6, width: WT_W * progress, background: wt.accent }} />
     </AbsoluteFill>
   );
 };

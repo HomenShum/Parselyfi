@@ -65,6 +65,16 @@ const doAct = async (p, a) => {
   else if (a.act === "scrollY") { await p.evaluate((y) => window.scrollTo(0, y), a.y); await sleep(p, 300); }
   else if (a.act === "scrollText") { await p.evaluate((s) => { const rx = new RegExp(s); const el = [...document.querySelectorAll("*")].find((n) => rx.test(n.textContent || "") && n.children.length < 6); if (el) el.scrollIntoView({ block: "center" }); }, a.value); await sleep(p, 400); }
   else if (a.act === "scrollLastChat") { await p.evaluate(() => { const m = document.querySelectorAll('[data-testid="stChatMessage"]'); if (m.length) m[m.length - 1].scrollIntoView({ block: "center" }); }); await sleep(p, 500); }
+  else if (a.act === "scrollEl") {
+    // Center the RESULT WIDGET in the viewport (window.scrollTo doesn't move
+    // Streamlit's inner scroll container — scrollIntoView on the element does).
+    const map = { df: '[data-testid="stDataFrame"]', iframe: "iframe", metric: '[data-testid="stMetric"]' };
+    const css = map[a.sel] || a.sel;
+    const L = panel(p).locator(css);
+    const el = a.last ? L.last() : L.first();
+    await el.evaluate((n) => n.scrollIntoView({ block: "center", inline: "nearest" })).catch(() => {});
+    await sleep(p, 600);
+  }
 };
 
 const run = async () => {

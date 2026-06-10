@@ -44,9 +44,14 @@ embedded in the README. Made of N "steps", each a captured UI state with a capti
    frame at each `cap`, records the pointer target (element center, viewport px) and
    click flag, and writes `src/walkthrough.data.js` + frames under `public/wt/<id>/`.
 3. **Render** — Remotion `Walkthrough.jsx` overlays an animated cursor (glides between
-   targets), a click ripple, the step caption + progress dots over each frame.
+   targets) + click ripple + step caption + progress bar, AND runs an Arcade-style
+   **zoom/pan camera** (zoom ~1.36× to the click on action steps; pull back ~1.14×,
+   centered, on the result state — the result is scrolled to viewport centre at capture).
    `npx remotion render src/index.js WT-<id> out/WT-<id>.mp4`.
-4. **GIF** — `ffmpeg -i out/WT-<id>.mp4 -vf "fps=12,scale=760:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3" -loop 0 assets/feature-<name>.gif`.
+4. **GIF** — two-pass palette (the single highest-leverage quality lever):
+   `ffmpeg -i out/WT-<id>.mp4 -vf "fps=15,scale=720:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" -loop 0 assets/feature-<name>.gif`.
+   `stats_mode=diff` weights the palette to the moving region; `bayer` + `diff_mode=rectangle`
+   keep static panels byte-identical frame-to-frame (no "swarming", smaller file).
 
 ## Spec format (`walkthrough.specs.mjs`)
 A spec is `{ id, title, accent, tab, steps: [...] }`. Each step is ONE of:
@@ -101,6 +106,36 @@ Selector shorthand (resolved against the **active tab panel** — see lesson #1)
 2. Write `walkthrough.specs.mjs` for your features (adapt the example).
 3. Start the app's clean/demo harness, then: `node walkthrough.mjs` → render each
    `WT-<id>` → ffmpeg to `assets/feature-<name>.gif` → embed in the README.
+
+## Design principles (researched — apply these)
+Distilled from product-demo / screencast guidance (Arcade, Supademo, HowdyGo,
+CleanShot, Rekort, Mux, ubitux's *High-quality GIF with FFmpeg*, GIPHY, WCAG):
+- **Two-pass palette is mandatory.** `stats_mode=diff` + `lanczos` + `bayer` +
+  `diff_mode=rectangle` — the difference between a banded 256-color mess and a clean
+  demo, and it shrinks the file. *(blog.pkh.me; Mux)*
+- **Deliver 12–15 fps; author higher.** 15 fps is the screencast sweet spot; render the
+  composition at 30 fps so cursor/zoom interpolate smoothly, sample down for the GIF.
+  *(blog.pkh.me; Mux; Remotion `everyNthFrame`)*
+- **Zoom/pan to focus, eased, with a pre-move delay.** Click-triggered zoom ~1.3–1.6×
+  beats highlight-only for comprehension and makes small text legible; glide (pan)
+  between same-scale steps rather than cut; a 200–400 ms delay lets the eye register
+  context first. *(Arcade Pan & Zoom; Supademo; Camtasia "zoom to focus")*
+- **Cursor at ~1.5–2× OS size + click ripple + dwell-before-click.** A real 32px cursor
+  is invisible after downscaling; the ripple is the silent substitute for a click sound,
+  anchoring cause→effect. *(Rekort; CleanShot/Camtasia; Material ripple ~600 ms)*
+- **Show every state, including loading.** empty → click → *loading/skeleton* → result;
+  never cut an action straight to a finished result — the work must feel real.
+- **Pace from the caption; write outcome statements.** No narration paces the viewer, so
+  dwell ≈ `clamp(1.5 s, words/2.5, 7 s)`; ≤15–18 words; "Filter to overdue invoices", not
+  "Click Filter". *(Supademo hotspots; Arcade; captioning standards)*
+- **3–10 s, scope to ONE feature, ~6–12 steps, seamless loop.** End on a ~1–1.5 s hold (or
+  make the last frame match the first) so the restart reads as a clean replay. *(HowdyGo;
+  GIPHY ≤6 s; Arcade 9–12 steps)*
+- **Crop/downscale to ~640–800 px wide** — the single biggest size lever, and it sharpens focus.
+- **Ship MP4 + GIF.** MP4 is 60–90% smaller; GitHub auto-embeds a bare user-attachments
+  MP4 URL. Use MP4 for the hero/long walkthroughs, GIF for per-feature loops + chat/email.
+- **Accessibility:** no flashing ≥3×/s; keep loops short or pair with a pausable `<video>`;
+  ship a frame-0 PNG poster for `prefers-reduced-motion`; write content-specific alt text.
 
 ## Gotchas
 - Remotion composition ids **cannot contain `_`** (a-z A-Z 0-9 and `-` only) → use `WT-<id>`.

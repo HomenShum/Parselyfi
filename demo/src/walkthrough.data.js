@@ -37,7 +37,7 @@ export const WALKTHROUGHS = [
         "caption": "Every company scored — evidence-backed",
         "cursor": null,
         "click": false,
-        "hold": 100
+        "hold": 104
       }
     ]
   },
@@ -78,7 +78,7 @@ export const WALKTHROUGHS = [
         "caption": "Interactive corporate lineage",
         "cursor": null,
         "click": false,
-        "hold": 104
+        "hold": 110
       }
     ]
   },
@@ -102,7 +102,7 @@ export const WALKTHROUGHS = [
         "caption": "Extract the companies",
         "cursor": {
           "x": 640,
-          "y": 400
+          "y": 608
         },
         "click": true,
         "hold": 60
@@ -119,7 +119,7 @@ export const WALKTHROUGHS = [
         "caption": "Structured rows — ready for List Intelligence",
         "cursor": null,
         "click": false,
-        "hold": 100
+        "hold": 104
       }
     ]
   },
@@ -197,7 +197,7 @@ export const WALKTHROUGHS = [
         "caption": "Python computes EBIT → EBITDA → Adjusted EBITDA",
         "cursor": null,
         "click": false,
-        "hold": 108
+        "hold": 112
       }
     ]
   }

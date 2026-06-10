@@ -19,8 +19,8 @@ export const SPECS = [
       { act: "sleep", ms: 1600 },
       { cap: "MATCH → ENRICH → CLASSIFY → SCORE, live", hold: 70 },
       { act: "waitText", value: "Avg score|Results grid" }, { act: "notRunning" },
-      { act: "sleep", ms: 1600 }, { act: "scrollTop" },
-      { cap: "Every company scored — evidence-backed", hold: 100 },
+      { act: "sleep", ms: 1600 }, { act: "scrollEl", sel: "df", last: true },
+      { cap: "Every company scored — evidence-backed", hold: 104 },
     ],
   },
   {
@@ -33,8 +33,8 @@ export const SPECS = [
       { act: "sleep", ms: 1600 },
       { cap: "Extracting source-backed relationships…", hold: 64 },
       { act: "waitText", value: "Depth-1|Relationships|Entities" }, { act: "notRunning" },
-      { act: "sleep", ms: 2800 }, { act: "scrollY", y: 235 },
-      { cap: "Interactive corporate lineage", hold: 104 },
+      { act: "sleep", ms: 2800 }, { act: "scrollEl", sel: "iframe", last: true },
+      { cap: "Interactive corporate lineage", hold: 110 },
     ],
   },
   {
@@ -48,8 +48,8 @@ export const SPECS = [
       { act: "sleep", ms: 1200 },
       { cap: "Gemini reads the image (multimodal)…", hold: 56 },
       { act: "waitText", value: "Companies found" }, { act: "notRunning" },
-      { act: "sleep", ms: 1400 }, { act: "scrollText", value: "Companies found" },
-      { cap: "Structured rows — ready for List Intelligence", hold: 100 },
+      { act: "sleep", ms: 1400 }, { act: "scrollEl", sel: "df", last: true },
+      { cap: "Structured rows — ready for List Intelligence", hold: 104 },
     ],
   },
   {
@@ -77,8 +77,8 @@ export const SPECS = [
       { act: "fill", sel: "aria:Depreciation", value: "2500", commit: "Enter" },
       { act: "fill", sel: "aria:Amortization", value: "800", commit: "Enter" },
       { act: "fill", sel: "aria^:Revenue", value: "50000", commit: "Enter" },
-      { act: "sleep", ms: 900 }, { act: "scrollText", value: "3 · Bridge" },
-      { cap: "Python computes EBIT → EBITDA → Adjusted EBITDA", hold: 108 },
+      { act: "sleep", ms: 900 }, { act: "scrollEl", sel: "metric", last: false },
+      { cap: "Python computes EBIT → EBITDA → Adjusted EBITDA", hold: 112 },
     ],
   },
 ];
