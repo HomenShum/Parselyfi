@@ -58,8 +58,17 @@ A spec is `{ id, title, accent, tab, steps: [...] }`. Each step is ONE of:
 - **Capture**: `{ cap: "Caption text", cursor?: "<selector>", click?: true, hold?: 60 }`
   Captures a clean frame of the CURRENT state. `cursor` marks where the pointer
   glides to; `click:true` draws a ripple there; `hold` = frames to dwell (30 fps).
-- **Action**: `{ act: "fill"|"click"|"upload"|"sleep"|"waitText"|"notRunning"|"scrollTop"|"scrollY"|"scrollText"|"scrollLastChat", ... }`
-  Advances the UI so the NEXT `cap` shows the result.
+- **Burst capture** (show the loading/STREAMING motion): `{ cap: "Running…", burst: { ms: 2800, every: 300 }, hold: 64 }`
+  Rapidly screenshots the CURRENT state every `every` ms for `ms`; Remotion plays
+  the frames back as **real motion** — the spinner spinning, the status updating, and
+  results **streaming in** — instead of a frozen snapshot. Put it right after the click
+  that starts the work, and `scroll*` to the spinner/output first so it's in view. Its
+  impact scales with how much the app actually streams (token-by-token chat → dramatic;
+  atomic result + spinner → you still see it working). This is the answer to "I want to
+  see the loading/streaming, not just the final state."
+- **Action**: `{ act: "fill"|"click"|"upload"|"sleep"|"waitText"|"notRunning"|"scrollEl"|"scrollText"|"scrollLastChat"|"scrollTop"|"scrollY", ... }`
+  Advances the UI so the NEXT `cap` shows the result. `scrollEl` centers a result
+  widget — `{ act: "scrollEl", sel: "df"|"iframe"|"metric"|"<css>", last?: true }`.
 
 Order so the story reads: capture empty → fill → capture (cursor on the button,
 click:true) → click → sleep → capture the loading state → wait for result →

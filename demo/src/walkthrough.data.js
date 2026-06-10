@@ -26,11 +26,24 @@ export const WALKTHROUGHS = [
         "hold": 60
       },
       {
-        "img": "wt/ListIntel/02.png",
-        "caption": "MATCH → ENRICH → CLASSIFY → SCORE, live",
+        "imgs": [
+          "wt/ListIntel/02_00.png",
+          "wt/ListIntel/02_01.png",
+          "wt/ListIntel/02_02.png",
+          "wt/ListIntel/02_03.png",
+          "wt/ListIntel/02_04.png",
+          "wt/ListIntel/02_05.png",
+          "wt/ListIntel/02_06.png",
+          "wt/ListIntel/02_07.png",
+          "wt/ListIntel/02_08.png",
+          "wt/ListIntel/02_09.png",
+          "wt/ListIntel/02_10.png"
+        ],
+        "caption": "MATCH → ENRICH → CLASSIFY → SCORE — running live",
         "cursor": null,
         "click": false,
-        "hold": 70
+        "hold": 78,
+        "burst": true
       },
       {
         "img": "wt/ListIntel/03.png",
@@ -67,11 +80,23 @@ export const WALKTHROUGHS = [
         "hold": 60
       },
       {
-        "img": "wt/Graph/02.png",
-        "caption": "Extracting source-backed relationships…",
+        "imgs": [
+          "wt/Graph/02_00.png",
+          "wt/Graph/02_01.png",
+          "wt/Graph/02_02.png",
+          "wt/Graph/02_03.png",
+          "wt/Graph/02_04.png",
+          "wt/Graph/02_05.png",
+          "wt/Graph/02_06.png",
+          "wt/Graph/02_07.png",
+          "wt/Graph/02_08.png",
+          "wt/Graph/02_09.png"
+        ],
+        "caption": "Extracting source-backed relationships — live",
         "cursor": null,
         "click": false,
-        "hold": 64
+        "hold": 74,
+        "burst": true
       },
       {
         "img": "wt/Graph/03.png",
@@ -108,11 +133,22 @@ export const WALKTHROUGHS = [
         "hold": 60
       },
       {
-        "img": "wt/Cards/02.png",
-        "caption": "Gemini reads the image (multimodal)…",
+        "imgs": [
+          "wt/Cards/02_00.png",
+          "wt/Cards/02_01.png",
+          "wt/Cards/02_02.png",
+          "wt/Cards/02_03.png",
+          "wt/Cards/02_04.png",
+          "wt/Cards/02_05.png",
+          "wt/Cards/02_06.png",
+          "wt/Cards/02_07.png",
+          "wt/Cards/02_08.png"
+        ],
+        "caption": "Gemini reads the image — multimodal, live",
         "cursor": null,
         "click": false,
-        "hold": 56
+        "hold": 66,
+        "burst": true
       },
       {
         "img": "wt/Cards/03.png",
@@ -159,7 +195,25 @@ export const WALKTHROUGHS = [
         "hold": 60
       },
       {
-        "img": "wt/DocBrain/03.png",
+        "imgs": [
+          "wt/DocBrain/03_00.png",
+          "wt/DocBrain/03_01.png",
+          "wt/DocBrain/03_02.png",
+          "wt/DocBrain/03_03.png",
+          "wt/DocBrain/03_04.png",
+          "wt/DocBrain/03_05.png",
+          "wt/DocBrain/03_06.png",
+          "wt/DocBrain/03_07.png",
+          "wt/DocBrain/03_08.png"
+        ],
+        "caption": "Searching your documents — grounded retrieval",
+        "cursor": null,
+        "click": false,
+        "hold": 62,
+        "burst": true
+      },
+      {
+        "img": "wt/DocBrain/04.png",
         "caption": "Grounded answer — with (file#chunk) citations",
         "cursor": null,
         "click": false,

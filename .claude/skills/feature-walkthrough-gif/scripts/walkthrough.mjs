@@ -95,7 +95,23 @@ const run = async () => {
       await clickTab(page, spec.tab);
       let n = 0;
       for (const op of spec.steps) {
-        if (op.cap) {
+        if (op.cap && op.burst) {
+          // BURST: rapidly capture a SEQUENCE of the loading/streaming state so the
+          // rendered clip shows real motion — the spinner spinning, the status text
+          // updating, results streaming in — instead of a frozen snapshot.
+          const every = op.burst.every || 320;
+          const count = Math.max(2, Math.round((op.burst.ms || 2800) / every));
+          const imgs = [];
+          for (let b = 0; b < count; b++) {
+            const fn = `${String(n).padStart(2, "0")}_${String(b).padStart(2, "0")}.png`;
+            await page.screenshot({ path: join(dir, fn) });
+            imgs.push(`wt/${spec.id}/${fn}`);
+            if (b < count - 1) await sleep(page, every);
+          }
+          steps.push({ imgs, caption: op.cap, cursor: null, click: false, hold: op.hold || 72, burst: true });
+          console.log(`  ${spec.id} burst ${n}: ${imgs.length} frames — ${op.cap}`);
+          n++;
+        } else if (op.cap) {
           const cur = await cursorOf(page, op.cursor);
           const name = String(n).padStart(2, "0") + ".png";
           await sleep(page, 350);

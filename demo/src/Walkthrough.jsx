@@ -22,6 +22,18 @@ const camTarget = (step) =>
 
 export const wtDuration = (wt) => wt.steps.reduce((a, s) => a + (s.hold || 60), 0);
 
+// A BURST step holds a captured frame SEQUENCE (loading/streaming motion). Pick the
+// frame for this local time — play once over ~72% of the hold, then rest on the last.
+const burstFrame = (step, lf) => {
+  if (step && step.burst && step.imgs && step.imgs.length) {
+    const N = step.imgs.length;
+    const playFrames = Math.max(N, Math.floor((step.hold || 60) * 0.72));
+    const idx = Math.min(N - 1, Math.max(0, Math.floor(lf / (playFrames / N))));
+    return step.imgs[idx];
+  }
+  return (step && (step.img || (step.imgs && step.imgs[step.imgs.length - 1]))) || null;
+};
+
 const Background = () => (
   <AbsoluteFill style={{ background: "radial-gradient(1300px 760px at 68% -5%, #14253f 0%, #0f1b2e 46%, #0b1220 100%)" }}>
     <AbsoluteFill style={{ background: "radial-gradient(900px 520px at 10% 100%, rgba(52,211,153,0.10), transparent 60%)" }} />
@@ -91,6 +103,8 @@ export const Walkthrough = ({ wt }) => {
     cursorOp = interpolate(lf, [0, 8], [prev && prev.cursor ? 1 : 0, 1], { extrapolateRight: "clamp" });
   }
 
+  const curImg = burstFrame(cur, lf);
+  const prevImg = prev ? burstFrame(prev, 1e9) : null;
   const fadeIn = interpolate(lf, [0, 11], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const capY = interpolate(lf, [4, 22], [26, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const capOp = interpolate(lf, [4, 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -117,8 +131,8 @@ export const Walkthrough = ({ wt }) => {
         <div style={{ position: "relative", width: IMG_W, height: IMG_H, overflow: "hidden", background: "#fff" }}>
           {/* Camera: zoom + pan toward the active region */}
           <div style={{ position: "absolute", top: 0, left: 0, width: IMG_W, height: IMG_H, transformOrigin: "0 0", transform: `translate(${tx}px, ${ty}px) scale(${s})` }}>
-            {prev && <Img src={staticFile(prev.img)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W }} />}
-            <Img src={staticFile(cur.img)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W, opacity: fadeIn }} />
+            {prevImg && <Img src={staticFile(prevImg)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W }} />}
+            <Img src={staticFile(curImg)} style={{ position: "absolute", top: 0, left: 0, width: IMG_W, opacity: fadeIn }} />
             {cursor && <Ripple x={cursor.x} y={cursor.y} lf={cur.click ? lf : -999} accent={wt.accent} />}
             {cursor && <Pointer x={cursor.x} y={cursor.y} opacity={cursorOp} />}
           </div>
