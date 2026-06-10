@@ -44,8 +44,11 @@ Session prefix: ``fin_``.
 from __future__ import annotations
 
 import csv
+import html
 import io
 import logging
+import math
+import re
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -141,44 +144,56 @@ _CENTS = Decimal("0.01")
 # ===========================================================================
 # Numeric helpers (pure, defensive — used by the compute + the UI)
 # ===========================================================================
-def _to_decimal(value: Any) -> Optional[Decimal]:
-    """Coerce a model/user-supplied value to ``Decimal``.
+# A strictly-numeric token: optional sign, optional thousands grouping, optional
+# single decimal part. Used to REJECT (not silently mangle) ambiguous figures.
+_NUM_RE = re.compile(r"^[+-]?\d{1,3}(?:,\d{3})*(?:\.\d+)?$|^[+-]?\d+(?:\.\d+)?$")
 
-    Returns ``None`` for missing/blank/unparseable values (HONEST: a missing
-    figure stays missing — never silently becomes 0 here; the *compute* decides
-    how to treat a None, and flags it as "not provided"). Tolerates strings with
-    currency symbols, thousands separators, and parenthesized negatives
-    (accounting style, e.g. "(1,234)" -> -1234).
+
+def _to_decimal(value: Any) -> Optional[Decimal]:
+    """Coerce a model/user-supplied value to a FINITE ``Decimal`` (or ``None``).
+
+    Returns ``None`` for missing/blank/unparseable/non-finite values (HONEST: a
+    missing figure stays missing — never silently becomes 0; the *compute*
+    decides how to treat a None and flags it "not provided"). For strings it
+    tolerates a leading currency symbol, thousands separators, and parenthesized
+    negatives ("(1,234)" -> -1234), but REJECTS anything ambiguous — unit
+    suffixes ("$1.2M"), scientific notation ("1e9"), percents ("50%"), or weird
+    grouping ("1,2,3") become ``None`` rather than a fabricated, wrong number,
+    because in an auditable bridge a silently mis-scaled figure is worse than a
+    rejected one.
     """
     if value is None:
         return None
     if isinstance(value, bool):  # guard: bool is an int subclass
         return None
     if isinstance(value, Decimal):
-        return value
+        return value if value.is_finite() else None
     if isinstance(value, (int, float)):
+        if isinstance(value, float) and not math.isfinite(value):
+            return None  # reject NaN / +Inf / -Inf
         try:
-            return Decimal(str(value))
+            d = Decimal(str(value))
         except (InvalidOperation, ValueError):
             return None
+        return d if d.is_finite() else None
     s = str(value).strip()
     if not s:
         return None
     neg = False
     if s.startswith("(") and s.endswith(")"):
         neg = True
-        s = s[1:-1]
-    # Strip everything except digits, sign, and decimal point.
-    cleaned = []
-    for ch in s:
-        if ch.isdigit() or ch in ".-+":
-            cleaned.append(ch)
-    s2 = "".join(cleaned)
-    if s2 in ("", "+", "-", ".", "+.", "-."):
+        s = s[1:-1].strip()
+    # Drop a leading currency symbol and any internal spaces, then validate
+    # strictly. Letters (unit suffixes / sci-notation 'e' / "USD") or a failed
+    # numeric match -> reject, so we never coerce "$1.2M" into 1.2.
+    s = s.lstrip("$€£¥").strip().replace(" ", "")
+    if not s or any(ch.isalpha() for ch in s) or not _NUM_RE.match(s):
         return None
     try:
-        d = Decimal(s2)
+        d = Decimal(s.replace(",", ""))
     except (InvalidOperation, ValueError):
+        return None
+    if not d.is_finite():
         return None
     return -d if neg else d
 
@@ -189,6 +204,12 @@ def _fmt_money(value: Optional[Decimal], currency: str = "") -> str:
     ``None`` renders as an em-dash so "not provided" is visible, not faked as 0.
     """
     if value is None:
+        return "—"
+    # Non-finite (NaN/Inf) must never render as an authoritative money string.
+    try:
+        if not value.is_finite():
+            return "—"
+    except (AttributeError, InvalidOperation):
         return "—"
     try:
         q = value.quantize(_CENTS)
@@ -202,9 +223,9 @@ def _fmt_money(value: Optional[Decimal], currency: str = "") -> str:
 
 
 def _clean_currency(raw: Any) -> str:
-    """Bound + sanitize a currency code/symbol for display."""
+    """Bound + sanitize a currency code/symbol-or-scale label for display."""
     s = str(raw or "").strip()
-    return s[:8]
+    return s[:24]   # roomy enough for "USD thousands" etc. (still BOUNDED)
 
 
 def _clean_label(raw: Any) -> str:
@@ -288,7 +309,7 @@ def compute_bridge(
             "kind": kind,                  # "start" | "addback" | "subtotal" | "adjustment"
             "key": key,
             "component": component,
-            "sign": "" if signed is None else ("+" if signed >= 0 else "-"),
+            "sign": "" if signed is None else ("+" if signed > 0 else ("-" if signed < 0 else "")),
             "amount": (abs(signed) if signed is not None else None),
             "signed": signed if signed is not None else Decimal("0"),
             "running": running,
@@ -336,9 +357,10 @@ def compute_bridge(
              is_subtotal=True)
     steps[-1]["running"] = adjusted
 
-    # --- EBITDA margin: ONLY if revenue provided and non-zero (never faked) -
+    # --- EBITDA margin: ONLY for a finite, strictly-positive revenue (never faked) -
     ebitda_margin: Optional[Decimal] = None
-    if revenue is not None and revenue != 0:
+    if (revenue is not None and revenue.is_finite() and revenue > 0
+            and ebitda is not None and ebitda.is_finite()):
         ebitda_margin = (ebitda / revenue) * Decimal("100")
 
     return {
@@ -607,7 +629,7 @@ def _build_dag_html(bridge: Dict[str, Any], currency: str) -> Optional[str]:
             net.add_node(
                 key, label=f"{label}\n{val}", shape="box",
                 color=subtotal_color.get(key, ui.GREEN), font={"color": "#0f172a"},
-                title=f"{label}: {val}",
+                title=html.escape(f"{label}: {val}"),   # currency is user-text -> escape
             )
 
         # Edge NI->EBIT labelled with (interest+taxes), EBIT->EBITDA with (dep+amort).
@@ -634,9 +656,11 @@ def _build_dag_html(bridge: Dict[str, Any], currency: str) -> Optional[str]:
             node_id = f"adj_{adj_idx}"
             signed = s["signed"]
             net.add_node(
-                node_id, label=s["component"], shape="dot", size=14,
+                # label/title carry LLM/user text -> escape before it reaches the
+                # pyvis tooltip innerHTML sink (prevents markup/script injection).
+                node_id, label=html.escape(str(s["component"]))[:60], shape="dot", size=14,
                 color=(ui.GREEN if signed >= 0 else "#ef4444"),
-                title=(s.get("rationale") or s["component"]),
+                title=html.escape(str(s.get("rationale") or s["component"])),
             )
             net.add_edge(node_id, "adjusted_ebitda",
                          label=_fmt_money(signed, currency), arrows="to")
@@ -736,7 +760,9 @@ def _render_step_table(bridge: Dict[str, Any], currency: str) -> None:
             amount_disp = (f"{s['sign']}{_fmt_money(s['amount'], currency)}"
                            if s["amount"] is not None else "—")
         rows.append({
-            "Step": "SUBTOTAL" if s["is_subtotal"] else s["component"].split()[0].strip("+="),
+            "Step": ("SUBTOTAL" if s["is_subtotal"]
+                     else {"start": "Start", "addback": "Add-back",
+                           "adjustment": "Adjustment"}.get(s["kind"], s["kind"])),
             "Component": s["component"],
             "Provenance": provenance,
             "+/- Amount": amount_disp,
@@ -845,8 +871,11 @@ def render_financials_tab() -> None:
         key=_PFX + "extract_btn",
     )
     if c_clear.button("Reset", key=_PFX + "reset_btn"):
-        for k in (SS_FIGURES, SS_ADJ, SS_EXTRACTED, SS_EXTRACT_OK, SS_EXTRACT_ERR):
+        for k in (SS_FIGURES, SS_ADJ, SS_EXTRACTED, SS_EXTRACT_OK, SS_EXTRACT_ERR, SS_RAW_TEXT):
             st.session_state.pop(k, None)
+        # Bump the nonce so the input widgets get fresh keys and actually clear
+        # (keyed widgets otherwise restore their old value from session_state).
+        st.session_state[_PFX + "nonce"] = st.session_state.get(_PFX + "nonce", 0) + 1
         st.rerun()
 
     if not ok:
@@ -876,6 +905,10 @@ def render_financials_tab() -> None:
                     st.session_state[SS_FIGURES]["currency"] = result.get("currency", "")
                     st.session_state[SS_FIGURES]["period"] = result.get("period", "")
                     st.session_state[SS_ADJ] = list(result.get("adjustments") or [])
+                    # Bump the nonce so the freshly extracted figures re-seed the
+                    # input widgets (value= is ignored once a keyed widget has state).
+                    st.session_state[_PFX + "nonce"] = (
+                        st.session_state.get(_PFX + "nonce", 0) + 1)
                     status.update(label="Figures extracted (you can edit them)",
                                   state="complete")
                     push_history(SS_HISTORY,
@@ -899,16 +932,21 @@ def render_financials_tab() -> None:
                "below is computed in Python.")
 
     figures: Dict[str, Any] = dict(st.session_state.get(SS_FIGURES) or {})
+    # Widget-key nonce: bumped on Extract/Reset so a fresh extraction (or reset)
+    # re-seeds the input widgets via value= (Streamlit ignores value= once a keyed
+    # widget already holds session state — a fresh key lets value= win again).
+    _nonce = str(st.session_state.get(_PFX + "nonce", 0))
 
     meta_cols = st.columns(2)
     currency = meta_cols[0].text_input(
-        "Currency (label only)", value=_clean_currency(figures.get("currency")),
-        max_chars=8, key=_PFX + "currency")
+        "Currency / scale (label only)", value=_clean_currency(figures.get("currency")),
+        max_chars=24, key=_PFX + "currency_" + _nonce)
     period = meta_cols[1].text_input(
         "Period (label only)", value=str(figures.get("period") or "")[:60],
-        max_chars=60, key=_PFX + "period")
+        max_chars=60, key=_PFX + "period_" + _nonce)
 
-    st.caption("Core income-statement lines (leave at 0 / blank if not reported):")
+    st.caption("Core income-statement lines — leave a line BLANK if it was not "
+               "reported (a blank stays 'not provided', NOT a reported 0):")
     num_cols = st.columns(3)
     edited_figures: Dict[str, Any] = {}
     for i, (key, label) in enumerate(CORE_FIELDS):
@@ -916,16 +954,17 @@ def render_financials_tab() -> None:
         existing = _to_decimal(figures.get(key))
         edited_figures[key] = col.number_input(
             label,
-            value=(float(existing) if existing is not None else 0.0),
+            value=(float(existing) if existing is not None else None),
             step=1.0, format="%.2f",
-            key=_PFX + "num_" + key,
+            key=_PFX + "num_" + key + "_" + _nonce,
         )
     edited_figures["currency"] = currency
     edited_figures["period"] = period
 
     st.caption(f"Proposed adjustments (add-backs to EBITDA) — capped at "
                f"{MAX_ADJUSTMENTS} rows. Toggle Add-back off to SUBTRACT "
-               f"(e.g. a one-time gain).")
+               f"(e.g. a one-time gain). Pre-filled rows are MODEL PROPOSALS — "
+               f"review / edit them before trusting the Adjusted-EBITDA total.")
 
     adj_rows = list(st.session_state.get(SS_ADJ) or [])
     if PANDAS_AVAILABLE:
@@ -941,7 +980,7 @@ def render_financials_tab() -> None:
             num_rows="dynamic",
             use_container_width=True,
             hide_index=True,
-            key=_PFX + "adj_editor",
+            key=_PFX + "adj_editor_" + _nonce,
             column_config={
                 "label": st.column_config.TextColumn(
                     "Label", required=False, max_chars=MAX_LABEL_CHARS),
@@ -969,6 +1008,11 @@ def render_financials_tab() -> None:
                 "add_back": bool(rec.get("add_back", True)),
                 "rationale": str(rec.get("rationale") or "")[:240],
             })
+        _valid = sum(1 for r in records if _clean_label(r.get("label")))
+        if _valid > MAX_ADJUSTMENTS:
+            st.warning(
+                f"Only the first {MAX_ADJUSTMENTS} adjustments are included in the "
+                f"bridge; {_valid - MAX_ADJUSTMENTS} additional row(s) were dropped.")
     else:  # pragma: no cover - pandas present in this venv
         adjustments = adj_rows
         st.info("pandas unavailable — adjustments shown read-only.")
@@ -978,7 +1022,15 @@ def render_financials_tab() -> None:
     st.session_state[SS_ADJ] = adjustments[:MAX_ADJUSTMENTS]
 
     # --- DETERMINISTIC COMPUTE (the source of truth) -----------------------
-    bridge = compute_bridge(edited_figures, adjustments)
+    try:
+        bridge = compute_bridge(edited_figures, adjustments)
+    except Exception as e:  # ERROR_BOUNDARY: a malformed input must never crash the tab
+        logger.error("compute_bridge failed: %s", e)
+        st.error("Could not compute the bridge for the current inputs — please "
+                 "check the figures and adjustment amounts for a malformed value.")
+        with st.expander("Token usage & cost", expanded=False):
+            common.render_token_usage(inside_expander=True)
+        return
 
     # --- VISUAL OUTPUT -----------------------------------------------------
     ui.section("3 · Bridge", "All subtotals below are computed in Python "
