@@ -38,11 +38,11 @@ A source-backed research workspace — led by the **List Intelligence** pipeline
 >
 > <details><summary>🧭 <b>Part of a bigger toolkit</b> — one skill, two architectures (Streamlit here · Convex collaboration elsewhere)</summary>
 > <br>
-> ParselyFi is my <b>single-user Streamlit</b> side — fast MVPs for data &amp; workflow. The same <a href="https://github.com/HomenShum/feature-walkthrough-gif">feature-walkthrough-gif</a> skill also documents my <b>live-collaborative Convex + React</b> apps (e.g. NodeRoom): a <b>multi-pane</b> mode drives two/three browser clients side-by-side and bursts the moment a change syncs across them —
+> ParselyFi is my <b>single-user Streamlit</b> side — fast MVPs for data &amp; workflow. The same <a href="https://github.com/HomenShum/feature-walkthrough-gif">feature-walkthrough-gif</a> skill also documents my <b>live-collaborative Convex + React</b> apps like <a href="https://github.com/HomenShum/noderoom">NodeRoom</a> (<a href="https://noderoom.live">noderoom.live</a>): a <b>multi-pane</b> mode drives two/three browser clients side-by-side and bursts the moment a change syncs across them —
 > <br>
 > <img src="assets/feature-collab.gif" alt="Two clients side by side: Client A adds a card and runs an agent; Client B sees both update live via the server broadcast" width="760">
 > <br>
-> One skill spanning both architectures. See the <a href="https://github.com/HomenShum/feature-walkthrough-gif#live-collaboration-multi-pane">multi-pane mode</a> and the <a href="https://github.com/HomenShum/feature-walkthrough-gif/blob/main/STACK_GUIDELINES.md">stack guidelines</a> (Streamlit vs Convex vs Next.js — what's worth filming differs by architecture).
+> <i>(The GIF above is the reproducible local stand-in; the <b>real</b> two-client capture — of the live NodeRoom app — lives in <a href="https://github.com/HomenShum/noderoom#the-headline-shown-literally--two-clients-one-room-live">NodeRoom's own README</a>.)</i> One skill spanning both architectures. See the <a href="https://github.com/HomenShum/feature-walkthrough-gif#live-collaboration-multi-pane">multi-pane mode</a> and the <a href="https://github.com/HomenShum/feature-walkthrough-gif/blob/main/STACK_GUIDELINES.md">stack guidelines</a> (Streamlit vs Convex vs Next.js — what's worth filming differs by architecture).
 > </details>
 
 ### 📋 List Intelligence — the company-list pipeline
