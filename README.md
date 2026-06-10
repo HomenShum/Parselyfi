@@ -35,13 +35,6 @@ ParselyFi is a Streamlit workspace for **venture-capital, middle-market, and pub
 A source-backed research workspace — led by the **List Intelligence** pipeline and an **interactive relationship graph**, plus **image→rows extraction**, a **document-brain** (grounded RAG over your own files), and a deterministic **Adjusted-EBITDA bridge**, alongside company deep-dives, news/video briefings, transcription, a file manager, and a public data dashboard.
 
 > 🛠️ **The animated previews below are full feature walkthroughs** — empty state → the cursor gliding to each click (with a ripple) → the loading state → the result, with a **zoom‑to‑focus camera**, step captions, and a progress bar, so you see *exactly* what was clicked and what happened (not a final‑state hero shot). Made via my reusable **[`feature-walkthrough-gif`](https://github.com/HomenShum/feature-walkthrough-gif)** skill — Playwright capture → Remotion render → ffmpeg, with research‑backed design (two‑pass palette, Arcade‑style zoom/pan, caption pacing). Also bundled here at [`.claude/skills/feature-walkthrough-gif/`](.claude/skills/feature-walkthrough-gif/SKILL.md).
->
-> <details><summary>🤝 <b>The same skill also captures multi-client collaboration</b> — for our Convex + React apps (not a ParselyFi feature)</summary>
-> <br>
-> <img src="assets/feature-collab.gif" alt="Two clients side by side: Client A adds a card and runs an agent; Client B sees both update live via the server broadcast" width="760">
-> <br>
-> A single cursor can't show what makes a <i>collaborative</i> app special, so the skill has a <b>multi-pane</b> mode that drives two (or three) browser clients side-by-side and bursts the moment a change syncs across them. ParselyFi is single-user Streamlit, so this is purely a capability demo — see the <a href="https://github.com/HomenShum/feature-walkthrough-gif#live-collaboration-multi-pane">tool repo</a>.
-> </details>
 
 ### 📋 List Intelligence — the company-list pipeline
 
