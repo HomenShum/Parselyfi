@@ -36,21 +36,31 @@ A source-backed research workspace — led by the **List Intelligence** pipeline
 
 ### 📋 List Intelligence — the company-list pipeline
 
+<p align="center"><img src="assets/feature-list-intelligence.gif" alt="List Intelligence pipeline preview" width="760"></p>
+
 Paste or upload a list of companies → **Match** each to a canonical entity (High / Medium / No-Match, source-backed) → **Enrich** with structured fields → **Classify** against a sector definition you write → **Score** on a fully editable, weighted rubric where **every dimension cites a real source URL** → **Export** to CSV / Excel. Bounded concurrency, per-row evidence drill-down, KPI metrics, and an honest coverage / confidence readout. *This is the spine the product is built around: comparable, auditable company tables.*
 
 ### 🕸️ Relationship Graph
+
+<p align="center"><img src="assets/feature-relationship-graph.gif" alt="Relationship Graph preview" width="760"></p>
 
 Map a company's corporate lineage — **parents, subsidiaries, acquisitions (with years), investors, partners, and competitors** — as an interactive, draggable network (pyvis). Seed it from a typed company or straight from your last List Intelligence run. Every edge is grounded; evidence links are filtered to **real retrieved sources only**, and uncited edges are drawn dashed so the graph shows what's source-backed.
 
 ### 🖼️ Card → Rows
 
+<p align="center"><img src="assets/feature-card-rows.gif" alt="Card to Rows multimodal extraction preview" width="760"></p>
+
 Drop **images** — pitch-deck slides, cap tables, CRM/contact cards, screenshots of a portfolio list — and Gemini multimodal extraction turns them into **structured company rows** in an editable grid. One click **sends the companies straight into List Intelligence** to match/enrich/classify/score them. Never invents a company that isn't visible in the image.
 
 ### 📚 Document Brain
 
+<p align="center"><img src="assets/feature-document-brain.gif" alt="Document Brain RAG preview" width="760"></p>
+
 Upload your own files (**PDF / DOCX / TXT / MD / CSV / XLSX**) and ask questions. **Hybrid retrieval** (dense embeddings in an in-memory vector store + lexical TF-IDF, fused with Reciprocal Rank Fusion) grounds every answer in your documents with inline **`(filename#chunkN)` citations** — and says *"I could not find this in your documents"* rather than guessing. Spreadsheets become **queryable tables**. Degrades honestly to lexical-only search when the embedding stack isn't present.
 
 ### 💵 EBITDA Bridge
+
+<p align="center"><img src="assets/feature-ebitda-bridge.gif" alt="Adjusted-EBITDA Bridge preview" width="760"></p>
 
 Paste an income statement (or enter figures by hand) and get an **auditable Adjusted-EBITDA reconciliation**: NI → EBIT → EBITDA → Adjusted EBITDA. The defining rule — **the LLM only proposes line items and add-backs; a pure Python function does every calculation** (in `Decimal`), so no total is ever hallucinated. Editable figures + adjustments recompute live; rendered as a KPI row, a step ladder, a **waterfall**, and an **auditable DAG** of the computation. Works with **no API key** — the math is pure Python.
 
