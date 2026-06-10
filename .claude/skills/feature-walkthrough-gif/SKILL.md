@@ -18,6 +18,11 @@ state frames + an overlaid cursor that glides to each click (with a ripple) +
 per-step captions + a progress bar. The opposite of a single Ken-Burns "hero"
 frame — the viewer follows the whole flow.
 
+> **Designing for a specific stack?** What's worth showing — and single-pane vs
+> multi-pane capture — differs by architecture. See [`STACK_GUIDELINES.md`](STACK_GUIDELINES.md)
+> for Streamlit (single-user), Convex + React (live multi-user), and Next.js + SQL on
+> Vercel, grounded in the latest SDK docs.
+
 ## When to use
 - "Make a GIF that walks through the feature" / "show every step / where the user clicked".
 - Per-feature README previews, changelog clips, PR demos, onboarding.
