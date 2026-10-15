@@ -161,6 +161,11 @@ streamlit run streamlit_app.py
 Create `.streamlit/secrets.toml` (gitignored). Storage/auth go under `[supabase]`; **API keys are top-level**:
 
 ```toml
+# Feature API keys (top level; keep these before any table header)
+GEMINI_API_KEY      = "..."   # or legacy GOOGLE_AI_STUDIO   — Company / News / summaries
+LINKUP_API_KEY      = "..."   # https://www.linkup.so        — source-backed search
+ELEVEN_LABS_API_KEY = "..."   # speech-to-text for Transcription
+
 [supabase]
 SUPABASE_URL = "..."
 SUPABASE_KEY = "..."
@@ -169,11 +174,6 @@ SUPABASE_S3_ENDPOINT_URL = "..."
 SUPABASE_S3_BUCKET_REGION = "..."
 SUPABASE_S3_BUCKET_ACCESS_KEY = "..."
 SUPABASE_S3_BUCKET_SECRET_KEY = "..."
-
-# Feature API keys (top level)
-GEMINI_API_KEY      = "..."   # or legacy GOOGLE_AI_STUDIO   — Company / News / summaries
-LINKUP_API_KEY      = "..."   # https://www.linkup.so        — source-backed search
-ELEVEN_LABS_API_KEY = "..."   # speech-to-text for Transcription
 ```
 
 Each feature **degrades gracefully**: a missing key shows a notice instead of failing, and never fabricates results.
